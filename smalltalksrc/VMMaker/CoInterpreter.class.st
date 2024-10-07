@@ -120,7 +120,7 @@ Class {
 		'CogMethodConstants',
 		'VMStackFrameOffsets'
 	],
-	#category : 'VMMaker-JIT'
+	#category : #'VMMaker-JIT'
 }
 
 { #category : #translation }
@@ -1789,6 +1789,20 @@ CoInterpreter >> ceStackOverflow: contextSwitchIfNotNil [
 	self returnToExecutive: false postContextSwitch: switched.
 	self error: 'should not be reached'
 
+]
+
+{ #category : #enilopmarts }
+CoInterpreter >> ceStaticSendInterpreted: aCompiledMethodOop [
+
+	| primitiveIndex |
+	instructionPointer := self popStack.
+	newMethod := aCompiledMethodOop.
+
+	primitiveIndex := self primitiveIndexOf: newMethod.
+	primitiveFunctionPointer := self functionPointerFor: primitiveIndex inClass: nil.
+
+	self executeNewMethod: false.
+	self returnToExecutive: false	
 ]
 
 { #category : #'debug support' }

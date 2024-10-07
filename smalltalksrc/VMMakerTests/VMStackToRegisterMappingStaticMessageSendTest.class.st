@@ -4,6 +4,21 @@ Class {
 	#category : #'VMMakerTests-JitTests'
 }
 
+{ #category : #helpers }
+VMStackToRegisterMappingStaticMessageSendTest >> initStack [
+
+	self createBaseFrame.
+	
+	"Initialize Stack to the correct pointers in the selected page"
+	machineSimulator smalltalkStackPointerRegisterValue: interpreter stackPointer.
+	machineSimulator framePointerRegisterValue: interpreter framePointer.
+	machineSimulator baseRegisterValue: cogit varBaseAddress.
+
+	cogit setCStackPointer: interpreter rumpCStackAddress.
+	cogit setCFramePointer: interpreter rumpCStackAddress.
+
+]
+
 { #category : #running }
 VMStackToRegisterMappingStaticMessageSendTest >> setUpTrampolines [
 
@@ -24,8 +39,8 @@ VMStackToRegisterMappingStaticMessageSendTest >> setUpTrampolines [
 	cogit picAbortTrampolines at: 2 put: cogit cePICAbortTrampoline.
 	cogit picAbortTrampolines at: 3 put: cogit cePICAbortTrampoline.
 	
-	cogit staticSendTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#ceStaticSendInterpreted).
-	
+	cogit generateStaticSendTrampoline.
+		
 	cogit ceStoreCheckTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#ceStoreCheckTrampoline).
 	cogit objectRepresentation setAllStoreTrampolinesWith: (self compileTrampoline: [ cogit RetN: 0 ] named: #ceStoreTrampoline).
 ]
@@ -68,7 +83,76 @@ VMStackToRegisterMappingStaticMessageSendTest >> testStaticSendOfCoggedMethodCal
 ]
 
 { #category : #'tests - sends static' }
+VMStackToRegisterMappingStaticMessageSendTest >> testStaticSendOfNonCoggedMethodActivatesCorrectMethod [
+
+	| selector calledCompiledMethod staticCallerCompiledMethod staticCallerCogMethod |
+
+	self setUpTrampolines.
+	cogit generateEnilopmarts.
+	cogit computeEntryOffsets.
+
+	self initStack.	
+
+	calledCompiledMethod := self createMethodOopFromHostMethod: (Object >> #yourself).
+	
+	selector := self newOldSpaceObjectWithSlots: 0.
+	
+	staticCallerCompiledMethod := methodBuilder newMethod
+			 literalAt: 0 put: (memory integerObjectOf: 13);
+			 literalAt: 1 put: calledCompiledMethod;
+			 literalAt: 2 put: selector;
+			 literalAt: 3 put: memory nilObject;
+			 bytecodes: #[32 "PushLiteral 1" 
+				246 1 "Static Send literal at 2"
+				92 "Return top"];
+			 buildMethod.
+
+	staticCallerCogMethod := cogit cog: staticCallerCompiledMethod selector: memory nilObject.
+
+	self createFramefulCallFrom: callerAddress.
+	
+	"Push receiver, arg, then send"
+	self pushAddress: memory falseObject.
+
+	self 
+		runFrom: (staticCallerCogMethod address + cogit noCheckEntryOffset) 
+		until: callerAddress. 
+
+	self assert: machineSimulator pc equals: cogit staticSendTrampoline
+]
+
+{ #category : #'tests - sends static' }
 VMStackToRegisterMappingStaticMessageSendTest >> testStaticSendOfNonCoggedMethodCallsTrampoline [
 
-1halt
+	| selector calledCompiledMethod staticCallerCompiledMethod staticCallerCogMethod |
+
+	self setUpTrampolines.
+	cogit computeEntryOffsets.
+
+	calledCompiledMethod := self createMethodOopFromHostMethod: (Object >> #yourself).
+	
+	selector := self newOldSpaceObjectWithSlots: 0.
+	
+	staticCallerCompiledMethod := methodBuilder newMethod
+			 literalAt: 0 put: (memory integerObjectOf: 13);
+			 literalAt: 1 put: calledCompiledMethod;
+			 literalAt: 2 put: selector;
+			 literalAt: 3 put: memory nilObject;
+			 bytecodes: #[32 "PushLiteral 1" 
+				246 1 "Static Send literal at 2"
+				92 "Return top"];
+			 buildMethod.
+
+	staticCallerCogMethod := cogit cog: staticCallerCompiledMethod selector: memory nilObject.
+
+	self createFramefulCallFrom: callerAddress.
+	
+	"Push receiver, arg, then send"
+	self pushAddress: memory falseObject.
+
+	self 
+		runFrom: (staticCallerCogMethod address + cogit noCheckEntryOffset) 
+		until: cogit staticSendTrampoline. 
+
+	self assert: machineSimulator pc equals: cogit staticSendTrampoline
 ]

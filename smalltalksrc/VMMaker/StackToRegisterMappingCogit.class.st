@@ -3245,47 +3245,42 @@ StackToRegisterMappingCogit >> generateMissAbortTrampolines [
 StackToRegisterMappingCogit >> generateSendTrampolines [
 	"Override to generate code to push the register arg(s) for <= numRegArg arity sends."
 
-	staticSendTrampoline := self genTrampolineFor: #ceStaticSendInterpreted: 
-			called: 'ceStaticSendInterpreted' 
-			arg: TempReg.
+	self generateStaticSendTrampoline.
 
-	0 to: NumSendTrampolines - 1 do:
-		[:numArgs|
-		ordinarySendTrampolines
-			at: numArgs
-			put: (self genSendTrampolineFor: #ceSend:super:to:numArgs:
-					  numArgs: numArgs
-					  called: (self trampolineName: 'ceSend' numArgs: numArgs)
-					  arg: ClassReg
-					  arg: (self trampolineArgConstant: false)
-					  arg: ReceiverResultReg
-					  arg: (self numArgsOrSendNumArgsReg: numArgs))].
+	0 to: NumSendTrampolines - 1 do: [ :numArgs |
+		ordinarySendTrampolines at: numArgs put: (self
+				 genSendTrampolineFor: #ceSend:super:to:numArgs:
+				 numArgs: numArgs
+				 called: (self trampolineName: 'ceSend' numArgs: numArgs)
+				 arg: ClassReg
+				 arg: (self trampolineArgConstant: false)
+				 arg: ReceiverResultReg
+				 arg: (self numArgsOrSendNumArgsReg: numArgs)) ].
 
 	"Generate these in the middle so they are within [firstSend, lastSend]."
 	BytecodeSetHasDirectedSuperSend ifTrue: [
-		0 to: NumSendTrampolines - 1 do: [:numArgs|
+		0 to: NumSendTrampolines - 1 do: [ :numArgs |
 			self
 				generateSuperSendTrampolineTo: #ceSend:above:to:numArgs:
 				named: 'ceDirectedSuperSend'
 				numArgs: numArgs
 				in: directedSuperSendTrampolines.
 			self
-				generateSuperSendTrampolineTo: #ceSend:aboveClassBinding:to:numArgs:
+				generateSuperSendTrampolineTo:
+				#ceSend:aboveClassBinding:to:numArgs:
 				named: 'ceDirectedSuperBindingSend'
 				numArgs: numArgs
 				in: directedSuperBindingSendTrampolines ] ].
 
-	0 to: NumSendTrampolines - 1 do:
-		[:numArgs|
-		superSendTrampolines
-			at: numArgs
-			put: (self genSendTrampolineFor: #ceSend:super:to:numArgs:
-					  numArgs: numArgs
-					  called: (self trampolineName: 'ceSuperSend' numArgs: numArgs)
-					  arg: ClassReg
-					  arg: (self trampolineArgConstant: true)
-					  arg: ReceiverResultReg
-					  arg: (self numArgsOrSendNumArgsReg: numArgs))].
+	0 to: NumSendTrampolines - 1 do: [ :numArgs |
+		superSendTrampolines at: numArgs put: (self
+				 genSendTrampolineFor: #ceSend:super:to:numArgs:
+				 numArgs: numArgs
+				 called: (self trampolineName: 'ceSuperSend' numArgs: numArgs)
+				 arg: ClassReg
+				 arg: (self trampolineArgConstant: true)
+				 arg: ReceiverResultReg
+				 arg: (self numArgsOrSendNumArgsReg: numArgs)) ].
 	firstSend := ordinarySendTrampolines at: 0.
 	lastSend := superSendTrampolines at: NumSendTrampolines - 1
 ]
@@ -3293,6 +3288,15 @@ StackToRegisterMappingCogit >> generateSendTrampolines [
 { #category : #initialization }
 StackToRegisterMappingCogit >> generateSistaRuntime [
 	"No sita vm"
+]
+
+{ #category : #initialization }
+StackToRegisterMappingCogit >> generateStaticSendTrampoline [
+
+	staticSendTrampoline := self
+		                        genTrampolineFor: #ceStaticSendInterpreted:
+		                        called: 'ceStaticSendInterpreted'
+		                        arg: ClassReg
 ]
 
 { #category : #initialization }
