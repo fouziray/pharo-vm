@@ -8,32 +8,30 @@ Squeak uses 16-bit signed samples encoded in the host's endian order.  A sound b
 
 "
 Class {
-	#name : 'SoundPlugin',
-	#superclass : 'SmartSyntaxInterpreterPlugin',
-	#category : 'VMMaker-Plugins',
-	#package : 'VMMaker',
-	#tag : 'Plugins'
+	#name : #SoundPlugin,
+	#superclass : #SmartSyntaxInterpreterPlugin,
+	#category : 'VMMaker-Plugins'
 }
 
-{ #category : 'translation' }
+{ #category : #translation }
 SoundPlugin class >> hasHeaderFile [
 	"If there is a single intrinsic header file to be associated with the plugin, here is where you want to flag"
 	^true
 ]
 
-{ #category : 'translation' }
+{ #category : #translation }
 SoundPlugin class >> requiresPlatformFiles [
 	"this plugin requires platform specific files in order to work"
 	^true
 ]
 
-{ #category : 'initialize-release' }
+{ #category : #'initialize-release' }
 SoundPlugin >> initialiseModule [
 	<export: true>
 	^self cCode: 'soundInit()' inSmalltalk:[true]
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveGetDefaultSoundPlayer [
 	"Answer a String with the operating system name of the default output device, or nil"
 	"no arguments"
@@ -66,7 +64,7 @@ SoundPlugin >> primitiveGetDefaultSoundPlayer [
 	^interpreterProxy pop: 1 thenPush: newString
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveGetDefaultSoundRecorder [
 	"Answer a String with the operating system name of the default input device, or nil"
 	"no arguments"
@@ -99,7 +97,7 @@ SoundPlugin >> primitiveGetDefaultSoundRecorder [
 	^interpreterProxy pop: 1 thenPush: newString
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveGetNumberOfSoundPlayerDevices [
 	"arguments: name(type, stack offset)
 		dialString(String, 0)"
@@ -119,7 +117,7 @@ SoundPlugin >> primitiveGetNumberOfSoundPlayerDevices [
 	^interpreterProxy pop: 1 thenPush: result. "pop receiver, return result"
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveGetNumberOfSoundRecorderDevices [
 	"arguments: name(type, stack offset)
 		dialString(String, 0)"
@@ -139,7 +137,7 @@ SoundPlugin >> primitiveGetNumberOfSoundRecorderDevices [
 	^interpreterProxy pop: 1 thenPush: result. "pop receiver, return result"
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveGetSoundPlayerDeviceName [
 	"arguments: name(type, stack offset)
 		deviceNumber(Integer, 0)"
@@ -177,7 +175,7 @@ SoundPlugin >> primitiveGetSoundPlayerDeviceName [
 	^interpreterProxy pop: 2 thenPush: newString
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveGetSoundRecorderDeviceName [
 	"arguments: name(type, stack offset)
 		deviceNumber(Integer, 0)"
@@ -216,7 +214,7 @@ SoundPlugin >> primitiveGetSoundRecorderDeviceName [
 	^interpreterProxy pop: 2 thenPush: newString
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveSetDefaultSoundPlayer [
 	"Tell the operating system to use the specified device name as the output device for sound."
 	"arg at top of stack is the String"
@@ -246,7 +244,7 @@ SoundPlugin >> primitiveSetDefaultSoundPlayer [
 		[interpreterProxy pop: 1]
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveSetDefaultSoundRecorder [
 	"Tell the operating system to use the specified device name as the input device for sound."
 	"arg at top of stack is the String"
@@ -276,7 +274,7 @@ SoundPlugin >> primitiveSetDefaultSoundRecorder [
 		[interpreterProxy pop: 1]
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveSoundAvailableSpace [
 	"Returns the number of bytes of available sound output buffer space.  This should be (frames*4) if the device is in stereo mode, or (frames*2) otherwise"
 
@@ -287,7 +285,7 @@ SoundPlugin >> primitiveSoundAvailableSpace [
 	^frames asPositiveIntegerObj
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveSoundEnableAEC: trueOrFalse [ 
 	"Enable or disable acoustic echo-cancellation (AEC).  trueOrFalse should be 0 for false, and 1 for true."
 	| result |
@@ -298,7 +296,7 @@ SoundPlugin >> primitiveSoundEnableAEC: trueOrFalse [
 	].
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveSoundGetRecordLevel [
 	"Get the sound input recording level  in the range 0-1000."
 	| level |
@@ -309,7 +307,7 @@ SoundPlugin >> primitiveSoundGetRecordLevel [
 
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveSoundGetRecordingSampleRate [
 	"Return a float representing the actual sampling rate during recording. Fail if not currently recording."
 
@@ -320,7 +318,7 @@ SoundPlugin >> primitiveSoundGetRecordingSampleRate [
 	^rate asFloatObj
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveSoundGetVolume [
 	"Get the sound input recording level."
 	| left right results |
@@ -339,7 +337,7 @@ SoundPlugin >> primitiveSoundGetVolume [
 	^results
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveSoundInsertSamples: frameCount from: buf leadTime: leadTime [ 
 	"Insert a buffer's worth of sound samples into the currently playing  
 	buffer. Used to make a sound start playing as quickly as possible. The  
@@ -360,7 +358,7 @@ SoundPlugin >> primitiveSoundInsertSamples: frameCount from: buf leadTime: leadT
 	^ framesPlayed asPositiveIntegerObj
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveSoundPlaySamples: frameCount from: buf startingAt: startIndex [ 
 	"Output a buffer's worth of sound samples."
 	| framesPlayed |
@@ -374,7 +372,7 @@ SoundPlugin >> primitiveSoundPlaySamples: frameCount from: buf startingAt: start
 	^ framesPlayed asPositiveIntegerObj
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveSoundPlaySilence [
 	"Output a buffer's worth of silence. Returns the number of sample frames played."
 
@@ -385,7 +383,7 @@ SoundPlugin >> primitiveSoundPlaySilence [
 	^framesPlayed asPositiveIntegerObj
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveSoundRecordSamplesInto: buf startingAt: startWordIndex [ 
 	"Record a buffer's worth of 16-bit sound samples."
 	| bufSizeInBytes samplesRecorded bufPtr byteOffset bufLen |
@@ -407,7 +405,7 @@ SoundPlugin >> primitiveSoundRecordSamplesInto: buf startingAt: startWordIndex [
 	^ samplesRecorded asPositiveIntegerObj
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveSoundSetLeftVolume: aLeftVolume rightVolume: aRightVolume [
 	"Set the sound input recording level."
 
@@ -417,7 +415,7 @@ SoundPlugin >> primitiveSoundSetLeftVolume: aLeftVolume rightVolume: aRightVolum
 
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveSoundSetRecordLevel: level [ 
 	"Set the sound input recording level."
 	self primitive: 'primitiveSoundSetRecordLevel'
@@ -425,7 +423,7 @@ SoundPlugin >> primitiveSoundSetRecordLevel: level [
 	interpreterProxy failed ifFalse: [self cCode: 'snd_SetRecordLevel(level)']
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveSoundStartBufferSize: bufFrames rate: samplesPerSec stereo: stereoFlag [
 	"Start the double-buffered sound output with the given buffer size, sample rate, and stereo flag."
 
@@ -434,7 +432,7 @@ SoundPlugin >> primitiveSoundStartBufferSize: bufFrames rate: samplesPerSec ster
 	interpreterProxy success: (self cCode: 'snd_Start(bufFrames, samplesPerSec, stereoFlag, 0)')
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveSoundStartBufferSize: bufFrames rate: samplesPerSec stereo: stereoFlag semaIndex: semaIndex [
 	"Start the double-buffered sound output with the given buffer size, sample rate, stereo flag, and semaphore index."
 
@@ -443,7 +441,7 @@ SoundPlugin >> primitiveSoundStartBufferSize: bufFrames rate: samplesPerSec ster
 	interpreterProxy success: (self cCode: 'snd_Start(bufFrames, samplesPerSec, stereoFlag, semaIndex)')
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveSoundStartRecordingDesiredSampleRate: desiredSamplesPerSec stereo: stereoFlag semaIndex: semaIndex [
 	"Start recording sound with the given parameters."
 
@@ -452,7 +450,7 @@ SoundPlugin >> primitiveSoundStartRecordingDesiredSampleRate: desiredSamplesPerS
 	self cCode: 'snd_StartRecording(desiredSamplesPerSec, stereoFlag, semaIndex)'
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveSoundStop [
 	"Stop double-buffered sound output."
 
@@ -461,7 +459,7 @@ SoundPlugin >> primitiveSoundStop [
 	self cCode: 'snd_Stop()'.  "leave rcvr on stack"
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveSoundStopRecording [
 	"Stop recording sound."
 
@@ -469,7 +467,7 @@ SoundPlugin >> primitiveSoundStopRecording [
 	self cCode: 'snd_StopRecording()'.  "leave rcvr on stack"
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SoundPlugin >> primitiveSoundSupportsAEC [
 	"Answer true if the OS/hardware supports echo-cancellation, and false otherwise."
 	| result |
@@ -481,7 +479,7 @@ SoundPlugin >> primitiveSoundSupportsAEC [
 
 ]
 
-{ #category : 'initialize-release' }
+{ #category : #'initialize-release' }
 SoundPlugin >> shutdownModule [
 	<export: true>
 	^self cCode: 'soundShutdown()' inSmalltalk:[true]

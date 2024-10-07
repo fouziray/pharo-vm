@@ -1,16 +1,14 @@
 Class {
-	#name : 'CogSSOptStatus',
-	#superclass : 'VMStructType',
+	#name : #CogSSOptStatus,
+	#superclass : #VMStructType,
 	#instVars : [
 		'isReceiverResultRegLive',
 		'ssEntry'
 	],
-	#category : 'VMMaker-JIT',
-	#package : 'VMMaker',
-	#tag : 'JIT'
+	#category : 'VMMaker-JIT'
 }
 
-{ #category : 'translation' }
+{ #category : #translation }
 CogSSOptStatus class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	"enumerate aBinaryBlock with the names and C type strings for the inst vars to include in a CogSSOptStatus struct."
 
@@ -23,21 +21,21 @@ CogSSOptStatus class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 					ifFalse: [#sqInt])]
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 CogSSOptStatus >> isReceiverResultRegLive [
 	"Answer the value of isReceiverResultRegLive"
 
 	^ isReceiverResultRegLive
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 CogSSOptStatus >> isReceiverResultRegLive: anObject [
 	"Set the value of isReceiverResultRegLive"
 
 	^isReceiverResultRegLive := anObject
 ]
 
-{ #category : 'printing' }
+{ #category : #printing }
 CogSSOptStatus >> printStateOn: aStream [
 	<doNotGenerate>
 	(isReceiverResultRegLive notNil
@@ -52,14 +50,14 @@ CogSSOptStatus >> printStateOn: aStream [
 		aStream nextPut: $)]
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 CogSSOptStatus >> ssEntry [
 	"Answer the value of ssEntry"
 
 	^ ssEntry
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 CogSSOptStatus >> ssEntry: anObject [
 	"Set the value of ssEntry"
 

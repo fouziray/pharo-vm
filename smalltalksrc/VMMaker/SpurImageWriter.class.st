@@ -1,14 +1,12 @@
 Class {
-	#name : 'SpurImageWriter',
-	#superclass : 'AbstractImageAccess',
+	#name : #SpurImageWriter,
+	#superclass : #AbstractImageAccess,
 	#traits : 'TImageWriter',
 	#classTraits : 'TImageWriter classTrait',
-	#category : 'VMMaker-ImageFormat',
-	#package : 'VMMaker',
-	#tag : 'ImageFormat'
+	#category : 'VMMaker-ImageFormat'
 }
 
-{ #category : 'writing' }
+{ #category : #writing }
 SpurImageWriter >> padHeader: emptySize toFile: f [
 
 	emptySize timesRepeat: [self putLong: 0 toFile: f].
@@ -18,7 +16,7 @@ SpurImageWriter >> padHeader: emptySize toFile: f [
 
 ]
 
-{ #category : 'writing' }
+{ #category : #writing }
 SpurImageWriter >> putLong: aLong toFile: aFile [
 	"Append aLong to aFile in this platform's 'natural' byte order.  aLong is either 32 or 64 bits,
 	 depending on ObjectMemory.  (Bytes will be swapped, if necessary, when the image is read
@@ -40,7 +38,7 @@ SpurImageWriter >> putLong: aLong toFile: aFile [
 	coInterpreter success: objectsWritten = 1
 ]
 
-{ #category : 'writing' }
+{ #category : #writing }
 SpurImageWriter >> putShort: aShort toFile: aFile [
 	"Append the 16-bit aShort to aFile in this platform's 'natural' byte order.
 	 (Bytes will be swapped, if necessary, when the image is read on a
@@ -60,7 +58,7 @@ SpurImageWriter >> putShort: aShort toFile: aFile [
 	coInterpreter success: objectsWritten = 1
 ]
 
-{ #category : 'writing' }
+{ #category : #writing }
 SpurImageWriter >> putWord32: aWord32 toFile: aFile [
 	"Append aWord32 to aFile in this platform's 'natural' byte order.  aWord32 is 32 bits,
 	 depending on ObjectMemory.  (Bytes will be swapped, if necessary, when the image is read
@@ -82,21 +80,21 @@ SpurImageWriter >> putWord32: aWord32 toFile: aFile [
 	coInterpreter success: objectsWritten = 1
 ]
 
-{ #category : 'accessing - files' }
+{ #category : #'accessing - files' }
 SpurImageWriter >> sqImage: file File: imageName StartLocation: location [
 
 	<doNotGenerate>
 	^0
 ]
 
-{ #category : 'accessing - files' }
+{ #category : #'accessing - files' }
 SpurImageWriter >> sqImageFilePosition: file [
 
 	<doNotGenerate>
 	^file position
 ]
 
-{ #category : 'writing' }
+{ #category : #writing }
 SpurImageWriter >> writeHeader: header toFile: f [
 
 	self putWord32: header imageFormat toFile: f.
@@ -116,7 +114,7 @@ SpurImageWriter >> writeHeader: header toFile: f [
 
 ]
 
-{ #category : 'writing' }
+{ #category : #writing }
 SpurImageWriter >> writeImageFile: imageFileName fromHeader: header [
 
 	"Write the image header and heap contents to imageFile for snapshot. c.f. writeImageFileIOSimulation.
@@ -179,7 +177,7 @@ SpurImageWriter >> writeImageFile: imageFileName fromHeader: header [
 	self logDebug: 'Snapshot file %s done' _: imageFileName
 ]
 
-{ #category : 'writing' }
+{ #category : #writing }
 SpurImageWriter >> writeImageSegmentsToFile: aBinaryStream [
 
 	<var: 'aBinaryStream' type: #sqImageFile>
@@ -195,7 +193,7 @@ SpurImageWriter >> writeImageSegmentsToFile: aBinaryStream [
 
 ]
 
-{ #category : 'writing' }
+{ #category : #writing }
 SpurImageWriter >> writeSegment: segment nextSegment: nextSegment toFile: aBinaryStream [
 
 	"Write the segment contents, the size of and the distance to the next segment to aBinaryStream."

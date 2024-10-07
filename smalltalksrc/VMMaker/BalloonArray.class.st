@@ -2,32 +2,30 @@
 BalloonArray keeps a shadow copy of its raw memory data in a Smalltalk array.  This allows support for C's inhomogeneous access, returning floats where Floats were stored, and negative ints where they were stored.  This ruse only works, of course where we have control over all the access.
 "
 Class {
-	#name : 'BalloonArray',
-	#superclass : 'CArray',
+	#name : #BalloonArray,
+	#superclass : #CArray,
 	#instVars : [
 		'simArray',
 		'simOffset'
 	],
-	#category : 'VMMaker-InterpreterSimulation',
-	#package : 'VMMaker',
-	#tag : 'InterpreterSimulation'
+	#category : 'VMMaker-InterpreterSimulation'
 }
 
-{ #category : 'pointer arithmetic' }
+{ #category : #'pointer arithmetic' }
 BalloonArray >> += increment [
 
 	super += increment.
 	simOffset := simOffset + (increment / unitSize)
 ]
 
-{ #category : 'pointer arithmetic' }
+{ #category : #'pointer arithmetic' }
 BalloonArray >> -= increment [
 
 	super -= increment.
 	simOffset := simOffset - (increment / unitSize)
 ]
 
-{ #category : 'memory access' }
+{ #category : #'memory access' }
 BalloonArray >> at: index [
 	| value |
 	value := simArray at: index + simOffset.
@@ -40,7 +38,7 @@ BalloonArray >> at: index [
 	^value
 ]
 
-{ #category : 'memory access' }
+{ #category : #'memory access' }
 BalloonArray >> at: index put: value [
 
 	super at: index put: (self bitsOf: value).
@@ -48,7 +46,7 @@ BalloonArray >> at: index put: value [
 	
 ]
 
-{ #category : 'memory access' }
+{ #category : #'memory access' }
 BalloonArray >> bitsOf: value [
 	"Convert pos and neg ints and floats to 32-bit representations expected by C"
 
@@ -61,7 +59,7 @@ BalloonArray >> bitsOf: value [
 	^ 0
 ]
 
-{ #category : 'memory access' }
+{ #category : #'memory access' }
 BalloonArray >> floatAt: index [
 	| value |
 	value := self at: index.
@@ -72,7 +70,7 @@ BalloonArray >> floatAt: index [
 	^ value
 ]
 
-{ #category : 'memory access' }
+{ #category : #'memory access' }
 BalloonArray >> floatAt: index put: value [
 
 	value isFloat
@@ -80,7 +78,7 @@ BalloonArray >> floatAt: index put: value [
 	^ self at: index put: value
 ]
 
-{ #category : 'memory access' }
+{ #category : #'memory access' }
 BalloonArray >> intAt: index [
 	| value |
 	value := self at: index.
@@ -89,7 +87,7 @@ BalloonArray >> intAt: index [
 	^ value
 ]
 
-{ #category : 'memory access' }
+{ #category : #'memory access' }
 BalloonArray >> intAt: index put: value [
 
 	value isInteger
@@ -97,7 +95,7 @@ BalloonArray >> intAt: index put: value [
 	^ self at: index put: value
 ]
 
-{ #category : 'memory access' }
+{ #category : #'memory access' }
 BalloonArray >> setSimArray: anArray [
 	simArray := anArray.
 	"Now sync the contents of the simArray with the actual work buffer.

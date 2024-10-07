@@ -1,17 +1,15 @@
 Class {
-	#name : 'CogCodeRange',
-	#superclass : 'Interval',
+	#name : #CogCodeRange,
+	#superclass : #Interval,
 	#instVars : [
 		'startpc',
 		'endpc',
 		'cogMethod'
 	],
-	#category : 'VMMaker-JITSimulation',
-	#package : 'VMMaker',
-	#tag : 'JITSimulation'
+	#category : 'VMMaker-JITSimulation'
 }
 
-{ #category : 'instance creation' }
+{ #category : #'instance creation' }
 CogCodeRange class >> from: start to: stop cogMethod: cogMethod startpc: startpc [
 	^(super from: start to: stop)
 		cogMethod: cogMethod;
@@ -19,38 +17,38 @@ CogCodeRange class >> from: start to: stop cogMethod: cogMethod startpc: startpc
 		yourself
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 CogCodeRange >> cogMethod [
 	"Answer the value of cogMethod"
 
 	^ cogMethod
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 CogCodeRange >> cogMethod: anObject [
 	"Set the value of cogMethod"
 
 	cogMethod := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 CogCodeRange >> endPC [
 	"Answer the value of endpc"
 
 	^ endpc
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 CogCodeRange >> endPC: anObject [
 	endpc := anObject
 ]
 
-{ #category : 'explorer' }
+{ #category : #explorer }
 CogCodeRange >> explorerContents [
 	^nil
 ]
 
-{ #category : 'printing' }
+{ #category : #printing }
 CogCodeRange >> printOn: aStream [
 	aStream nextPut: $(.
 	(startpc notNil and: [endpc notNil])
@@ -70,14 +68,14 @@ CogCodeRange >> printOn: aStream [
 	aStream nextPut: $)
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 CogCodeRange >> startpc [
 	"Answer the value of startpc"
 
 	^ startpc
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 CogCodeRange >> startpc: anObject [
 	"Set the value of startpc"
 

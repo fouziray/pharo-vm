@@ -1,18 +1,16 @@
 Class {
-	#name : 'ClipboardExtendedPlugin',
-	#superclass : 'SmartSyntaxInterpreterPlugin',
-	#category : 'VMMaker-Plugins',
-	#package : 'VMMaker',
-	#tag : 'Plugins'
+	#name : #ClipboardExtendedPlugin,
+	#superclass : #SmartSyntaxInterpreterPlugin,
+	#category : 'VMMaker-Plugins'
 }
 
-{ #category : 'simulation' }
+{ #category : #simulation }
 ClipboardExtendedPlugin class >> simulatorClass [
 	"This should be easy to simulate, but I'm short of time.  Feel free to have a go, following e.g. the pattern in JPEGReadWriter2Plugin."
 	^nil
 ]
 
-{ #category : 'io' }
+{ #category : #io }
 ClipboardExtendedPlugin >> ioAddClipboardData: clipboard data: data dataFormat: aFormat [
 	| clipboardAddress formatLength dataLength |
 	<var: #clipboardAddress type: #'usqIntptr_t'>
@@ -26,7 +24,7 @@ ClipboardExtendedPlugin >> ioAddClipboardData: clipboard data: data dataFormat: 
 
 ]
 
-{ #category : 'io' }
+{ #category : #io }
 ClipboardExtendedPlugin >> ioClearClipboard: clipboard [
 	| clipboardAddress |
 	<var: #clipboardAddress type: #'usqIntptr_t'>
@@ -35,7 +33,7 @@ ClipboardExtendedPlugin >> ioClearClipboard: clipboard [
 	self sqPasteboardClear: clipboardAddress.
 ]
 
-{ #category : 'io' }
+{ #category : #io }
 ClipboardExtendedPlugin >> ioCreateClipboard [
 	| clipboardAddress |
 	self primitive: 'ioCreateClipboard' parameters: #().
@@ -45,7 +43,7 @@ ClipboardExtendedPlugin >> ioCreateClipboard [
 	^ clipboardAddress.
 ]
 
-{ #category : 'io' }
+{ #category : #io }
 ClipboardExtendedPlugin >> ioGetClipboardFormat: clipboard formatNumber: formatNumber [ 
 	| clipboardAddress itemCount |
 	<var: #clipboardAddress type: #'usqIntptr_t'>
@@ -57,7 +55,7 @@ ClipboardExtendedPlugin >> ioGetClipboardFormat: clipboard formatNumber: formatN
 	^ interpreterProxy nilObject
 ]
 
-{ #category : 'io' }
+{ #category : #io }
 ClipboardExtendedPlugin >> ioReadClipboardData: clipboard format: format [
 	| clipboardAddress formatLength |
 	<var: #clipboardAddress type: #'usqIntptr_t'>

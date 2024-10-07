@@ -17,46 +17,44 @@ selectiveCompactor
 
 "
 Class {
-	#name : 'SpurHybridCompactor',
-	#superclass : 'SpurCompactor',
+	#name : #SpurHybridCompactor,
+	#superclass : #SpurCompactor,
 	#instVars : [
 		'planningCompactor',
 		'selectiveCompactor',
 		'planNotSelect'
 	],
-	#category : 'VMMaker-SpurMemoryManager',
-	#package : 'VMMaker',
-	#tag : 'SpurMemoryManager'
+	#category : 'VMMaker-SpurMemoryManager'
 }
 
-{ #category : 'translation' }
+{ #category : #translation }
 SpurHybridCompactor class >> classesForTranslation [
 	^{	SpurPlanningCompactor.
 		SpurSelectiveCompactor.
 		SpurSweeper }, super classesForTranslation
 ]
 
-{ #category : 'translation' }
+{ #category : #translation }
 SpurHybridCompactor class >> declareCVarsIn: aCCodeGenerator [
 	aCCodeGenerator
 		staticallyResolvedPolymorphicReceiver: 'planningCompactor' to: SpurPlanningCompactor;
 		staticallyResolvedPolymorphicReceiver: 'selectiveCompactor' to: SpurSweeper"SpurSelectiveCompactor" "The selector mangling is easier this way"
 ]
 
-{ #category : 'api' }
+{ #category : #api }
 SpurHybridCompactor >> biasForGC [
 	<inline: true>
 	planNotSelect := false.
 	selectiveCompactor biasForGC
 ]
 
-{ #category : 'api' }
+{ #category : #api }
 SpurHybridCompactor >> biasForSnapshot [
 	planNotSelect := true.
 	planningCompactor biasForSnapshot
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 SpurHybridCompactor >> coInterpreter: aVMSimulator [
 	<doNotGenerate>
 	super coInterpreter: aVMSimulator.
@@ -64,14 +62,14 @@ SpurHybridCompactor >> coInterpreter: aVMSimulator [
 	selectiveCompactor coInterpreter: aVMSimulator
 ]
 
-{ #category : 'api' }
+{ #category : #api }
 SpurHybridCompactor >> compact [
 	planNotSelect
 		ifTrue: [planningCompactor compact]
 		ifFalse: [selectiveCompactor compact]
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 SpurHybridCompactor >> manager: aSpurNBitMMXEndianSimulator [
 	<doNotGenerate>
 	super manager: aSpurNBitMMXEndianSimulator.
@@ -83,7 +81,7 @@ SpurHybridCompactor >> manager: aSpurNBitMMXEndianSimulator [
 	planNotSelect := false
 ]
 
-{ #category : 'api' }
+{ #category : #api }
 SpurHybridCompactor >> remapObj: objOop [
 	<api>
 	<inline: false>
@@ -92,7 +90,7 @@ SpurHybridCompactor >> remapObj: objOop [
 	^super remapObj: objOop
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 SpurHybridCompactor >> scavenger: aSpurGenerationScavenger [
 	<doNotGenerate>
 	super scavenger: aSpurGenerationScavenger. "I always thought the scavenger was super..."
@@ -100,7 +98,7 @@ SpurHybridCompactor >> scavenger: aSpurGenerationScavenger [
 	selectiveCompactor scavenger: aSpurGenerationScavenger
 ]
 
-{ #category : 'api' }
+{ #category : #api }
 SpurHybridCompactor >> shouldRemapObj: objOop [
 	<api>
 	<inline: false>

@@ -1,12 +1,10 @@
 Class {
-	#name : 'VMStackPagesMSB',
-	#superclass : 'VMStackPages',
-	#category : 'VMMaker-Interpreter',
-	#package : 'VMMaker',
-	#tag : 'Interpreter'
+	#name : #VMStackPagesMSB,
+	#superclass : #VMStackPages,
+	#category : 'VMMaker-Interpreter'
 }
 
-{ #category : 'memory access' }
+{ #category : #'memory access' }
 VMStackPagesMSB >> byteAt: byteAddress [
 	| lowBits bpwMinus1 |
 	bpwMinus1 := objectMemory wordSize - 1.

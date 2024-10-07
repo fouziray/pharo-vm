@@ -1,10 +1,9 @@
 Trait {
-	#name : 'TVMSimulator',
-	#category : 'VMMaker',
-	#package : 'VMMaker'
+	#name : #TVMSimulator,
+	#category : 'VMMaker'
 }
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 TVMSimulator >> openOn: fileName extraMemory: extraBytes [
 
 	"CogVMSimulator new openOn: 'clone.im' extraMemory: 100000"
@@ -27,7 +26,7 @@ TVMSimulator >> openOn: fileName extraMemory: extraBytes [
 
 ]
 
-{ #category : 'frame access' }
+{ #category : #'frame access' }
 TVMSimulator >> withoutSmallIntegerTags: anInteger [
 	| signBit |
 	self assert: (anInteger >= 0 and: [anInteger highBit <= (self objectMemory wordSize * 8)]).

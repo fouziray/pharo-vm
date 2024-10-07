@@ -1,27 +1,25 @@
 Class {
-	#name : 'SpurGenerationScavengerSimulator',
-	#superclass : 'SpurGenerationScavenger',
+	#name : #SpurGenerationScavengerSimulator,
+	#superclass : #SpurGenerationScavenger,
 	#instVars : [
 		'cameFrom'
 	],
-	#category : 'VMMaker-SpurMemoryManagerSimulation',
-	#package : 'VMMaker',
-	#tag : 'SpurMemoryManagerSimulation'
+	#category : 'VMMaker-SpurMemoryManagerSimulation'
 }
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SpurGenerationScavengerSimulator >> cameFrom [
 
 	^ cameFrom
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SpurGenerationScavengerSimulator >> cameFrom: anObject [
 
 	cameFrom := anObject
 ]
 
-{ #category : 'scavenger' }
+{ #category : #scavenger }
 SpurGenerationScavengerSimulator >> copyAndForward: survivor [
 	| relocatedOop |
 	relocatedOop := super copyAndForward: survivor.
@@ -30,7 +28,7 @@ SpurGenerationScavengerSimulator >> copyAndForward: survivor [
 	^relocatedOop
 ]
 
-{ #category : 'scavenger' }
+{ #category : #scavenger }
 SpurGenerationScavengerSimulator >> copyAndForwardMourner: survivor [
 	| relocatedOop |
 	relocatedOop := super copyAndForwardMourner: survivor.
@@ -39,19 +37,19 @@ SpurGenerationScavengerSimulator >> copyAndForwardMourner: survivor [
 	^relocatedOop
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 SpurGenerationScavengerSimulator >> manager: aSpurNBitMMXEndianSimulator [
 	manager := aSpurNBitMMXEndianSimulator.
 	aSpurNBitMMXEndianSimulator coInterpreter ifNotNil:
 		[:coint| coInterpreter := coint]
 ]
 
-{ #category : 'scavenger' }
+{ #category : #scavenger }
 SpurGenerationScavengerSimulator >> recordMovements [
 	cameFrom := Dictionary new
 ]
 
-{ #category : 'scavenger' }
+{ #category : #scavenger }
 SpurGenerationScavengerSimulator >> scavenge: tenuringCriterion [
 	manager bootstrapping ifFalse:
 		[coInterpreter transcript nextPutAll: 'scavenging('; print: manager statScavenges; nextPutAll: ')...'; cr; flush.

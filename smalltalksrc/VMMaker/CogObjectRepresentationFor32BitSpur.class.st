@@ -1,18 +1,16 @@
 Class {
-	#name : 'CogObjectRepresentationFor32BitSpur',
-	#superclass : 'CogObjectRepresentationForSpur',
+	#name : #CogObjectRepresentationFor32BitSpur,
+	#superclass : #CogObjectRepresentationForSpur,
 	#instVars : [
 		'ceSigned32BitIntegerTrampoline',
 		'ceSigned32BitValueOfTrampoline',
 		'cePositive32BitValueOfTrampoline',
 		'cePositive32BitIntegerTrampoline'
 	],
-	#category : 'VMMaker-JIT',
-	#package : 'VMMaker',
-	#tag : 'JIT'
+	#category : 'VMMaker-JIT'
 }
 
-{ #category : 'sista support' }
+{ #category : #'sista support' }
 CogObjectRepresentationFor32BitSpur >> allImmediate: immediateMask branchIf: reg instanceOfBehaviors: arrayObj target: targetFixUp [
 	< inline: true>	
 	<var: #targetFixUp type: #'AbstractInstruction *'>
@@ -21,7 +19,7 @@ CogObjectRepresentationFor32BitSpur >> allImmediate: immediateMask branchIf: reg
 	^0
 ]
 
-{ #category : 'sista support' }
+{ #category : #'sista support' }
 CogObjectRepresentationFor32BitSpur >> allImmediate: immediateMask branchIf: reg notInstanceOfBehaviors: arrayObj target: targetFixUp [
 	< inline: true>	
 	<var: #targetFixUp type: #'AbstractInstruction *'>
@@ -30,7 +28,7 @@ CogObjectRepresentationFor32BitSpur >> allImmediate: immediateMask branchIf: reg
 	^0
 ]
 
-{ #category : 'sista support' }
+{ #category : #'sista support' }
 CogObjectRepresentationFor32BitSpur >> allocateCounters: nCounters [
 	"On Spur allocate the counters on the heap as pinned objects.
 	 Each counter occupies 32-bits.  The number of counters can
@@ -43,19 +41,19 @@ CogObjectRepresentationFor32BitSpur >> allocateCounters: nCounters [
 		ifNotNil: [objOop + objectMemory baseHeaderSize]
 ]
 
-{ #category : 'sista support' }
+{ #category : #'sista support' }
 CogObjectRepresentationFor32BitSpur >> branch2CasesIf: reg instanceOfBehaviors: arrayObj target: targetFixUp [
 	<inline: true>
 	self Jump: targetFixUp
 ]
 
-{ #category : 'sista support' }
+{ #category : #'sista support' }
 CogObjectRepresentationFor32BitSpur >> branch2CasesIf: reg notInstanceOfBehaviors: arrayObj target: targetFixUp [
 	"nothing to do, 2 immediates so all immediates are allowed"
 	<inline: true>
 ]
 
-{ #category : 'sista support' }
+{ #category : #'sista support' }
 CogObjectRepresentationFor32BitSpur >> branchIf: reg hasImmediateTag: classIndex target: targetFixUp [
 	<var: #targetFixUp type: #'AbstractInstruction *'>
 	| jmpImmediate|
@@ -68,7 +66,7 @@ CogObjectRepresentationFor32BitSpur >> branchIf: reg hasImmediateTag: classIndex
 	jmpImmediate jmpTarget: targetFixUp
 ]
 
-{ #category : 'sista support' }
+{ #category : #'sista support' }
 CogObjectRepresentationFor32BitSpur >> branchIf: reg hasNotImmediateTag: classIndex target: targetFixUp [
 	<var: #targetFixUp type: #'AbstractInstruction *'>
 	| jmpImmediate |
@@ -82,7 +80,7 @@ CogObjectRepresentationFor32BitSpur >> branchIf: reg hasNotImmediateTag: classIn
 	jmpImmediate jmpTarget: targetFixUp
 ]
 
-{ #category : 'in-line cacheing' }
+{ #category : #'in-line cacheing' }
 CogObjectRepresentationFor32BitSpur >> classForInlineCacheTag: inlineCacheTag [
 	"Character gets mapped to zero.  See inlineCacheTagForInstance:."
 	^objectMemory classOrNilAtIndex: (inlineCacheTag = 0
@@ -90,19 +88,19 @@ CogObjectRepresentationFor32BitSpur >> classForInlineCacheTag: inlineCacheTag [
 											ifFalse: [inlineCacheTag])
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 CogObjectRepresentationFor32BitSpur >> genAddSmallIntegerTagsTo: aRegister [
 	cogit AddCq: 1 R: aRegister.
 	^0
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 CogObjectRepresentationFor32BitSpur >> genClearAndSetSmallIntegerTagsIn: scratchReg [
 	"Set the SmallInteger tag bits when the tag bits may be filled with garbage."
 	^self genSetSmallIntegerTagsIn: scratchReg
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 CogObjectRepresentationFor32BitSpur >> genConvertCharacterToSmallIntegerInReg: reg [
 	"Convert the Character in reg to a SmallInteger, assuming
 	 the Character's value is a valid character."
@@ -112,14 +110,14 @@ CogObjectRepresentationFor32BitSpur >> genConvertCharacterToSmallIntegerInReg: r
 	cogit LogicalShiftRightCq: 1 R: reg
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 CogObjectRepresentationFor32BitSpur >> genConvertIntegerToSmallIntegerInReg: reg [
 	cogit LogicalShiftLeftCq: 1 R: reg.
 	cogit AddCq: 1 R: reg.
 	^0
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 CogObjectRepresentationFor32BitSpur >> genConvertSmallIntegerToCharacterInReg: reg [
 	"Convert the SmallInteger in reg to a Character, assuming
 	 the SmallInteger's value is a valid character."
@@ -129,13 +127,13 @@ CogObjectRepresentationFor32BitSpur >> genConvertSmallIntegerToCharacterInReg: r
 	cogit LogicalShiftLeftCq: 1 R: reg
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 CogObjectRepresentationFor32BitSpur >> genConvertSmallIntegerToIntegerInReg: reg [
 	cogit ArithmeticShiftRightCq: 1 R: reg.
 	^0
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 CogObjectRepresentationFor32BitSpur >> genFetchIndexRegister: indexReg from: tableObj into: destReg [
 	"indexReg contains the 1-relative index of an element in tableObj.
 	 Since BaseHeaderSize > BytesPerOop we must adjust it to use
@@ -147,7 +145,7 @@ CogObjectRepresentationFor32BitSpur >> genFetchIndexRegister: indexReg from: tab
 	^0
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 CogObjectRepresentationFor32BitSpur >> genGetHashFieldNonImmOf: instReg asSmallIntegerInto: destReg [
 	"Fetch the instance's identity hash into destReg, encoded as a SmallInteger."
 	"Get header word in scratchReg"
@@ -158,7 +156,7 @@ CogObjectRepresentationFor32BitSpur >> genGetHashFieldNonImmOf: instReg asSmallI
 	^0
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 CogObjectRepresentationFor32BitSpur >> genGetHashFieldNonImmOf: instReg into: destReg [
 	"Fetch the instance's identity hash into destReg, unencoded."
 	cogit MoveMw: 4 r: instReg R: destReg.
@@ -166,7 +164,7 @@ CogObjectRepresentationFor32BitSpur >> genGetHashFieldNonImmOf: instReg into: de
 	^0
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 CogObjectRepresentationFor32BitSpur >> genGetInlineCacheClassTagFrom: sourceReg into: destReg forEntry: forEntry [
 	"Extract the inline cache tag for the object in sourceReg into destReg. The inline
 	 cache tag for a given object is the value loaded in inline caches to distinguish
@@ -236,7 +234,7 @@ CogObjectRepresentationFor32BitSpur >> genGetInlineCacheClassTagFrom: sourceReg 
 	^entryLabel
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 CogObjectRepresentationFor32BitSpur >> genGetNumBytesOf: srcReg into: destReg [
 	"Get the size in byte-sized slots of the object in srcReg into destReg.
 	 srcReg may equal destReg.
@@ -255,13 +253,13 @@ CogObjectRepresentationFor32BitSpur >> genGetNumBytesOf: srcReg into: destReg [
 	^0
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 CogObjectRepresentationFor32BitSpur >> genGetOverflowSlotsOf: srcReg into: destReg [
 	cogit MoveMw: objectMemory baseHeaderSize negated r: srcReg R: destReg.
 	^0
 ]
 
-{ #category : 'primitive generators' }
+{ #category : #'primitive generators' }
 CogObjectRepresentationFor32BitSpur >> genGetSizeOf: sourceReg into: destReg formatReg: formatReg scratchReg: scratchReg abortJumpsInto: aBinaryBlock [
 	"Get the size of the non-immediate object in sourceReg into destReg using formatReg
 	 and scratchReg as temps.  None of these registers can overlap.  Supply the jumps
@@ -356,7 +354,7 @@ CogObjectRepresentationFor32BitSpur >> genGetSizeOf: sourceReg into: destReg for
 	aBinaryBlock value: jumpNotIndexable value: jumpIsContext
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 CogObjectRepresentationFor32BitSpur >> genJumpIsSmallIntegerValue: aRegister scratch: scratchReg [
 	"Generate a test for aRegister containing an integer value in the SmallInteger range, and a jump if so, answering the jump.
 	 c.f. Spur32BitMemoryManager>>isIntegerValue:"
@@ -368,21 +366,21 @@ CogObjectRepresentationFor32BitSpur >> genJumpIsSmallIntegerValue: aRegister scr
 		JumpGreaterOrEqual: 0
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 CogObjectRepresentationFor32BitSpur >> genJumpNotSmallInteger: aRegister [
 	<returnTypeC: #'AbstractInstruction *'>
 	cogit TstCq: 1 R: aRegister.
 	^cogit JumpZero: 0
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 CogObjectRepresentationFor32BitSpur >> genJumpNotSmallIntegerInScratchReg: aRegister [
 	<returnTypeC: #'AbstractInstruction *'>
 	cogit AndCq: 1 R: aRegister.
 	^cogit JumpZero: 0
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 CogObjectRepresentationFor32BitSpur >> genJumpNotSmallIntegerValue: aRegister scratch: scratchReg [
 	"Generate a test for aRegister containing an integer value outside the SmallInteger range, and a jump if so, answering the jump.
 	 c.f. Spur32BitMemoryManager>>isIntegerValue:"
@@ -394,21 +392,21 @@ CogObjectRepresentationFor32BitSpur >> genJumpNotSmallIntegerValue: aRegister sc
 		JumpLess: 0
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 CogObjectRepresentationFor32BitSpur >> genJumpSmallInteger: aRegister [
 	<returnTypeC: #'AbstractInstruction *'>
 	cogit TstCq: 1 R: aRegister.
 	^cogit JumpNonZero: 0
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 CogObjectRepresentationFor32BitSpur >> genJumpSmallIntegerInScratchReg: aRegister [
 	<returnTypeC: #'AbstractInstruction *'>
 	cogit AndCq: 1 R: aRegister.
 	^cogit JumpNonZero: 0
 ]
 
-{ #category : 'primitive generators' }
+{ #category : #'primitive generators' }
 CogObjectRepresentationFor32BitSpur >> genPrimitiveAtPut [
 	| formatReg nSlotsOrBytesReg methodInBounds
 	  jumpImmediate jumpBadIndex jumpImmutable jumpNotIndexablePointers jumpNotIndexableBits
@@ -600,7 +598,7 @@ CogObjectRepresentationFor32BitSpur >> genPrimitiveAtPut [
 	^0 "Can't be complete because of contexts."
 ]
 
-{ #category : 'primitive generators' }
+{ #category : #'primitive generators' }
 CogObjectRepresentationFor32BitSpur >> genPrimitiveAtPutSigned: signedVersion [
 	"Generate the code for primitives 61 & 165, at:put:/basicAt:put: & integerAt:put:.  If signedVersion is true
 	 then generate signed accesses to the bits classes (a la 164 & 165).  If signedVersion is false,
@@ -797,7 +795,7 @@ CogObjectRepresentationFor32BitSpur >> genPrimitiveAtPutSigned: signedVersion [
 	^0 "Can't be complete because of contexts."
 ]
 
-{ #category : 'primitive generators' }
+{ #category : #'primitive generators' }
 CogObjectRepresentationFor32BitSpur >> genPrimitiveAtSigned: signedVersion [
 	"Generate the code for primitives 60 & 164, at:/basicAt: & integerAt:.  If signedVersion is true
 	 then generate signed accesses to the bits classes (a la 164 & 165).  If signedVersion is false,
@@ -950,7 +948,7 @@ CogObjectRepresentationFor32BitSpur >> genPrimitiveAtSigned: signedVersion [
 	^0 "Can't be complete because of contexts."
 ]
 
-{ #category : 'primitive generators' }
+{ #category : #'primitive generators' }
 CogObjectRepresentationFor32BitSpur >> genPrimitiveIdentityHash [
 	"Arguably we should fail for immediates, but so far no one has complained, so..."
 	| jumpImm jumpSI jumpNotSet ret |
@@ -979,7 +977,7 @@ CogObjectRepresentationFor32BitSpur >> genPrimitiveIdentityHash [
 	^UnfailingPrimitive
 ]
 
-{ #category : 'primitive generators' }
+{ #category : #'primitive generators' }
 CogObjectRepresentationFor32BitSpur >> genPrimitiveImmediateAsInteger [
 	":Assume the receiuver is never a SmallInteger.  One would use ^self for that."
 	self genConvertCharacterToSmallIntegerInReg: ReceiverResultReg.
@@ -987,7 +985,7 @@ CogObjectRepresentationFor32BitSpur >> genPrimitiveImmediateAsInteger [
 	^UnfailingPrimitive
 ]
 
-{ #category : 'primitive generators' }
+{ #category : #'primitive generators' }
 CogObjectRepresentationFor32BitSpur >> genPrimitiveNew [
 	"Implement primitiveNew for convenient cases:
 	- the receiver has a hash
@@ -1084,7 +1082,7 @@ CogObjectRepresentationFor32BitSpur >> genPrimitiveNew [
 	^0
 ]
 
-{ #category : 'primitive generators' }
+{ #category : #'primitive generators' }
 CogObjectRepresentationFor32BitSpur >> genPrimitiveNewWithArg [
 	"Implement primitiveNewWithArg for convenient cases:
 	- the receiver has a hash
@@ -1243,7 +1241,7 @@ CogObjectRepresentationFor32BitSpur >> genPrimitiveNewWithArg [
 	^0
 ]
 
-{ #category : 'primitive generators' }
+{ #category : #'primitive generators' }
 CogObjectRepresentationFor32BitSpur >> genPrimitiveShallowCopy [
 	"Implement primitiveShallowCopy/primitiveClone for convenient cases:
 	- the receiver is not a context
@@ -1339,7 +1337,7 @@ CogObjectRepresentationFor32BitSpur >> genPrimitiveShallowCopy [
 	^0
 ]
 
-{ #category : 'primitive generators' }
+{ #category : #'primitive generators' }
 CogObjectRepresentationFor32BitSpur >> genPrimitiveStringAt [
 	| formatReg jumpNotIndexable jumpBadIndex done
 	  jumpIsBytes jumpIsShorts jumpWordTooBig jumpWordsDone
@@ -1434,7 +1432,7 @@ CogObjectRepresentationFor32BitSpur >> genPrimitiveStringAt [
 	^CompletePrimitive
 ]
 
-{ #category : 'primitive generators' }
+{ #category : #'primitive generators' }
 CogObjectRepresentationFor32BitSpur >> genPrimitiveStringAtPut [
 	| formatReg jumpBadIndex jumpBadArg jumpImmutable
 	  jumpIsBytes jumpIsShorts jumpNotString jumpIsCompiledMethod
@@ -1554,13 +1552,13 @@ CogObjectRepresentationFor32BitSpur >> genPrimitiveStringAtPut [
 	^CompletePrimitive
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 CogObjectRepresentationFor32BitSpur >> genRemoveSmallIntegerTagsInScratchReg: scratchReg [
 	cogit SubCq: 1 R: scratchReg.
 	^0
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 CogObjectRepresentationFor32BitSpur >> genStoreHeader: header intoNewInstance: rcvrReg using: scratchReg [
 	"Generate the instructions to move the constant header into a new instance pointed to by rcvrReg."
 	<inline: true>
@@ -1572,7 +1570,7 @@ CogObjectRepresentationFor32BitSpur >> genStoreHeader: header intoNewInstance: r
 		MoveR: scratchReg Mw: 4 r: rcvrReg
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 CogObjectRepresentationFor32BitSpur >> getLiteralCountOf: methodReg plusOne: plusOne inBytes: inBytes into: litCountReg scratch: scratchReg [
 	"Get the literal count of a CompiledMethod into headerReg, plus one if requested.
 	  If inBytes is true, scale the count by the word size.  Deal with the possibility of
@@ -1592,12 +1590,12 @@ CogObjectRepresentationFor32BitSpur >> getLiteralCountOf: methodReg plusOne: plu
 	^0
 ]
 
-{ #category : 'in-line cacheing' }
+{ #category : #'in-line cacheing' }
 CogObjectRepresentationFor32BitSpur >> illegalClassTag [
 	^2
 ]
 
-{ #category : 'in-line cacheing' }
+{ #category : #'in-line cacheing' }
 CogObjectRepresentationFor32BitSpur >> inlineCacheTagForClass: classOop [
 	"Answer the relevant inline cache tag for a class.
 	 c.f. inlineCacheTagForInstance:"
@@ -1608,7 +1606,7 @@ CogObjectRepresentationFor32BitSpur >> inlineCacheTagForClass: classOop [
 		ifFalse: [hash]
 ]
 
-{ #category : 'in-line cacheing' }
+{ #category : #'in-line cacheing' }
 CogObjectRepresentationFor32BitSpur >> inlineCacheTagForInstance: oop [
 	"Answer the relevant inline cache tag for an instance.
 	 c.f. getInlineCacheClassTagFrom:into: & inlineCacheTagForClass:"
@@ -1617,24 +1615,24 @@ CogObjectRepresentationFor32BitSpur >> inlineCacheTagForInstance: oop [
 		ifFalse: [objectMemory classIndexOf: oop]
 ]
 
-{ #category : 'primitive generators' }
+{ #category : #'primitive generators' }
 CogObjectRepresentationFor32BitSpur >> jumpNotSmallIntegerUnsignedValueInRegister: reg [
 	cogit CmpCq: 16r3FFFFFFF R: reg.
 	^cogit JumpAbove: 0
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 CogObjectRepresentationFor32BitSpur >> log2BytesPerWord [
 	^2
 ]
 
-{ #category : 'private' }
+{ #category : #private }
 CogObjectRepresentationFor32BitSpur >> low32BitsOf: a64BitHeader [
 	<inline: true>
 	^self cCode: [self cCoerceSimple: a64BitHeader to: #usqInt] inSmalltalk: [a64BitHeader bitAnd: 16rffffffff]
 ]
 
-{ #category : 'garbage collection' }
+{ #category : #'garbage collection' }
 CogObjectRepresentationFor32BitSpur >> markAndTraceCacheTagLiteral: literal in: cogMethodOrNil atpc: address [
 	"Mark and trace a literal in an inline cache preceding address in cogMethodOrNil.
 	 Answer if code was modified."
@@ -1653,7 +1651,7 @@ CogObjectRepresentationFor32BitSpur >> markAndTraceCacheTagLiteral: literal in: 
 	^true
 ]
 
-{ #category : 'sista support' }
+{ #category : #'sista support' }
 CogObjectRepresentationFor32BitSpur >> numCountersFor: theCounters [
 	<var: #theCounters type: #usqInt>
 	| objOop |
@@ -1663,17 +1661,17 @@ CogObjectRepresentationFor32BitSpur >> numCountersFor: theCounters [
 	^objectMemory numSlotsOf: objOop
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 CogObjectRepresentationFor32BitSpur >> numSmallIntegerBits [
 	^31
 ]
 
-{ #category : 'object representation' }
+{ #category : #'object representation' }
 CogObjectRepresentationFor32BitSpur >> numSmallIntegerTagBits [
 	^1
 ]
 
-{ #category : 'debug support' }
+{ #category : #'debug support' }
 CogObjectRepresentationFor32BitSpur >> validInlineCacheTag: classIndexOrTagPattern [
 	"The two valid tag patterns are 0 (Character) and 1 (SmallInteger)"
 	<var: 'classIndexOrTagPattern' type: #usqInt>

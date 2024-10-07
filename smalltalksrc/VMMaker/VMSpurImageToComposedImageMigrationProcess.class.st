@@ -1,16 +1,14 @@
 Class {
-	#name : 'VMSpurImageToComposedImageMigrationProcess',
-	#superclass : 'Object',
+	#name : #VMSpurImageToComposedImageMigrationProcess,
+	#superclass : #Object,
 	#instVars : [
 		'interpreter',
 		'memory'
 	],
-	#category : 'VMMaker-PermSpace',
-	#package : 'VMMaker',
-	#tag : 'PermSpace'
+	#category : 'VMMaker-PermSpace'
 }
 
-{ #category : 'migrate' }
+{ #category : #migrate }
 VMSpurImageToComposedImageMigrationProcess >> copyChangesFileFromImage: originalImageString to: newImageString [ 
 
 	| originalImageFileReference originalChangesFileReference newImageFileReference newChangesFileReference |
@@ -27,7 +25,7 @@ VMSpurImageToComposedImageMigrationProcess >> copyChangesFileFromImage: original
 		originalChangesFileReference copyTo: newChangesFileReference ].
 ]
 
-{ #category : 'migrate' }
+{ #category : #migrate }
 VMSpurImageToComposedImageMigrationProcess >> createSimulator [
 
 	| environmentBuilder memoryClass |
@@ -52,7 +50,7 @@ VMSpurImageToComposedImageMigrationProcess >> createSimulator [
 	memory := environmentBuilder objectMemory.
 ]
 
-{ #category : 'migrate' }
+{ #category : #migrate }
 VMSpurImageToComposedImageMigrationProcess >> loadImage: originalImage [
 
 	interpreter imageReaderWriter useComposedImageFormatAsDefault: false.
@@ -61,7 +59,7 @@ VMSpurImageToComposedImageMigrationProcess >> loadImage: originalImage [
 
 ]
 
-{ #category : 'migrate' }
+{ #category : #migrate }
 VMSpurImageToComposedImageMigrationProcess >> migrate: originalImage to: newImage [
 
 	originalImage ~= newImage ifTrue: [ newImage asFileReference ensureDeleteAll ].
@@ -73,7 +71,7 @@ VMSpurImageToComposedImageMigrationProcess >> migrate: originalImage to: newImag
 	self copyChangesFileFromImage: originalImage to: newImage 
 ]
 
-{ #category : 'migrate' }
+{ #category : #migrate }
 VMSpurImageToComposedImageMigrationProcess >> saveImage: newImage [
 
 	interpreter imageReaderWriter useComposedImageFormatAsDefault: true.

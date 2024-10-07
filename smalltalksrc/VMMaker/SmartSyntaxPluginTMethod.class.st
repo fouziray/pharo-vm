@@ -4,8 +4,8 @@ Variation of TMethod node of the Smalltalk C Code Generator, used in conjunction
 	primitive: functionName parameters: #(SmallInteger LargeNegativeInteger LargePositiveInteger Integer Unsigned) receiver: #Oop
 "
 Class {
-	#name : 'SmartSyntaxPluginTMethod',
-	#superclass : 'TMethod',
+	#name : #SmartSyntaxPluginTMethod,
+	#superclass : #TMethod,
 	#instVars : [
 		'isPrimitive',
 		'fullSelector',
@@ -16,18 +16,16 @@ Class {
 	#classVars : [
 		'Them'
 	],
-	#category : 'VMMaker-SmartSyntaxPlugins',
-	#package : 'VMMaker',
-	#tag : 'SmartSyntaxPlugins'
+	#category : 'VMMaker-SmartSyntaxPlugins'
 }
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SmartSyntaxPluginTMethod >> args: anInteger [
 
 	^args := anInteger
 ]
 
-{ #category : 'private' }
+{ #category : #private }
 SmartSyntaxPluginTMethod >> assign: variable expression: expression [
 
 	^TAssignmentNode new
@@ -35,7 +33,7 @@ SmartSyntaxPluginTMethod >> assign: variable expression: expression [
 		expression: expression
 ]
 
-{ #category : 'C code generation' }
+{ #category : #'C code generation' }
 SmartSyntaxPluginTMethod >> emitCLocalsOn: aStream generator: aCodeGen [
 	"Emit a C function header for this method onto the given stream."
 
@@ -51,7 +49,7 @@ SmartSyntaxPluginTMethod >> emitCLocalsOn: aStream generator: aCodeGen [
 		 aStream newLine]
 ]
 
-{ #category : 'specifying primitives' }
+{ #category : #'specifying primitives' }
 SmartSyntaxPluginTMethod >> extractPrimitiveDirectives [
 
 	"Save selector in fullSelector and args in fullArgs.  Scan top-level statements for a directive of the form:
@@ -86,7 +84,7 @@ or an assignment of that expression to a local, and manipulate the state and par
 	^ false
 ]
 
-{ #category : 'transforming' }
+{ #category : #transforming }
 SmartSyntaxPluginTMethod >> fixUpReturnOneStmt: stmt on: sStream [
 	| expr exprRetStmts "p t" |
 	stmt isReturn ifFalse: [^sStream nextPut: stmt].
@@ -143,7 +141,7 @@ SmartSyntaxPluginTMethod >> fixUpReturnOneStmt: stmt on: sStream [
 		put: (sStream originalContents copyFrom: p + 1 to: sStream position)"
 ]
 
-{ #category : 'transforming' }
+{ #category : #transforming }
 SmartSyntaxPluginTMethod >> fixUpReturns [
 
 	"Replace each return statement in this method with (a) the given postlog, (b) code to pop the receiver and the given number of arguments, and (c) code to push the integer result and return."
@@ -155,7 +153,7 @@ SmartSyntaxPluginTMethod >> fixUpReturns [
 						 self fixUpReturnOneStmt: stmt on: sStream ] ]) ] ]
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 SmartSyntaxPluginTMethod >> fromContext: aContext primitive: aString parameters: aClassList receiver: aClass [
 
 	fullArgs := args := aContext tempNames
@@ -167,7 +165,7 @@ SmartSyntaxPluginTMethod >> fromContext: aContext primitive: aString parameters:
 		receiver: aClass
 ]
 
-{ #category : 'specifying primitives' }
+{ #category : #'specifying primitives' }
 SmartSyntaxPluginTMethod >> handlePrimitiveDirective: aStmt on: sStream [
 
 	isPrimitive := true.
@@ -198,7 +196,7 @@ SmartSyntaxPluginTMethod >> handlePrimitiveDirective: aStmt on: sStream [
 
 ]
 
-{ #category : 'specifying primitives' }
+{ #category : #'specifying primitives' }
 SmartSyntaxPluginTMethod >> isPrimitiveDirectiveSend: stmt [
 
 	stmt isSend ifTrue: [ 
@@ -221,7 +219,7 @@ SmartSyntaxPluginTMethod >> isPrimitiveDirectiveSend: stmt [
 	^ false
 ]
 
-{ #category : 'specifying primitives' }
+{ #category : #'specifying primitives' }
 SmartSyntaxPluginTMethod >> namedPrimitiveProlog [
 	"Generate the code for a primitive:parameters:... send.  This is in two parts.
 	 The first is validation; the second is coercing assignment."
@@ -270,14 +268,14 @@ SmartSyntaxPluginTMethod >> namedPrimitiveProlog [
 	^statements
 ]
 
-{ #category : 'private' }
+{ #category : #private }
 SmartSyntaxPluginTMethod >> nullReturnExpr [
 
 	^ TReturnNode new
 		setExpression: (TVariableNode new setName: 'null')
 ]
 
-{ #category : 'private' }
+{ #category : #private }
 SmartSyntaxPluginTMethod >> oopVariable: aString [
 
 	(self locals includes: aString) ifFalse:
@@ -288,13 +286,13 @@ SmartSyntaxPluginTMethod >> oopVariable: aString [
 	^TVariableNode new setName: aString
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SmartSyntaxPluginTMethod >> parmSpecs [
 
 	^parmSpecs
 ]
 
-{ #category : 'private' }
+{ #category : #private }
 SmartSyntaxPluginTMethod >> pop: anInteger thenReturnExpr: anExpression [
 
 	^TSendNode new
@@ -303,7 +301,7 @@ SmartSyntaxPluginTMethod >> pop: anInteger thenReturnExpr: anExpression [
 		arguments: {TConstantNode value: anInteger. anExpression}
 ]
 
-{ #category : 'private' }
+{ #category : #private }
 SmartSyntaxPluginTMethod >> popExpr: anInteger [
 
 	^ TSendNode new
@@ -314,7 +312,7 @@ SmartSyntaxPluginTMethod >> popExpr: anInteger [
 					value: anInteger))
 ]
 
-{ #category : 'specifying primitives' }
+{ #category : #'specifying primitives' }
 SmartSyntaxPluginTMethod >> primitive: aString parameters: anArray receiver: aClassSymbol [
 
 	fullSelector := selector.
@@ -333,7 +331,7 @@ SmartSyntaxPluginTMethod >> primitive: aString parameters: anArray receiver: aCl
 	^true
 ]
 
-{ #category : 'specifying primitives' }
+{ #category : #'specifying primitives' }
 SmartSyntaxPluginTMethod >> primitiveDirectiveWasHandled: stmt on: sStream [
 
 	(self isPrimitiveDirectiveSend: stmt) ifTrue:
@@ -345,7 +343,7 @@ SmartSyntaxPluginTMethod >> primitiveDirectiveWasHandled: stmt on: sStream [
 
 ]
 
-{ #category : 'private' }
+{ #category : #private }
 SmartSyntaxPluginTMethod >> printTempsAndVar: varName on: aStream [ 
 	"add the required temps and the varname to the stream"
 	aStream nextPut: $|; space.
@@ -359,13 +357,13 @@ SmartSyntaxPluginTMethod >> printTempsAndVar: varName on: aStream [
 	aStream nextPut: $|; newLine
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SmartSyntaxPluginTMethod >> rcvrSpec [
 
 	^rcvrSpec
 ]
 
-{ #category : 'transforming' }
+{ #category : #transforming }
 SmartSyntaxPluginTMethod >> recordDeclarationsIn: aCCodeGen [
 
 	"Record C type declarations of the forms
@@ -443,7 +441,7 @@ SmartSyntaxPluginTMethod >> recordDeclarationsIn: aCCodeGen [
 	parseTree statements: newStatements asArray
 ]
 
-{ #category : 'transforming' }
+{ #category : #transforming }
 SmartSyntaxPluginTMethod >> replaceSizeMessages [
 	"Replace sends of the message 'size' with calls to sizeOfSTArrayFromCPrimitive."
 
@@ -456,13 +454,13 @@ SmartSyntaxPluginTMethod >> replaceSizeMessages [
 
 ]
 
-{ #category : 'private' }
+{ #category : #private }
 SmartSyntaxPluginTMethod >> resultExpressionCanFail: aTSendNode [
 	"Neither asSmallIntegerObj nor asBooleanObj can fail."
 	^(#(asSmallIntegerObj asBooleanObj nilObject trueObject falseObject) includes: aTSendNode selector) not
 ]
 
-{ #category : 'private' }
+{ #category : #private }
 SmartSyntaxPluginTMethod >> resultSendAlwaysFails: aTSendNode [
 	^(#(primitiveFail primitiveFailFor:) includes: aTSendNode selector)
 		or: [aTSendNode selector == #success:
@@ -470,7 +468,7 @@ SmartSyntaxPluginTMethod >> resultSendAlwaysFails: aTSendNode [
 			 and: [aTSendNode args first value == false]]]
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 SmartSyntaxPluginTMethod >> setSelector: sel definingClass: class args: argList locals: localList block: aBlockNode primitive: aNumber properties: methodProperties comment: aComment [
 	"Initialize this method using the given information."
 
@@ -495,13 +493,13 @@ SmartSyntaxPluginTMethod >> setSelector: sel definingClass: class args: argList 
 
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SmartSyntaxPluginTMethod >> smalltalkSelector [
 	"Answer the selector of the original Smalltalk method, not any mangled one."
 	^fullSelector ifNil: [selector]
 ]
 
-{ #category : 'private' }
+{ #category : #private }
 SmartSyntaxPluginTMethod >> statementGuardedWithSuccess: aTParseNodeOrSequenceThereof [
 	"Answer a TSendNode for interpreterProxy failed ifFalse: [aTParseNodeOrSequenceThereof]"
 	^TSendNode new
@@ -519,7 +517,7 @@ SmartSyntaxPluginTMethod >> statementGuardedWithSuccess: aTParseNodeOrSequenceTh
 													ifFalse: [{aTParseNodeOrSequenceThereof}])]}
 ]
 
-{ #category : 'primitive compilation' }
+{ #category : #'primitive compilation' }
 SmartSyntaxPluginTMethod >> vmNameString [
 	"return the string to use as the vm name in code generated for this method"
 	^'interpreterProxy'

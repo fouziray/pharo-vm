@@ -1,17 +1,15 @@
 Class {
-	#name : 'CogSistaMethodSurrogate64',
-	#superclass : 'CogMethodSurrogate64',
-	#category : 'VMMaker-JITSimulation',
-	#package : 'VMMaker',
-	#tag : 'JITSimulation'
+	#name : #CogSistaMethodSurrogate64,
+	#superclass : #CogMethodSurrogate64,
+	#category : 'VMMaker-JITSimulation'
 }
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 CogSistaMethodSurrogate64 class >> alignedByteSize [
 	^40 + self baseHeaderSize
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 CogSistaMethodSurrogate64 class >> offsetOf: aByteSymbol [
 	"These should be generated!!"
 	^aByteSymbol == #counters
@@ -19,12 +17,12 @@ CogSistaMethodSurrogate64 class >> offsetOf: aByteSymbol [
 		ifFalse: [super offsetOf: aByteSymbol]
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 CogSistaMethodSurrogate64 >> counters [
 	^memory unsignedLong64At: address + 32 + baseHeaderSize
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 CogSistaMethodSurrogate64 >> counters: aValue [
 	^memory
 		unsignedLong64At: address + baseHeaderSize + 32

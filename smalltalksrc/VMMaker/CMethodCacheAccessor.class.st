@@ -3,19 +3,17 @@ I am used to simulate accesses to the methodCache so it can live partly in memor
 
 "
 Class {
-	#name : 'CMethodCacheAccessor',
-	#superclass : 'CArrayOfLongsAccessor',
+	#name : #CMethodCacheAccessor,
+	#superclass : #CArrayOfLongsAccessor,
 	#instVars : [
 		'methodCacheArray',
 		'entrySize',
 		'functionPointerIndex'
 	],
-	#category : 'VMMaker-JITSimulation',
-	#package : 'VMMaker',
-	#tag : 'JITSimulation'
+	#category : 'VMMaker-JITSimulation'
 }
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 CMethodCacheAccessor >> at: index [
 	"The special handling of functionPointerIndex is necessary because in simulation function
 	 pointers are Smalltalk symbols (under simulation primitive dispatch is done via perform:)."
@@ -24,7 +22,7 @@ CMethodCacheAccessor >> at: index [
 	^objectMemory longAt: index * elementByteSize + address
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 CMethodCacheAccessor >> at: index put: value [
 	"The special handling of functionPointerIndex is necessary because in simulation function
 	 pointers are Smalltalk symbols (under simulation primitive dispatch is done via perform:)."
@@ -36,7 +34,7 @@ CMethodCacheAccessor >> at: index put: value [
 	^objectMemory longAt: index * elementByteSize + address put: value
 ]
 
-{ #category : 'initialize-release' }
+{ #category : #'initialize-release' }
 CMethodCacheAccessor >> objectMemory: anObjectMemory at: anAddress array: cacheArray functionPointerIndex: fpIndex entrySize: wordsPerCacheEntry [
 	self objectMemory: anObjectMemory
 		at: anAddress - anObjectMemory wordSize. "implicit -1 for indices in at:[put:]; the MethodCache is one-relative"

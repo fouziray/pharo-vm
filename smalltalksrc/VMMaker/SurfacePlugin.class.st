@@ -2,19 +2,17 @@
 This plugin is a fake. It doesn't do anything useful. It's sole purpose is to wrap the C code that's associated with the SurfacePlugin into the main VM generation process. Since the C code isn't easily generated from ST code this is (unfortunately) necessary. But look on the bright side - you don't have to define any weird stuff for the C compiler. Isn't that great?! (just kidding...) 
 "
 Class {
-	#name : 'SurfacePlugin',
-	#superclass : 'InterpreterPlugin',
+	#name : #SurfacePlugin,
+	#superclass : #InterpreterPlugin,
 	#instVars : [
 		'maxSurfaces',
 		'surfaceArray',
 		'numSurfaces'
 	],
-	#category : 'VMMaker-Plugins-Surface',
-	#package : 'VMMaker',
-	#tag : 'Plugins-Surface'
+	#category : 'VMMaker-Plugins-Surface'
 }
 
-{ #category : 'translation' }
+{ #category : #translation }
 SurfacePlugin class >> declareCVarsIn: aCCodeGenerator [
 
 	aCCodeGenerator addHeaderFile: '"SurfacePlugin.h"'.
@@ -23,25 +21,25 @@ SurfacePlugin class >> declareCVarsIn: aCCodeGenerator [
 	aCCodeGenerator var:#maxSurfaces declareC: 'static int maxSurfaces = 0'.	
 ]
 
-{ #category : 'translation' }
+{ #category : #translation }
 SurfacePlugin class >> hasHeaderFile [
 	"If there is a single intrinsic header file to be associated with the plugin, here is where you want to flag"
 	^true
 ]
 
-{ #category : 'translation' }
+{ #category : #translation }
 SurfacePlugin class >> requiresCrossPlatformFiles [
 	"If there cross platform files to be associated with the plugin, here is where you want to flag"
 	^true
 ]
 
-{ #category : 'private - utils' }
+{ #category : #'private - utils' }
 SurfacePlugin >> dispatchOf: aSurface [
 	<cmacro: '(aSurface) aSurface->dispatch'>
 	^ self shouldBeImplemented
 ]
 
-{ #category : 'private - utils' }
+{ #category : #'private - utils' }
 SurfacePlugin >> dispatchOfSurfaceIndex: i [
 
 	<cmacro: '(i) surfaceArray[i].dispatch'>
@@ -49,19 +47,19 @@ SurfacePlugin >> dispatchOfSurfaceIndex: i [
 	^ self shouldBeImplemented
 ]
 
-{ #category : 'private - utils' }
+{ #category : #'private - utils' }
 SurfacePlugin >> getSurfaceFormatOf: aSurface [
 	<cmacro: '(aSurface) aSurface->dispatch->getSurfaceFormat'>
 	^ self shouldBeImplemented
 ]
 
-{ #category : 'private - utils' }
+{ #category : #'private - utils' }
 SurfacePlugin >> handleOf: aSurface [
 	<cmacro: '(aSurface) aSurface->handle'>
 	^ self shouldBeImplemented
 ]
 
-{ #category : 'initialize' }
+{ #category : #initialize }
 SurfacePlugin >> initialiseModule [
 	<export: true>
 	
@@ -73,7 +71,7 @@ SurfacePlugin >> initialiseModule [
 
 ]
 
-{ #category : 'exported functions' }
+{ #category : #'exported functions' }
 SurfacePlugin >> ioFindSurface: surfaceID _: fn _: surfaceHandle [
 
 	"Find the surface with the given ID, and, optionally,
@@ -106,7 +104,7 @@ SurfacePlugin >> ioFindSurface: surfaceID _: fn _: surfaceHandle [
 	^ 1
 ]
 
-{ #category : 'exported functions' }
+{ #category : #'exported functions' }
 SurfacePlugin >> ioGetSurfaceFormat:surfaceID _:width _:height _:depth _: isMSB [
 	<export: true>
 	<var: #surfaceID type: 'int'>
@@ -139,7 +137,7 @@ SurfacePlugin >> ioGetSurfaceFormat:surfaceID _:width _:height _:depth _: isMSB 
 
 ]
 
-{ #category : 'exported functions' }
+{ #category : #'exported functions' }
 SurfacePlugin >> ioLockSurface: surfaceID _: pitch _: x _: y _: w _: h [
 
 	"Lock the bits of the surface. 
@@ -175,7 +173,7 @@ SurfacePlugin >> ioLockSurface: surfaceID _: pitch _: x _: y _: w _: h [
 
 ]
 
-{ #category : 'exported functions' }
+{ #category : #'exported functions' }
 SurfacePlugin >> ioRegisterSurface: surfaceHandle _: fn _: surfaceIDPtr [
 	"Register a new surface with the given handle and
 	the set of surface functions. The new ID is returned
@@ -222,7 +220,7 @@ SurfacePlugin >> ioRegisterSurface: surfaceHandle _: fn _: surfaceIDPtr [
 	^ 1.
 ]
 
-{ #category : 'exported functions' }
+{ #category : #'exported functions' }
 SurfacePlugin >> ioShowSurface: surfaceID _: x _: y _: w _: h [
 	"Transfer the bits of a surface to the screen."
 	<export: true>
@@ -252,7 +250,7 @@ SurfacePlugin >> ioShowSurface: surfaceID _: x _: y _: w _: h [
 	^ self perform: fnShowSurface with: (self handleOf: surface) with: x with: y with: w with: h.	
 ]
 
-{ #category : 'exported functions' }
+{ #category : #'exported functions' }
 SurfacePlugin >> ioUnlockSurface: surfaceID _: x _: y _: w _: h [
 
 	"Unlock the bits of the surface. 
@@ -283,7 +281,7 @@ SurfacePlugin >> ioUnlockSurface: surfaceID _: x _: y _: w _: h [
 	^ self perform: fnUnlockSurface with: (self handleOf: surface) with: x with: y with: w with: h.
 ]
 
-{ #category : 'exported functions' }
+{ #category : #'exported functions' }
 SurfacePlugin >> ioUnregisterSurface: surfaceID [
 	"Unregister the surface with the given ID.
 	Returns true if successful, false otherwise."
@@ -310,13 +308,13 @@ SurfacePlugin >> ioUnregisterSurface: surfaceID [
 
 ]
 
-{ #category : 'private - utils' }
+{ #category : #'private - utils' }
 SurfacePlugin >> lockSurfaceOf: aSurface [
 	<cmacro: '(aSurface) aSurface->dispatch->lockSurface'>
 	^ self shouldBeImplemented
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SurfacePlugin >> primitiveCreateManualSurface [
 	"arguments: name(type, stack offset)
 		width(Integer, 4)
@@ -345,7 +343,7 @@ SurfacePlugin >> primitiveCreateManualSurface [
 	
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SurfacePlugin >> primitiveDestroyManualSurface [
 	"arguments: name(type, stack offset)
 		surfaceID(Integer, 0)"
@@ -361,7 +359,7 @@ SurfacePlugin >> primitiveDestroyManualSurface [
 	
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SurfacePlugin >> primitiveFindSurface [
 	"arguments: name(type, stack offset)
 		externalID(Integer, 1)
@@ -388,7 +386,7 @@ SurfacePlugin >> primitiveFindSurface [
 	interpreterProxy pop: 3 thenPush: (result ifTrue: [interpreterProxy trueObject] ifFalse: [interpreterProxy falseObject])
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SurfacePlugin >> primitiveRegisterSurface [
 	"arguments: name(type, stack offset)
 		surfaceHandle(ExternalAddress, 2)
@@ -432,7 +430,7 @@ SurfacePlugin >> primitiveRegisterSurface [
 	interpreterProxy pop: 4 thenPush: (result ifTrue: [interpreterProxy trueObject] ifFalse: [interpreterProxy falseObject])
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SurfacePlugin >> primitiveSetManualSurfacePointer [
 	"Create a 'manual surface' data-structure.  See the ExternalForm class in the FFI package for example usage."
 	"arguments: name(type, stack offset)
@@ -455,7 +453,7 @@ SurfacePlugin >> primitiveSetManualSurfacePointer [
 	
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SurfacePlugin >> primitiveUnregisterSurface [
 	"arguments: name(type, stack offset)
 		surfaceID(Integer, 0) "
@@ -477,13 +475,13 @@ SurfacePlugin >> primitiveUnregisterSurface [
 	
 ]
 
-{ #category : 'private - utils' }
+{ #category : #'private - utils' }
 SurfacePlugin >> showSurfaceOf: aSurface [
 	<cmacro: '(aSurface) aSurface->dispatch->showSurface'>
 	^ self shouldBeImplemented
 ]
 
-{ #category : 'initialize' }
+{ #category : #initialize }
 SurfacePlugin >> shutdownModule [
 	<export: true>
 
@@ -498,7 +496,7 @@ SurfacePlugin >> shutdownModule [
 
 ]
 
-{ #category : 'private - utils' }
+{ #category : #'private - utils' }
 SurfacePlugin >> surfaceIndex: i putDispatch: aValue [
 
 	<cmacro: '(i,aValue) surfaceArray[i].dispatch = aValue'>
@@ -506,7 +504,7 @@ SurfacePlugin >> surfaceIndex: i putDispatch: aValue [
 	^ self shouldBeImplemented
 ]
 
-{ #category : 'private - utils' }
+{ #category : #'private - utils' }
 SurfacePlugin >> surfaceIndex: i putHandle: aValue [
 
 	<cmacro: '(i,aValue) surfaceArray[i].handle = aValue'>
@@ -514,7 +512,7 @@ SurfacePlugin >> surfaceIndex: i putHandle: aValue [
 	^ self shouldBeImplemented
 ]
 
-{ #category : 'private - utils' }
+{ #category : #'private - utils' }
 SurfacePlugin >> unlockSurfaceOf: aSurface [
 	<cmacro: '(aSurface) aSurface->dispatch->unlockSurface'>
 	^ self shouldBeImplemented

@@ -1,16 +1,14 @@
 Class {
-	#name : 'SpurSimulatedMemory',
-	#superclass : 'Object',
+	#name : #SpurSimulatedMemory,
+	#superclass : #Object,
 	#instVars : [
 		'memoryObject',
 		'initialAddress'
 	],
-	#category : 'VMMaker-SpurMemoryManager',
-	#package : 'VMMaker',
-	#tag : 'SpurMemoryManager'
+	#category : 'VMMaker-SpurMemoryManager'
 }
 
-{ #category : 'instance creation' }
+{ #category : #'instance creation' }
 SpurSimulatedMemory class >> new: slots [
 
 	^ self new
@@ -18,7 +16,7 @@ SpurSimulatedMemory class >> new: slots [
 		yourself
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SpurSimulatedMemory >> at: address [
 
 	^ memoryObject
@@ -27,7 +25,7 @@ SpurSimulatedMemory >> at: address [
 		signed: false
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SpurSimulatedMemory >> at: address put: a32BitValue [
 
 	^ memoryObject
@@ -37,19 +35,19 @@ SpurSimulatedMemory >> at: address put: a32BitValue [
 		signed: false
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : #'as yet unclassified' }
 SpurSimulatedMemory >> byteSize [
 	
 	^ self size
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SpurSimulatedMemory >> bytesPerElement [
 	
 	^ 4
 ]
 
-{ #category : 'copying' }
+{ #category : #copying }
 SpurSimulatedMemory >> copyFrom: anAddress [
 
 	^ memoryObject
@@ -57,31 +55,31 @@ SpurSimulatedMemory >> copyFrom: anAddress [
 		to: memoryObject size
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SpurSimulatedMemory >> copyFrom: start to: end [
 	
 	^ memoryObject copyFrom: start - initialAddress + 1 to: end - initialAddress + 1
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SpurSimulatedMemory >> initialAddress [
 	^ initialAddress
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SpurSimulatedMemory >> initialAddress: anAddress [
 
 	initialAddress := anAddress
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SpurSimulatedMemory >> initialize [
 
 	super initialize.
 	initialAddress := 0"2*1024*1024".
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 SpurSimulatedMemory >> initializeSlots: anInteger [ 
 	
 	"Allocate a memory to hold at least `anInteger` elements of size `self bytesPerElement`.
@@ -97,7 +95,7 @@ SpurSimulatedMemory >> initializeSlots: anInteger [
 	memoryObject := ByteArray new: bytesToAllocate + trailingBytes
 ]
 
-{ #category : 'loading' }
+{ #category : #loading }
 SpurSimulatedMemory >> loadFrom: aMultiByteFileStream size: size inPosition: startingPosition [
 
 	^ aMultiByteFileStream
@@ -106,7 +104,7 @@ SpurSimulatedMemory >> loadFrom: aMultiByteFileStream size: size inPosition: sta
 		  count: size
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SpurSimulatedMemory >> long64At: address [ 
 	
 	^ memoryObject
@@ -115,7 +113,7 @@ SpurSimulatedMemory >> long64At: address [
 		signed: true
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SpurSimulatedMemory >> long64At: address put: aValue [
 	
 	^ memoryObject
@@ -125,7 +123,7 @@ SpurSimulatedMemory >> long64At: address put: aValue [
 		signed: true
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : #'as yet unclassified' }
 SpurSimulatedMemory >> longAt: address [ 
 	
 	^ memoryObject
@@ -135,7 +133,7 @@ SpurSimulatedMemory >> longAt: address [
 
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SpurSimulatedMemory >> longAt: address put: aValue [
 
 	^ memoryObject
@@ -145,25 +143,25 @@ SpurSimulatedMemory >> longAt: address put: aValue [
 		signed: true
 ]
 
-{ #category : 'converting' }
+{ #category : #converting }
 SpurSimulatedMemory >> memoryObject [
 	
 	^ memoryObject
 ]
 
-{ #category : 'replacing' }
+{ #category : #replacing }
 SpurSimulatedMemory >> replaceFrom: start to: stop with: replacement startingAt: repStart [ 
 	
 	memoryObject replaceFrom: start to: stop with: replacement memoryObject startingAt: repStart
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SpurSimulatedMemory >> size [
 
 	^ memoryObject size
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SpurSimulatedMemory >> unsignedByteAt: anAddress [ 
 	
 	^ memoryObject
@@ -172,7 +170,7 @@ SpurSimulatedMemory >> unsignedByteAt: anAddress [
 		signed: false
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SpurSimulatedMemory >> unsignedByteAt: anAddress put: aValue [
 	
 	^ memoryObject
@@ -182,7 +180,7 @@ SpurSimulatedMemory >> unsignedByteAt: anAddress put: aValue [
 		signed: false
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SpurSimulatedMemory >> unsignedLong64At: address [ 
 
 	^ memoryObject
@@ -191,7 +189,7 @@ SpurSimulatedMemory >> unsignedLong64At: address [
 		signed: false
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SpurSimulatedMemory >> unsignedLong64At: address put: aValue [ 
 	
 	^ memoryObject
@@ -201,7 +199,7 @@ SpurSimulatedMemory >> unsignedLong64At: address put: aValue [
 		signed: false
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SpurSimulatedMemory >> unsignedLongAt: address [
 
 	^ memoryObject
@@ -210,7 +208,7 @@ SpurSimulatedMemory >> unsignedLongAt: address [
 		signed: false
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SpurSimulatedMemory >> unsignedLongAt: address put: aValue [ 
 
 	^ memoryObject
@@ -220,7 +218,7 @@ SpurSimulatedMemory >> unsignedLongAt: address put: aValue [
 		signed: false
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SpurSimulatedMemory >> unsignedShortAt: anAddress [ 
 	
 	^ memoryObject
@@ -229,7 +227,7 @@ SpurSimulatedMemory >> unsignedShortAt: anAddress [
 		signed: false
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 SpurSimulatedMemory >> unsignedShortAt: anAddress put: aValue [
 	
 	^ memoryObject

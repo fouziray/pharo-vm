@@ -2,14 +2,12 @@
 A plugin to provide fast read and write of .bmp files
 "
 Class {
-	#name : 'BMPReadWriterPlugin',
-	#superclass : 'InterpreterPlugin',
-	#category : 'VMMaker-Plugins',
-	#package : 'VMMaker',
-	#tag : 'Plugins'
+	#name : #BMPReadWriterPlugin,
+	#superclass : #InterpreterPlugin,
+	#category : 'VMMaker-Plugins'
 }
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 BMPReadWriterPlugin >> primitiveRead24BmpLine [
 	| width formBitsIndex formBitsOop pixelLineOop formBitsSize formBits pixelLineSize pixelLine |
 	<export: true>
@@ -51,7 +49,7 @@ BMPReadWriterPlugin >> primitiveRead24BmpLine [
 
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 BMPReadWriterPlugin >> primitiveWrite24BmpLine [
 
 	| width formBitsIndex formBitsOop pixelLineOop formBitsSize formBits pixelLineSize pixelLine |

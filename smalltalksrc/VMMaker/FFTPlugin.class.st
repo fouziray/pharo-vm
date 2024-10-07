@@ -6,8 +6,8 @@ See also:
 
 "
 Class {
-	#name : 'FFTPlugin',
-	#superclass : 'InterpreterPlugin',
+	#name : #FFTPlugin,
+	#superclass : #InterpreterPlugin,
 	#instVars : [
 		'nu',
 		'fftSize',
@@ -20,12 +20,10 @@ Class {
 		'imagData',
 		'imagDataSize'
 	],
-	#category : 'VMMaker-Plugins',
-	#package : 'VMMaker',
-	#tag : 'Plugins'
+	#category : 'VMMaker-Plugins'
 }
 
-{ #category : 'translation to C' }
+{ #category : #'translation to C' }
 FFTPlugin class >> declareCVarsIn: cg [
 	cg var: #sinTable type: #'float *'.
 	cg var: #realData type:  #'float *'.
@@ -33,7 +31,7 @@ FFTPlugin class >> declareCVarsIn: cg [
 	cg var: #permTable type: #'unsigned int *'
 ]
 
-{ #category : 'private' }
+{ #category : #private }
 FFTPlugin >> checkedFloatPtrOf: oop [
 	"Return the first indexable word of oop which is assumed to be variableWordSubclass"
 	<returnTypeC:'float *'>
@@ -42,7 +40,7 @@ FFTPlugin >> checkedFloatPtrOf: oop [
 	^self cCoerce: (interpreterProxy firstIndexableField: oop) to:'float *'
 ]
 
-{ #category : 'private' }
+{ #category : #private }
 FFTPlugin >> checkedWordPtrOf: oop [
 	"Return the first indexable word of oop which is assumed to be variableWordSubclass"
 	<returnTypeC:'unsigned int *'>
@@ -50,7 +48,7 @@ FFTPlugin >> checkedWordPtrOf: oop [
 	^self cCoerce: (interpreterProxy firstIndexableField: oop) to: 'unsigned int *'
 ]
 
-{ #category : 'private' }
+{ #category : #private }
 FFTPlugin >> loadFFTFrom: fftOop [
 	| oop |
 	interpreterProxy success: (interpreterProxy slotSizeOf: fftOop) >= 6.
@@ -85,7 +83,7 @@ FFTPlugin >> loadFFTFrom: fftOop [
 	^interpreterProxy failed == false
 ]
 
-{ #category : 'transforming' }
+{ #category : #transforming }
 FFTPlugin >> permuteData [
 	| i end a b tmp |
 	<var: #tmp type: 'float '>
@@ -108,7 +106,7 @@ FFTPlugin >> permuteData [
 		i := i + 2]
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 FFTPlugin >> primitiveFFTPermuteData [
 	| rcvr |
 	<export: true>
@@ -120,7 +118,7 @@ FFTPlugin >> primitiveFFTPermuteData [
 		self permuteData].
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 FFTPlugin >> primitiveFFTScaleData [
 	| rcvr |
 	<export: true>
@@ -129,7 +127,7 @@ FFTPlugin >> primitiveFFTScaleData [
 	self scaleData.
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 FFTPlugin >> primitiveFFTTransformData [
 	| rcvr forward |
 	<export: true>
@@ -142,7 +140,7 @@ FFTPlugin >> primitiveFFTTransformData [
 	].
 ]
 
-{ #category : 'transforming' }
+{ #category : #transforming }
 FFTPlugin >> scaleData [
 	"Scale all elements by 1/n when doing inverse"
 	| realN |
@@ -155,7 +153,7 @@ FFTPlugin >> scaleData [
 		imagData at: i put: (imagData at: i) * realN]
 ]
 
-{ #category : 'transforming' }
+{ #category : #transforming }
 FFTPlugin >> transformData: forward [
 	self permuteData.
 	interpreterProxy failed ifTrue:[
@@ -166,7 +164,7 @@ FFTPlugin >> transformData: forward [
 	forward ifFalse: [self scaleData]  "Reverse transform must scale to be an inverse"
 ]
 
-{ #category : 'transforming' }
+{ #category : #transforming }
 FFTPlugin >> transformForward: forward [
 	| lev lev1 ip theta realU imagU realT imagT i fftSize2 fftSize4 fftScale ii |
 	<var: #realU type:'float '>

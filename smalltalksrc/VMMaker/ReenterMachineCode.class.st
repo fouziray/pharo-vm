@@ -1,22 +1,20 @@
 Class {
-	#name : 'ReenterMachineCode',
-	#superclass : 'Notification',
+	#name : #ReenterMachineCode,
+	#superclass : #Notification,
 	#instVars : [
 		'returnValue'
 	],
-	#category : 'VMMaker-JITSimulation',
-	#package : 'VMMaker',
-	#tag : 'JITSimulation'
+	#category : 'VMMaker-JITSimulation'
 }
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 ReenterMachineCode >> returnValue [
 	"Answer the value of returnValue"
 
 	^ returnValue
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 ReenterMachineCode >> returnValue: anObject [
 	"Set the value of returnValue"
 

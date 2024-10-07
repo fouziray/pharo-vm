@@ -1,18 +1,16 @@
 Class {
-	#name : 'ReSlangRedundantTypeDeclarationRule',
-	#superclass : 'ReAbstractRule',
-	#category : 'VMMaker-Slang',
-	#package : 'VMMaker',
-	#tag : 'Slang'
+	#name : #ReSlangRedundantTypeDeclarationRule,
+	#superclass : #ReAbstractRule,
+	#category : 'VMMaker-Slang'
 }
 
-{ #category : 'testing - interest' }
+{ #category : #'testing - interest' }
 ReSlangRedundantTypeDeclarationRule class >> checksNode [
 
 	^ true
 ]
 
-{ #category : 'running' }
+{ #category : #running }
 ReSlangRedundantTypeDeclarationRule >> basicCheck: aNode [
 
 	^ aNode isPragma and: [
@@ -21,7 +19,7 @@ ReSlangRedundantTypeDeclarationRule >> basicCheck: aNode [
 				  (aNode argumentAt: #var:) value) not ] ]
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 ReSlangRedundantTypeDeclarationRule >> name [
 
 	^ 'Type declaration for missing local'

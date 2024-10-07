@@ -1,19 +1,17 @@
 Class {
-	#name : 'ComposedImageReader',
-	#superclass : 'AbstractComposedImageAccess',
+	#name : #ComposedImageReader,
+	#superclass : #AbstractComposedImageAccess,
 	#traits : 'TImageReader',
 	#classTraits : 'TImageReader classTrait',
-	#category : 'VMMaker-ImageFormat',
-	#package : 'VMMaker',
-	#tag : 'ImageFormat'
+	#category : 'VMMaker-ImageFormat'
 }
 
-{ #category : 'translation' }
+{ #category : #translation }
 ComposedImageReader class >> declareCVarsIn: aCCodeGenerator [
 	"currently Slang lacks some support for subclasses: prevent <sys/stat.h> to be include a second time during C code generation as the superclass already includes it but declareCVarsIn: is called for each concrete class logging the warning inside addHeaderFile: method"
 ]
 
-{ #category : 'reading' }
+{ #category : #reading }
 ComposedImageReader >> endOfSTON: file [
 	
 	"This method consume 2 chars from file and return they are equivalent to '\n}'"
@@ -25,7 +23,7 @@ ComposedImageReader >> endOfSTON: file [
 	^ (self isEndOfLine: charLeft) and: [ charRight = $} ]
 ]
 
-{ #category : 'reading' }
+{ #category : #reading }
 ComposedImageReader >> readDataFromFileName: fullFileName startingAt: startingAddress bytes: bytesToRead [
 
 	<inline: true>
@@ -49,7 +47,7 @@ ComposedImageReader >> readDataFromFileName: fullFileName startingAt: startingAd
 	^ bytes
 ]
 
-{ #category : 'reading' }
+{ #category : #reading }
 ComposedImageReader >> readFieldsSTONFrom: file into: aStruct [
 
 	<inline: true>
@@ -80,7 +78,7 @@ ComposedImageReader >> readFieldsSTONFrom: file into: aStruct [
 	] whileFalse
 ]
 
-{ #category : 'reading' }
+{ #category : #reading }
 ComposedImageReader >> readHeadSTONFrom: file into: aStruct [
 
 	<inline: true>
@@ -95,7 +93,7 @@ ComposedImageReader >> readHeadSTONFrom: file into: aStruct [
 			self assert: name = (self contentsOf: structName) ] ]
 ]
 
-{ #category : 'api' }
+{ #category : #api }
 ComposedImageReader >> readHeaderFromImage: imageFileName [
 
 	<inline: true>
@@ -131,7 +129,7 @@ ComposedImageReader >> readHeaderFromImage: imageFileName [
 	^ header
 ]
 
-{ #category : 'api' }
+{ #category : #api }
 ComposedImageReader >> readImageNamed: imageName [
 	
 	<var: #imageName declareC: 'char *imageName'>
@@ -149,7 +147,7 @@ ComposedImageReader >> readImageNamed: imageName [
 	^ 0 "Must return sqInt"
 ]
 
-{ #category : 'reading' }
+{ #category : #reading }
 ComposedImageReader >> readMetadataFromFileName: fullFileName [ 
 
 	<inline: true>
@@ -174,7 +172,7 @@ ComposedImageReader >> readMetadataFromFileName: fullFileName [
 	^ metadata
 ]
 
-{ #category : 'perm - space' }
+{ #category : #'perm - space' }
 ComposedImageReader >> readPermanentSpaceDataFromImage: imageFileName startingAt: startingAddress bytes: bytesToRead [
 
 	^ self
@@ -183,7 +181,7 @@ ComposedImageReader >> readPermanentSpaceDataFromImage: imageFileName startingAt
 		  bytes: bytesToRead
 ]
 
-{ #category : 'perm - space' }
+{ #category : #'perm - space' }
 ComposedImageReader >> readPermanentSpaceFromImageFile: imageFileName header: aHeader [
 
 	<inline: false>
@@ -227,13 +225,13 @@ ComposedImageReader >> readPermanentSpaceFromImageFile: imageFileName header: aH
 	^ bytesRead
 ]
 
-{ #category : 'perm - space' }
+{ #category : #'perm - space' }
 ComposedImageReader >> readPermanentSpaceMetadataFromImage: imageFileName [ 
 
 	^ self readMetadataFromFileName: (self permSpaceMetadataFileNameInImage: imageFileName) 
 ]
 
-{ #category : 'reading' }
+{ #category : #reading }
 ComposedImageReader >> readSTONFrom: file into: aStruct [
 
 	<inline: true>
@@ -241,7 +239,7 @@ ComposedImageReader >> readSTONFrom: file into: aStruct [
 	self readFieldsSTONFrom: file into: aStruct
 ]
 
-{ #category : 'segments' }
+{ #category : #segments }
 ComposedImageReader >> readSegmentData: segmentIndex fromImage: imageFileName startingAt: startingAddress bytes: bytesToRead [ 
 
 	^ self
@@ -250,13 +248,13 @@ ComposedImageReader >> readSegmentData: segmentIndex fromImage: imageFileName st
 		  bytes: bytesToRead
 ]
 
-{ #category : 'segments' }
+{ #category : #segments }
 ComposedImageReader >> readSegmentMetadata: segmentIndex fromImage: imageFileName [
 
 	^ self readMetadataFromFileName: (self segmentMetadataFile: segmentIndex inImage: imageFileName)
 ]
 
-{ #category : 'segments' }
+{ #category : #segments }
 ComposedImageReader >> readSegmentsFromImageFile: imageFileName header: aHeader [
 
 	<inline: false>
@@ -313,7 +311,7 @@ ComposedImageReader >> readSegmentsFromImageFile: imageFileName header: aHeader 
 	^ totalBytesRead
 ]
 
-{ #category : 'testing' }
+{ #category : #testing }
 ComposedImageReader >> validateContent: imageFile [
 
 	"Contains header metadata and AT LEAST one segment (data & metadata)"

@@ -5,8 +5,8 @@ Instance Variables
 	cogit:		<Cogit>
 "
 Class {
-	#name : 'OutOfLineLiteralsManager',
-	#superclass : 'VMClass',
+	#name : #OutOfLineLiteralsManager,
+	#superclass : #VMClass,
 	#instVars : [
 		'cogit',
 		'objectMemory',
@@ -25,22 +25,20 @@ Class {
 		'CogCompilationConstants',
 		'CogRTLOpcodes'
 	],
-	#category : 'VMMaker-JIT',
-	#package : 'VMMaker',
-	#tag : 'JIT'
+	#category : 'VMMaker-JIT'
 }
 
-{ #category : 'translation' }
+{ #category : #translation }
 OutOfLineLiteralsManager class >> declareCVarsIn: aCCodeGenerator [
 	aCCodeGenerator var: 'literals' type: #'AbstractInstruction *'
 ]
 
-{ #category : 'translation' }
+{ #category : #translation }
 OutOfLineLiteralsManager class >> isNonArgumentImplicitReceiverVariableName: aString [
 	^Cogit isNonArgumentImplicitReceiverVariableName: aString
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 OutOfLineLiteralsManager >> allocateLiteral: aLiteral [
 	"Allocate an unsharable Literal instruction for the literal and answer it."
 	<returnTypeC: #'AbstractInstruction *'>
@@ -58,7 +56,7 @@ OutOfLineLiteralsManager >> allocateLiteral: aLiteral [
 	^litInst
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 OutOfLineLiteralsManager >> allocateLiterals: initialNumLiterals [
 	<inline: true>
 	| newLiterals newInst existingInst |
@@ -93,7 +91,7 @@ OutOfLineLiteralsManager >> allocateLiterals: initialNumLiterals [
 		 literalsSize := initialNumLiterals]
 ]
 
-{ #category : 'generate machine code' }
+{ #category : #'generate machine code' }
 OutOfLineLiteralsManager >> assertValidAnnotation: annotation for: instruction [
 	"Insist that the IsObjectReference applies only to out-of-line literals."
 	<var: #instruction type: #'AbstractInstruction *'>
@@ -101,7 +99,7 @@ OutOfLineLiteralsManager >> assertValidAnnotation: annotation for: instruction [
 	self assert: (annotation ~= cogit getIsObjectReference or: [instruction opcode = Literal])
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 OutOfLineLiteralsManager >> checkLiteral: literal forInstruction: anInstruction [
 	<var: #anInstruction type: #'AbstractInstruction *'>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -110,7 +108,7 @@ OutOfLineLiteralsManager >> checkLiteral: literal forInstruction: anInstruction 
 	^anInstruction
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 OutOfLineLiteralsManager >> checkQuickConstant: literal forInstruction: anInstruction [
 	<var: #anInstruction type: #'AbstractInstruction *'>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -120,7 +118,7 @@ OutOfLineLiteralsManager >> checkQuickConstant: literal forInstruction: anInstru
 	^anInstruction
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 OutOfLineLiteralsManager >> cogit: aCogit [
 	<doNotGenerate>
 	cogit := aCogit.
@@ -129,7 +127,7 @@ OutOfLineLiteralsManager >> cogit: aCogit [
 	literalsSize := 0
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 OutOfLineLiteralsManager >> dumpLiterals: generateBranchAround [
 	"Output all pending literal instructions, making the originals dependents of the generated ones
 	 so that a later pass will copy the address of each generated literl inst to its original in literals,
@@ -153,13 +151,13 @@ OutOfLineLiteralsManager >> dumpLiterals: generateBranchAround [
 	lastDumpedLiteralIndex := nextLiteralIndex
 ]
 
-{ #category : 'closed PIC parsing' }
+{ #category : #'closed PIC parsing' }
 OutOfLineLiteralsManager >> endSizeOffset [
 	"return the offset need from the cPICEndSize in order to point to just after the last instruction - here that means bytesPerOop * list size"
 	^nextLiteralIndex * objectMemory bytesPerOop
 ]
 
-{ #category : 'garbage collection' }
+{ #category : #'garbage collection' }
 OutOfLineLiteralsManager >> fetchLiteralAtAnnotatedAddress: address using: instruction [
 	"With out-of-line literals, the IsObjectReference annotation refers to
 	 the start of the literal and hence access the memory directly."
@@ -168,7 +166,7 @@ OutOfLineLiteralsManager >> fetchLiteralAtAnnotatedAddress: address using: instr
 	^objectMemory unsignedLongAt: address
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 OutOfLineLiteralsManager >> literalInstructionAt: index [
 	<cmacro: '(index) (&literals[index])'>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -177,7 +175,7 @@ OutOfLineLiteralsManager >> literalInstructionAt: index [
 		ifNotNil: [:litInst| litInst]
 ]
 
-{ #category : 'testing' }
+{ #category : #testing }
 OutOfLineLiteralsManager >> literalInstructionInRange: litInst [
 	"A literal is in range if its opcode index is within outOfLineLiteralOpcodeLimit,
 	 or if its index has yet to be assigned."
@@ -189,7 +187,7 @@ OutOfLineLiteralsManager >> literalInstructionInRange: litInst [
 		cogit getOpcodeIndex - opcodeIdx < cogit backEnd outOfLineLiteralOpcodeLimit]
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 OutOfLineLiteralsManager >> locateLiteral: aLiteral [
 	"Search for a Literal instruction that is in-range and answer it.  Otherwise
 	 allocate a new sharable Literal instruction for the literal and answer it."
@@ -215,14 +213,14 @@ OutOfLineLiteralsManager >> locateLiteral: aLiteral [
 	^litInst
 ]
 
-{ #category : 'testing' }
+{ #category : #testing }
 OutOfLineLiteralsManager >> mustDumpLiterals: currentOpcodeIndex [
 	<inline: true>
 	^currentOpcodeIndex >= firstOpcodeIndex
 	  and: [currentOpcodeIndex - firstOpcodeIndex >= cogit backEnd outOfLineLiteralOpcodeLimit]
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 OutOfLineLiteralsManager >> resetForRecompile [
 	<inline: true>
 	firstOpcodeIndex := savedFirstOpcodeIndex.
@@ -230,14 +228,14 @@ OutOfLineLiteralsManager >> resetForRecompile [
 	lastDumpedLiteralIndex := savedLastDumpedLiteralIndex
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 OutOfLineLiteralsManager >> resetLiterals [
 	<inline: true>
 	firstOpcodeIndex := 1 << 16. "an impossibly high value"
 	nextLiteralIndex := lastDumpedLiteralIndex := 0
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 OutOfLineLiteralsManager >> saveForRecompile [
 
 	<inline: true>
@@ -246,7 +244,7 @@ OutOfLineLiteralsManager >> saveForRecompile [
 	savedLastDumpedLiteralIndex := lastDumpedLiteralIndex
 ]
 
-{ #category : 'garbage collection' }
+{ #category : #'garbage collection' }
 OutOfLineLiteralsManager >> storeLiteral: literal atAnnotatedAddress: address using: instruction [
 	"With out-of-line literals, the IsObjectReference annotation refers to
 	 the start of the literal and hence access the memory directly."
@@ -256,7 +254,7 @@ OutOfLineLiteralsManager >> storeLiteral: literal atAnnotatedAddress: address us
 	objectMemory unsignedLongAt: address put: literal
 ]
 
-{ #category : 'compile abstract instructions' }
+{ #category : #'compile abstract instructions' }
 OutOfLineLiteralsManager >> uniqueLiteral: literal forInstruction: anInstruction [
 	<var: #anInstruction type: #'AbstractInstruction *'>
 	<returnTypeC: #'AbstractInstruction *'>

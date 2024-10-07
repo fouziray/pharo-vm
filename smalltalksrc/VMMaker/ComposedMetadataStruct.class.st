@@ -1,16 +1,14 @@
 Class {
-	#name : 'ComposedMetadataStruct',
-	#superclass : 'VMStructType',
+	#name : #ComposedMetadataStruct,
+	#superclass : #VMStructType,
 	#instVars : [
 		'startAddress',
 		'dataSize'
 	],
-	#category : 'VMMaker-ImageFormat',
-	#package : 'VMMaker',
-	#tag : 'ImageFormat'
+	#category : 'VMMaker-ImageFormat'
 }
 
-{ #category : 'simulation only' }
+{ #category : #'simulation only' }
 ComposedMetadataStruct class >> byteSizeForSimulator: aCogit [
 
 	"Answer an approximation of the byte size of an AbstractInstruction struct.
@@ -18,7 +16,7 @@ ComposedMetadataStruct class >> byteSizeForSimulator: aCogit [
 	^self instSize * (aCogit sizeof: #'void *'). 
 ]
 
-{ #category : 'translation' }
+{ #category : #translation }
 ComposedMetadataStruct class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 	"enumerate aBinaryBlock with the names and C type strings for the inst vars to include in a struct of this type."
 
@@ -32,32 +30,32 @@ ComposedMetadataStruct class >> instVarNamesAndTypesForTranslationDo: aBinaryBlo
 
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 ComposedMetadataStruct >> dataSize [
 
 	^ dataSize
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 ComposedMetadataStruct >> dataSize: anObject [
 
 	dataSize := anObject
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 ComposedMetadataStruct >> initialize [
 
 	startAddress := 0.
 	dataSize := 0
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 ComposedMetadataStruct >> startAddress [
 
 	^ startAddress
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 ComposedMetadataStruct >> startAddress: anObject [
 
 	startAddress := anObject

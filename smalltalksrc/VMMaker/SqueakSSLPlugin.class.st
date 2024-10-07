@@ -1,22 +1,20 @@
 Class {
-	#name : 'SqueakSSLPlugin',
-	#superclass : 'InterpreterPlugin',
-	#category : 'VMMaker-Plugins',
-	#package : 'VMMaker',
-	#tag : 'Plugins'
+	#name : #SqueakSSLPlugin,
+	#superclass : #InterpreterPlugin,
+	#category : 'VMMaker-Plugins'
 }
 
-{ #category : 'translation' }
+{ #category : #translation }
 SqueakSSLPlugin class >> hasHeaderFile [
 	^true
 ]
 
-{ #category : 'translation' }
+{ #category : #translation }
 SqueakSSLPlugin class >> moduleName [
 	^'SqueakSSL'
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SqueakSSLPlugin >> primitiveAccept [
 	"Primitive. Starts or continues a server handshake using the current session.
 	Will eventually produce output to be sent to the client. Requires the host
@@ -55,7 +53,7 @@ SqueakSSLPlugin >> primitiveAccept [
 	interpreterProxy pushInteger: result.
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SqueakSSLPlugin >> primitiveConnect [
 	"Primitive. Starts or continues a client handshake using the provided data.
 	Will eventually produce output to be sent to the server. Requires the host
@@ -94,7 +92,7 @@ SqueakSSLPlugin >> primitiveConnect [
 	interpreterProxy pushInteger: result.
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SqueakSSLPlugin >> primitiveCreate [
 	"Primitive. Creates a new SSL session and returns its handle."
 	| handle |
@@ -108,7 +106,7 @@ SqueakSSLPlugin >> primitiveCreate [
 
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SqueakSSLPlugin >> primitiveDecrypt [
 	"Primitive. Decrypts a buffer sent via the connection.
 	Requires the session to be established.
@@ -144,7 +142,7 @@ SqueakSSLPlugin >> primitiveDecrypt [
 	interpreterProxy pushInteger: result.
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SqueakSSLPlugin >> primitiveDestroy [
 	"Primitive. Destroys an SSL session."
 
@@ -161,7 +159,7 @@ SqueakSSLPlugin >> primitiveDestroy [
 
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SqueakSSLPlugin >> primitiveEncrypt [
 	"Primitive. Encrypts a buffer to be sent to the via the connection.
 	Requires the session to be established.
@@ -197,7 +195,7 @@ SqueakSSLPlugin >> primitiveEncrypt [
 	interpreterProxy pushInteger: result.
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SqueakSSLPlugin >> primitiveGetIntProperty [
 	"Primitive. Returns an integer property for the session"
 
@@ -217,7 +215,7 @@ SqueakSSLPlugin >> primitiveGetIntProperty [
 
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SqueakSSLPlugin >> primitiveGetStringProperty [
 	"Primitive. Returns a string property for the session"
 
@@ -249,7 +247,7 @@ SqueakSSLPlugin >> primitiveGetStringProperty [
 
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SqueakSSLPlugin >> primitiveSetIntProperty [
 	"Primitive. Sets a integer property for the session"
 
@@ -269,7 +267,7 @@ SqueakSSLPlugin >> primitiveSetIntProperty [
 
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 SqueakSSLPlugin >> primitiveSetStringProperty [
 	"Primitive. Sets a string property for the session"
 

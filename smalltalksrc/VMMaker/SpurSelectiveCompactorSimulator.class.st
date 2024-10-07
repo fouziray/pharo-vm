@@ -1,21 +1,19 @@
 Class {
-	#name : 'SpurSelectiveCompactorSimulator',
-	#superclass : 'SpurSelectiveCompactor',
+	#name : #SpurSelectiveCompactorSimulator,
+	#superclass : #SpurSelectiveCompactor,
 	#classVars : [
 		'Talking'
 	],
-	#category : 'VMMaker-SpurMemoryManagerSimulation',
-	#package : 'VMMaker',
-	#tag : 'SpurMemoryManagerSimulation'
+	#category : 'VMMaker-SpurMemoryManagerSimulation'
 }
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 SpurSelectiveCompactorSimulator class >> initialize [
 	super initialize.
 	Talking := true.
 ]
 
-{ #category : 'debugging' }
+{ #category : #debugging }
 SpurSelectiveCompactorSimulator >> checkOnlyForwardersOrWordNonImm: segInfo [
 	"Also check this is iterable until bridge 
 	 prevEntity is here for debugging only"
@@ -31,7 +29,7 @@ SpurSelectiveCompactorSimulator >> checkOnlyForwardersOrWordNonImm: segInfo [
 	self talkNoCr: ' OK'.
 ]
 
-{ #category : 'debugging' }
+{ #category : #debugging }
 SpurSelectiveCompactorSimulator >> checkSegmentToFillLooksAllRight [
 	"Check only 1 free object at the end or none.
 	 Check segment is iterable until bridge"
@@ -50,7 +48,7 @@ SpurSelectiveCompactorSimulator >> checkSegmentToFillLooksAllRight [
 	self talkNoCr: ' OK'.
 ]
 
-{ #category : 'debugging' }
+{ #category : #debugging }
 SpurSelectiveCompactorSimulator >> checkSegmentsIterable [
 	"Check only 1 free object at the end or none.
 	 Check segment is iterable until bridge"
@@ -68,7 +66,7 @@ SpurSelectiveCompactorSimulator >> checkSegmentsIterable [
 	self talkNoCr: ' OK'.
 ]
 
-{ #category : 'api' }
+{ #category : #api }
 SpurSelectiveCompactorSimulator >> compact [
 	self talk: '~~ Start selective compaction ~~'.
 	self tellMeNumSegmentAndTotalFreeSpace.
@@ -81,7 +79,7 @@ SpurSelectiveCompactorSimulator >> compact [
 	
 ]
 
-{ #category : 'compaction' }
+{ #category : #compaction }
 SpurSelectiveCompactorSimulator >> compactSegmentsToCompact [
 	self talk: 'filling segment ' , (manager segmentManager indexOfSegment: segmentToFill).
 	super compactSegmentsToCompact.
@@ -90,7 +88,7 @@ SpurSelectiveCompactorSimulator >> compactSegmentsToCompact [
 	
 ]
 
-{ #category : 'compaction' }
+{ #category : #compaction }
 SpurSelectiveCompactorSimulator >> computeSegmentsToCompact [
 	| res |
 	res := super computeSegmentsToCompact.
@@ -101,7 +99,7 @@ SpurSelectiveCompactorSimulator >> computeSegmentsToCompact [
 	^ res
 ]
 
-{ #category : 'freeing' }
+{ #category : #freeing }
 SpurSelectiveCompactorSimulator >> freePastSegmentsAndSetSegmentToFill [
 	super freePastSegmentsAndSetSegmentToFill.
 	segmentToFill
@@ -110,7 +108,7 @@ SpurSelectiveCompactorSimulator >> freePastSegmentsAndSetSegmentToFill [
 	
 ]
 
-{ #category : 'sweep phase' }
+{ #category : #'sweep phase' }
 SpurSelectiveCompactorSimulator >> globalSweepAndSegmentOccupationAnalysis [
 	super globalSweepAndSegmentOccupationAnalysis.
 	self talk: 'Occupation map: '.
@@ -127,34 +125,34 @@ SpurSelectiveCompactorSimulator >> globalSweepAndSegmentOccupationAnalysis [
 	
 ]
 
-{ #category : 'compaction' }
+{ #category : #compaction }
 SpurSelectiveCompactorSimulator >> markSegmentAsBeingCompacted: segInfo [ 
 	super markSegmentAsBeingCompacted: segInfo.
 	self talk: 'Marking as being compacted segment ' , (manager segmentManager indexOfSegment: segInfo) printString.
 ]
 
-{ #category : 'compaction' }
+{ #category : #compaction }
 SpurSelectiveCompactorSimulator >> selectiveCompaction [
 	super selectiveCompaction.
 	manager allFreeObjectsDo: [:objOop | manager assertValidFreeObject: objOop]
 ]
 
-{ #category : 'debugging' }
+{ #category : #debugging }
 SpurSelectiveCompactorSimulator >> talk: string [
 	Talking ifTrue: [Transcript cr; show: string]
 ]
 
-{ #category : 'debugging' }
+{ #category : #debugging }
 SpurSelectiveCompactorSimulator >> talkNoCr: string [
 	Talking ifTrue: [Transcript show: string]
 ]
 
-{ #category : 'debugging' }
+{ #category : #debugging }
 SpurSelectiveCompactorSimulator >> tellMeNumSegmentAndTotalFreeSpace [
 	self talk: 'numSegments: ' , manager numSegments printString , ', free space: ' , manager totalFreeOldSpace printString.
 ]
 
-{ #category : 'debugging' }
+{ #category : #debugging }
 SpurSelectiveCompactorSimulator >> tellMeWhichSegmentsAreBeingCompacted [
 	<doNotGenerate> 
 	| beingCompacted |

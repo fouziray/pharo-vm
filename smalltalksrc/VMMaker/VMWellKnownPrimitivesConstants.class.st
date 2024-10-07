@@ -1,6 +1,6 @@
 Class {
-	#name : 'VMWellKnownPrimitivesConstants',
-	#superclass : 'SharedPool',
+	#name : #VMWellKnownPrimitivesConstants,
+	#superclass : #SharedPool,
 	#classVars : [
 		'PrimNumberDoExternalCall',
 		'PrimNumberDoPrimitive',
@@ -8,7 +8,5 @@ Class {
 		'PrimNumberFFICall',
 		'PrimNumberHashMultiply'
 	],
-	#category : 'VMMaker-Interpreter',
-	#package : 'VMMaker',
-	#tag : 'Interpreter'
+	#category : 'VMMaker-Interpreter'
 }

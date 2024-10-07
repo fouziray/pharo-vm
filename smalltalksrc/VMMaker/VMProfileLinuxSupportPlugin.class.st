@@ -7,18 +7,16 @@ Further, we need to know the actual addresses in memory of symbols in the progra
 The primitive primitiveExecutableModules returns the names of the executable and the loaded libraries.
 "
 Class {
-	#name : 'VMProfileLinuxSupportPlugin',
-	#superclass : 'InterpreterPlugin',
+	#name : #VMProfileLinuxSupportPlugin,
+	#superclass : #InterpreterPlugin,
 	#instVars : [
 		'numModules',
 		'primErr'
 	],
-	#category : 'VMMaker-Plugins',
-	#package : 'VMMaker',
-	#tag : 'Plugins'
+	#category : 'VMMaker-Plugins'
 }
 
-{ #category : 'translation' }
+{ #category : #translation }
 VMProfileLinuxSupportPlugin class >> declareHeaderFilesIn: cg [
 
 	cg
@@ -28,7 +26,7 @@ VMProfileLinuxSupportPlugin class >> declareHeaderFilesIn: cg [
 		addHeaderFile: '#ifndef RTLD_NODELETE\# define RTLD_NODELETE 0\#endif' withCRs
 ]
 
-{ #category : 'iteration callbacks' }
+{ #category : #'iteration callbacks' }
 VMProfileLinuxSupportPlugin >> count: info num: size modules: ignored [
 	<returnTypeC: #int>
 	<var: #info type: #'struct dl_phdr_info *'>
@@ -38,7 +36,7 @@ VMProfileLinuxSupportPlugin >> count: info num: size modules: ignored [
 	^0
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 VMProfileLinuxSupportPlugin >> primitiveDLSymInLibrary [
 	"Answer the address of the symbol whose name is the first argument
 	 in the library whose name is the second argument, or nil if none."
@@ -78,7 +76,7 @@ VMProfileLinuxSupportPlugin >> primitiveDLSymInLibrary [
 	^interpreterProxy methodReturnValue: (interpreterProxy positiveMachineIntegerFor: addr asUnsignedIntegerPtr)
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 VMProfileLinuxSupportPlugin >> primitiveExecutableModules [
 	"Answer an Array of pairs of strings for executable modules (the VM executable and loaded libraries).
 	 The first element in each pair is the filename of the module.  The second element is either nil or
@@ -101,7 +99,7 @@ VMProfileLinuxSupportPlugin >> primitiveExecutableModules [
 	^interpreterProxy methodReturnValue: resultObj
 ]
 
-{ #category : 'primitives' }
+{ #category : #primitives }
 VMProfileLinuxSupportPlugin >> primitiveInterpretAddress [
 	"Answer the address of the interpret routine."
 	<export: true>
@@ -110,7 +108,7 @@ VMProfileLinuxSupportPlugin >> primitiveInterpretAddress [
 	^interpreterProxy methodReturnValue: (interpreterProxy positiveMachineIntegerFor: interpret asUnsignedIntegerPtr)
 ]
 
-{ #category : 'iteration callbacks' }
+{ #category : #'iteration callbacks' }
 VMProfileLinuxSupportPlugin >> reap: info module: size names: ignored [
 	<returnTypeC: #int>
 	| elfModuleName len moduleNameObj GetAttributeString |
@@ -141,7 +139,7 @@ VMProfileLinuxSupportPlugin >> reap: info module: size names: ignored [
 	^0
 ]
 
-{ #category : 'iteration callbacks' }
+{ #category : #'iteration callbacks' }
 VMProfileLinuxSupportPlugin >> reap: info module: size symlinks: ignored [
 	"like reap:module:names:, but follows symlinks"
 	<returnTypeC: #int>

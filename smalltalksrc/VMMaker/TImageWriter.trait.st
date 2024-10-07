@@ -1,11 +1,9 @@
 Trait {
-	#name : 'TImageWriter',
-	#category : 'VMMaker-ImageFormat',
-	#package : 'VMMaker',
-	#tag : 'ImageFormat'
+	#name : #TImageWriter,
+	#category : 'VMMaker-ImageFormat'
 }
 
-{ #category : 'translation' }
+{ #category : #translation }
 TImageWriter classSide >> staticallyResolvedSelectors [
 
 	^ super staticallyResolvedSelectors

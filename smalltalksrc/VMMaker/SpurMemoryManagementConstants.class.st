@@ -1,6 +1,6 @@
 Class {
-	#name : 'SpurMemoryManagementConstants',
-	#superclass : 'SharedPool',
+	#name : #SpurMemoryManagementConstants,
+	#superclass : #SharedPool,
 	#classVars : [
 		'DontTenure',
 		'MarkOnTenure',
@@ -11,7 +11,5 @@ Class {
 		'TenureByClass',
 		'TenureToShrinkRT'
 	],
-	#category : 'VMMaker-SpurMemoryManager',
-	#package : 'VMMaker',
-	#tag : 'SpurMemoryManager'
+	#category : 'VMMaker-SpurMemoryManager'
 }
