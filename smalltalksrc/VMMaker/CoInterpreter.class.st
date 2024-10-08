@@ -1794,6 +1794,7 @@ CoInterpreter >> ceStackOverflow: contextSwitchIfNotNil [
 { #category : #enilopmarts }
 CoInterpreter >> ceStaticSendInterpreted: aCompiledMethodOop [
 
+	<api>
 	| primitiveIndex |
 	instructionPointer := self popStack.
 	newMethod := aCompiledMethodOop.
