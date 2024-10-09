@@ -675,8 +675,7 @@ VMByteCodesTest >> testStaticSendMessageWithTwoArgumentsMakeAFrame [
 		method: aMethod;
 		stack: { 
 				receiver.
-				"arg1.
-				arg2 "}.
+				}.
 	stackBuilder buildStack.
 
 	interpreter methodDictLinearSearchLimit: 3.

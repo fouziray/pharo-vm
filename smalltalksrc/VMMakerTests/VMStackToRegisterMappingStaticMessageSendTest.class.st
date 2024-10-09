@@ -46,6 +46,40 @@ VMStackToRegisterMappingStaticMessageSendTest >> setUpTrampolines [
 ]
 
 { #category : #'tests - sends static' }
+VMStackToRegisterMappingStaticMessageSendTest >> testStaticSendOfCeStaticMethod [
+
+	| selector calledCompiledMethod staticCallerCompiledMethod staticCallerCogMethod |
+
+	self setUpTrampolines.
+	cogit computeEntryOffsets.
+
+	calledCompiledMethod := self createMethodOopFromHostMethod: (Object >> #yourself).
+	
+	selector := self newOldSpaceObjectWithSlots: 0.
+	
+	staticCallerCompiledMethod := methodBuilder newMethod
+			 literalAt: 0 put: (memory integerObjectOf: 13);
+			 literalAt: 1 put: calledCompiledMethod;
+			 literalAt: 2 put: selector;
+			 literalAt: 3 put: memory nilObject;
+			 bytecodes: #[32 "PushLiteral 1" 
+				246 1 "Static Send literal at 2"
+				92 "Return top"];
+			 buildMethod.
+
+	staticCallerCogMethod := cogit cog: staticCallerCompiledMethod selector: memory nilObject.
+
+	self createFramefulCallFrom: callerAddress.
+	
+	"Push receiver, arg, then send"
+	self pushAddress: memory falseObject.
+	interpreter push: callerAddress .
+	interpreter ceStaticSendInterpreted: calledCompiledMethod.
+	self assert: machineSimulator pc equals: cogit staticSendTrampoline.
+	self assert: machineSimulator classRegisterValue equals: calledCompiledMethod 
+]
+
+{ #category : #'tests - sends static' }
 VMStackToRegisterMappingStaticMessageSendTest >> testStaticSendOfCoggedMethodCallMethodDirectly [
 
 	| selector calledCompiledMethod calledCogMethod staticCallerCompiledMethod staticCallerCogMethod |
