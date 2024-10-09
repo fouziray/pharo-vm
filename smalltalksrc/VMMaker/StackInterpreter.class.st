@@ -13631,6 +13631,7 @@ StackInterpreter >> sendStaticLiteralMethodBytecode [
 
 	| methodLiteralOffset primitiveIndex |
 	methodLiteralOffset := self fetchByte.
+	
 	newMethod := self literal: methodLiteralOffset.
 
 	"argumentCount is used by primitives to

@@ -109,15 +109,15 @@ VMStackToRegisterMappingStaticMessageSendTest >> testStaticSendOfNonCoggedMethod
 
 	staticCallerCogMethod := cogit cog: staticCallerCompiledMethod selector: memory nilObject.
 
+
 	self createFramefulCallFrom: callerAddress.
 	
 	"Push receiver, arg, then send"
 	self pushAddress: memory falseObject.
 
 	self 
-		runFrom: (staticCallerCogMethod address + cogit noCheckEntryOffset) 
-		until: callerAddress. 
-
+		runFrom: (staticCallerCogMethod address + cogit noCheckEntryOffset)  
+		until: callerAddress.  
 	self assert: machineSimulator pc equals: cogit staticSendTrampoline
 ]
 
@@ -149,10 +149,10 @@ VMStackToRegisterMappingStaticMessageSendTest >> testStaticSendOfNonCoggedMethod
 	
 	"Push receiver, arg, then send"
 	self pushAddress: memory falseObject.
-
+	
 	self 
 		runFrom: (staticCallerCogMethod address + cogit noCheckEntryOffset) 
 		until: cogit staticSendTrampoline. 
-
-	self assert: machineSimulator pc equals: cogit staticSendTrampoline
+	self assert: machineSimulator pc equals: cogit staticSendTrampoline.
+	self assert: machineSimulator classRegisterValue equals: calledCompiledMethod 
 ]
