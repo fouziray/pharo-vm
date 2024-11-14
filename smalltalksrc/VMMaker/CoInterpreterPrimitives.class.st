@@ -1,7 +1,10 @@
 Class {
 	#name : #CoInterpreterPrimitives,
 	#superclass : #CoInterpreter,
-	#category : 'VMMaker-JIT'
+	#instVars : [
+		'cachedICProfilingTuples'
+	],
+	#category : #'VMMaker-JIT'
 }
 
 { #category : #'arithmetic primitives' }
@@ -669,9 +672,10 @@ CoInterpreterPrimitives >> profilingDataFor: cogMethod [
 	data := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: nSlots.
 	data ifNil: [^-1].
 	nEntries := cogit profilingDataFor: cogMethod into: data.
+    cogit setCachedICProfilingTuplesFor: cogMethod  with: [ data ].
 	nEntries = 0 ifTrue:
 		[^0].
 	nEntries < nSlots ifTrue:
 		[objectMemory shorten: data toIndexableSize: nEntries].
-	^data
+	^[data, cogit cachedICProfilingTuples ]
 ]
