@@ -677,5 +677,5 @@ CoInterpreterPrimitives >> profilingDataFor: cogMethod [
 		[^0].
 	nEntries < nSlots ifTrue:
 		[objectMemory shorten: data toIndexableSize: nEntries].
-	^[data, cogit cachedICProfilingTuples ]
+	^{data.  cogit cachedICProfilingTuples }
 ]
