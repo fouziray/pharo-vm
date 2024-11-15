@@ -8,6 +8,12 @@ Class {
 	#category : #'VMMaker-JIT'
 }
 
+{ #category : #accessing }
+CoInterpreterPrimitives >> cachedICProfilingTuples [
+
+	^ cachedICProfilingTuples
+]
+
 { #category : #initialization }
 CoInterpreterPrimitives >> initialize [ 
 	super initialize.
@@ -695,5 +701,5 @@ CoInterpreterPrimitives >> profilingDataFor: cogMethod [
 	cachedICProfilingTuplesIndex:= cachedICProfilingTuplesIndex + 1.
 	nEntries < nSlots ifTrue: [
 		objectMemory shorten: data toIndexableSize: nEntries ].
-	^ cachedICProfilingTuples 
+	^ self  cachedICProfilingTuples 
 ]
