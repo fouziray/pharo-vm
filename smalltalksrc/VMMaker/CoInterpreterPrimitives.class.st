@@ -695,5 +695,5 @@ CoInterpreterPrimitives >> profilingDataFor: cogMethod [
 	cachedICProfilingTuplesIndex:= cachedICProfilingTuplesIndex + 1.
 	nEntries < nSlots ifTrue: [
 		objectMemory shorten: data toIndexableSize: nEntries ].
-	^ cogit cachedICProfilingTuples asInteger
+	^ cachedICProfilingTuples 
 ]
