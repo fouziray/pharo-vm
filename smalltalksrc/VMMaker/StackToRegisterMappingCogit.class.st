@@ -138,8 +138,7 @@ Class {
 		'deadCode',
 		'useTwoPaths',
 		'counterIndex',
-		'staticSendTrampoline',
-		'cachedICProfilingTuples'
+		'staticSendTrampoline'
 	],
 	#pools : [
 		'CogCompilationConstants',
@@ -856,12 +855,6 @@ StackToRegisterMappingCogit >> bytecodeFixupClass [
 { #category : #trampolines }
 StackToRegisterMappingCogit >> cPICMissTrampolineFor: numArgs [
 	^picMissTrampolines at: (numArgs min: self numRegArgs + 1)
-]
-
-{ #category : #accessing }
-StackToRegisterMappingCogit >> cachedICProfilingTuples [
-
-	cachedICProfilingTuples
 ]
 
 { #category : #debugging }
@@ -4199,14 +4192,6 @@ StackToRegisterMappingCogit >> scanMethod [
 	
 	"ok"
 	^ 0
-]
-
-{ #category : #initialization }
-StackToRegisterMappingCogit >> setCachedICProfilingTuplesFor: aCoggedMethod with: aTuple [
-
-	cachedICProfilingTuples
-		at: aCoggedMethod
-		ifAbsentPut: [ aTuple asOrderedCollection ]
 ]
 
 { #category : #initialization }
