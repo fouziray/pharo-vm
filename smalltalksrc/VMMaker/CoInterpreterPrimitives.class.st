@@ -2,10 +2,23 @@ Class {
 	#name : #CoInterpreterPrimitives,
 	#superclass : #CoInterpreter,
 	#instVars : [
-		'cachedICProfilingTuples'
+		'cachedICProfilingTuples',
+		'cachedICProfilingTuplesIndex'
 	],
 	#category : #'VMMaker-JIT'
 }
+
+{ #category : #initialization }
+CoInterpreterPrimitives >> initialize [ 
+	super initialize.
+	cachedICProfilingTuplesIndex:=1.
+	cachedICProfilingTuples := memoryManager
+		         newObjectWithSlots: 10
+		         format: memoryManager arrayFormat
+		         classIndex: memoryManager arrayClassIndexPun.
+	
+
+]
 
 { #category : #'arithmetic primitives' }
 CoInterpreterPrimitives >> mcprimHashMultiply: receiverArg [
@@ -665,17 +678,22 @@ CoInterpreterPrimitives >> primitiveVoidVMStateForMethod [
 
 { #category : #'method introspection support' }
 CoInterpreterPrimitives >> profilingDataFor: cogMethod [
+
 	<var: #cogMethod type: #'CogMethod *'>
-	| cm nSlots nEntries data |
+	| cm nSlots nEntries data logIC |
 	cm := cogMethod methodObject.
-	nSlots := (objectMemory byteSizeOf: cm) - (self startPCOfMethod: cm) + objectMemory minSlotsForShortening.
-	data := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: nSlots.
-	data ifNil: [^-1].
+	nSlots := (objectMemory byteSizeOf: cm) - (self startPCOfMethod: cm)
+	          + objectMemory minSlotsForShortening.
+	data := objectMemory
+		        instantiateClass: (objectMemory splObj: ClassArray)
+		        indexableSize: nSlots.
+	data ifNil: [ ^ -1 ].
 	nEntries := cogit profilingDataFor: cogMethod into: data.
-    cogit setCachedICProfilingTuplesFor: cogMethod  with: [ data ].
-	nEntries = 0 ifTrue:
-		[^0].
-	nEntries < nSlots ifTrue:
-		[objectMemory shorten: data toIndexableSize: nEntries].
-	^{data.  cogit cachedICProfilingTuples }
+	"cogit setCachedICProfilingTuplesFor: cogMethod  with: [ data ]."
+	nEntries = 0 ifTrue: [ ^ 0 ].
+	memoryManager storePointer: cachedICProfilingTuplesIndex - 1 ofObject: cachedICProfilingTuples withValue: data .
+	cachedICProfilingTuplesIndex:= cachedICProfilingTuplesIndex + 1.
+	nEntries < nSlots ifTrue: [
+		objectMemory shorten: data toIndexableSize: nEntries ].
+	^ cogit cachedICProfilingTuples
 ]
