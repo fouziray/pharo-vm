@@ -223,21 +223,35 @@ CoInterpreterPrimitives >> primitiveMethodPCData [
 	self pop: 1 thenPush: data
 ]
 
-{ #category : #'method introspection primitives' }
+{ #category : #'as yet unclassified' }
 CoInterpreterPrimitives >> primitiveMethodProfilingData [
+
 	<export: true>
-	| methodReceiver data |
-	argumentCount ~= 0 ifTrue:
-		[^self primitiveFailFor: PrimErrBadNumArgs].
+	| methodReceiver data returnedData |
+	argumentCount ~= 0 ifTrue: [
+		^ self primitiveFailFor: PrimErrBadNumArgs ].
 	methodReceiver := self stackTop.
 	data := 0.
-	(self methodHasCogMethod: methodReceiver) ifTrue:
-		[data := self profilingDataFor: (self cogMethodOf: methodReceiver).
-		 data = -1 ifTrue:
-			[^self primitiveFailFor: PrimErrNoMemory]].
-	data = 0 ifTrue:
-		[data := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: 0].
-	self pop: 1 thenPush: data
+	(self methodHasCogMethod: methodReceiver) ifTrue: [
+		data := self profilingDataFor: (self cogMethodOf: methodReceiver).
+		data = -1 ifTrue: [ ^ self primitiveFailFor: PrimErrNoMemory ] ].
+	data = 0 ifTrue: [
+		data := objectMemory
+			        instantiateClass: (objectMemory splObj: ClassArray)
+			        indexableSize: 0 ].
+
+
+	returnedData := memoryManager
+		                newObjectWithSlots: 2
+		                format: memoryManager arrayFormat
+		                classIndex: memoryManager arrayClassIndexPun.
+	memoryManager storePointer: 0 ofObject: returnedData withValue: data.
+	memoryManager
+		storePointer: 1
+		ofObject: returnedData
+		withValue: self cachedICProfilingTuples.
+
+	self pop: 1 thenPush: returnedData
 ]
 
 { #category : #'indexing primitives' }
@@ -686,7 +700,7 @@ CoInterpreterPrimitives >> primitiveVoidVMStateForMethod [
 CoInterpreterPrimitives >> profilingDataFor: cogMethod [
 
 	<var: #cogMethod type: #'CogMethod *'>
-	| cm nSlots nEntries data logIC |
+	| cm nSlots nEntries data |
 	cm := cogMethod methodObject.
 	nSlots := (objectMemory byteSizeOf: cm) - (self startPCOfMethod: cm)
 	          + objectMemory minSlotsForShortening.
@@ -701,5 +715,5 @@ CoInterpreterPrimitives >> profilingDataFor: cogMethod [
 	cachedICProfilingTuplesIndex:= cachedICProfilingTuplesIndex + 1.
 	nEntries < nSlots ifTrue: [
 		objectMemory shorten: data toIndexableSize: nEntries ].
-	^ self  cachedICProfilingTuples 
+	^ data 
 ]
