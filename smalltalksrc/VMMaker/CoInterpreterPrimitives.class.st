@@ -242,7 +242,7 @@ CoInterpreterPrimitives >> primitiveMethodProfilingData [
 
 
 	returnedData := memoryManager
-		                newObjectWithSlots: 2
+		                newObjectWithSlots: 10
 		                format: memoryManager arrayFormat
 		                classIndex: memoryManager arrayClassIndexPun.
 	memoryManager storePointer: 0 ofObject: returnedData withValue: data.
