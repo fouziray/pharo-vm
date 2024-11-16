@@ -17,13 +17,7 @@ CoInterpreterPrimitives >> cachedICProfilingTuples [
 { #category : #initialization }
 CoInterpreterPrimitives >> initialize [ 
 	super initialize.
-	cachedICProfilingTuplesIndex:=1.
-	cachedICProfilingTuples := memoryManager
-		         newObjectWithSlots: 10
-		         format: memoryManager arrayFormat
-		         classIndex: memoryManager arrayClassIndexPun.
-	
-
+	cachedICProfilingTuples :=0.
 ]
 
 { #category : #'arithmetic primitives' }
@@ -227,7 +221,7 @@ CoInterpreterPrimitives >> primitiveMethodPCData [
 CoInterpreterPrimitives >> primitiveMethodProfilingData [
 
 	<export: true>
-	| methodReceiver data returnedData |
+	| methodReceiver data returnedData cache dataSize cacheSize totalSize fusedArray index |
 	argumentCount ~= 0 ifTrue: [
 		^ self primitiveFailFor: PrimErrBadNumArgs ].
 	methodReceiver := self stackTop.
@@ -240,18 +234,34 @@ CoInterpreterPrimitives >> primitiveMethodProfilingData [
 			        instantiateClass: (objectMemory splObj: ClassArray)
 			        indexableSize: 0 ].
 
+cache := cachedICProfilingTuples .
+    cache = 0 ifTrue: [
+        cache := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: 0 ].
 
-	returnedData := memoryManager
-		                newObjectWithSlots: 10
-		                format: memoryManager arrayFormat
-		                classIndex: memoryManager arrayClassIndexPun.
-	memoryManager storePointer: 0 ofObject: returnedData withValue: data.
-	memoryManager
-		storePointer: 1
-		ofObject: returnedData
-		withValue: self cachedICProfilingTuples.
+    "Determine sizes and create a new fused array"
+    dataSize := objectMemory slotSizeOf: data.
+    cacheSize := objectMemory slotSizeOf: cache.
+    totalSize := dataSize + cacheSize.
 
-	self pop: 1 thenPush: returnedData
+    fusedArray := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: totalSize.
+
+    "Copy contents of data array into fused array"
+    index := 1.
+    1 to: dataSize do: [:i | 
+	memoryManager storePointer: i - 1 ofObject: fusedArray withValue:  (objectMemory fetchPointer: i-1 ofObject: data).
+        index := index + 1
+    ].
+
+    "Copy contents of cache array into fused array"
+    1 to: cacheSize do: [:i | 
+        memoryManager storePointer: i - 1 ofObject: fusedArray withValue:  (objectMemory fetchPointer: i-1 ofObject: cache).
+        index := index + 1
+    ].
+cachedICProfilingTuples:= fusedArray .
+    "Push the fused array back onto the stack"
+    self pop: 1 thenPush: fusedArray
+"
+	self pop: 1 thenPush: returnedData"
 ]
 
 { #category : #'indexing primitives' }
@@ -711,8 +721,8 @@ CoInterpreterPrimitives >> profilingDataFor: cogMethod [
 	nEntries := cogit profilingDataFor: cogMethod into: data.
 	"cogit setCachedICProfilingTuplesFor: cogMethod  with: [ data ]."
 	nEntries = 0 ifTrue: [ ^ 0 ].
-	memoryManager storePointer: cachedICProfilingTuplesIndex - 1 ofObject: cachedICProfilingTuples withValue: data .
-	cachedICProfilingTuplesIndex:= cachedICProfilingTuplesIndex + 1.
+	"memoryManager storePointer: cachedICProfilingTuplesIndex - 1 ofObject: cachedICProfilingTuples withValue: data .
+	cachedICProfilingTuplesIndex:= cachedICProfilingTuplesIndex + 1."
 	nEntries < nSlots ifTrue: [
 		objectMemory shorten: data toIndexableSize: nEntries ].
 	^ data 
