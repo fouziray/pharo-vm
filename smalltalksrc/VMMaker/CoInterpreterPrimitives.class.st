@@ -257,7 +257,7 @@ cache := cachedICProfilingTuples .
         memoryManager storePointer: i - 1 ofObject: fusedArray withValue:  (objectMemory fetchPointer: i-1 ofObject: cache).
         index := index + 1
     ].
-memoryManager pinObject: fusedArray.
+objectMemory pinObject: fusedArray.
 cachedICProfilingTuples:= fusedArray .
     "Push the fused array back onto the stack"
 
