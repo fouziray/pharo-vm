@@ -233,8 +233,8 @@ CoInterpreterPrimitives >> primitiveMethodProfilingData [
 		data := objectMemory
 			        instantiateClass: (objectMemory splObj: ClassArray)
 			        indexableSize: 0 ].
-	cache := self arrayValueOf: cachedICProfilingTuples.
-	returnedData := self arrayValueOf: data.
+	cache :=  cachedICProfilingTuples.
+	"returnedData := self arrayValueOf: data."
 	cache = 0 ifTrue: [
 		cache := objectMemory
 			         instantiateClass: (objectMemory splObj: ClassArray)
@@ -255,7 +255,7 @@ CoInterpreterPrimitives >> primitiveMethodProfilingData [
 		memoryManager
 			storePointer: index - 1
 			ofObject: fusedArray
-			withValue: (objectMemory fetchPointer: i - 1 ofObject: returnedData).
+			withValue: (objectMemory fetchPointer: i - 1 ofObject: data).
 		index := index + 1 ].
 
 	"Copy contents of cache array into fused array"
