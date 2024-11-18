@@ -234,36 +234,42 @@ CoInterpreterPrimitives >> primitiveMethodProfilingData [
 			        instantiateClass: (objectMemory splObj: ClassArray)
 			        indexableSize: 0 ].
 
-cache := cachedICProfilingTuples .
-    cache = 0 ifTrue: [
-        cache := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: 0 ].
+	cachedICProfilingTuples = 0 ifTrue: [
+		cachedICProfilingTuples := objectMemory
+			                           instantiateClass:
+			                           (objectMemory splObj: ClassArray)
+			                           indexableSize: 0 ].
 
-    "Determine sizes and create a new fused array"
-    dataSize := objectMemory slotSizeOf: data.
-    cacheSize := objectMemory slotSizeOf: cache.
-    totalSize := dataSize + cacheSize.
+	"Determine sizes and create a new fused array"
+	dataSize := objectMemory slotSizeOf: data.
+	cacheSize := objectMemory slotSizeOf: cachedICProfilingTuples.
+	totalSize := dataSize + cacheSize.
 
-    fusedArray := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: totalSize.
+	fusedArray := objectMemory
+		              instantiateClass: (objectMemory splObj: ClassArray)
+		              indexableSize: totalSize.
 
-    "Copy contents of data array into fused array"
-    index := 1.
-    1 to: dataSize do: [:i | 
-	memoryManager storePointer: i - 1 ofObject: fusedArray withValue:  (objectMemory fetchPointer: i-1 ofObject: data).
-        index := index + 1
-    ].
+	"Copy contents of data array into fused array"
+	index := 1.
+	1 to: dataSize do: [ :i |
+		memoryManager
+			storePointer: index - 1
+			ofObject: fusedArray
+			withValue: (objectMemory fetchPointer: i - 1 ofObject: data).
+		index := index + 1 ].
 
-    "Copy contents of cache array into fused array"
-    1 to: cacheSize do: [:i | 
-        memoryManager storePointer: i - 1 ofObject: fusedArray withValue:  (objectMemory fetchPointer: i-1 ofObject: cache).
-        index := index + 1
-    ].
-objectMemory pinObject: fusedArray.
-cachedICProfilingTuples:= fusedArray .
-    "Push the fused array back onto the stack"
+	"Copy contents of cache array into fused array"
+	1 to: cacheSize do: [ :i |
+		memoryManager
+			storePointer: index - 1
+			ofObject: fusedArray
+			withValue:
+			(objectMemory fetchPointer: i - 1 ofObject: cachedICProfilingTuples).
+		index := index + 1 ].
+	objectMemory pinObject: fusedArray.
+	cachedICProfilingTuples := fusedArray.
 
-    self pop: 1 thenPush: fusedArray
-"
-	self pop: 1 thenPush: returnedData"
+	self pop: 1 thenPush: fusedArray.
 ]
 
 { #category : #'indexing primitives' }
