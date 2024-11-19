@@ -304,18 +304,22 @@ CoInterpreter class >> initializeMiscConstants [
 
 { #category : #initialization }
 CoInterpreter class >> initializePrimitiveTable [
+
 	super initializePrimitiveTable.
 	PrimNumberHashMultiply := 159.
-	self assert: (PrimitiveTable at: PrimNumberHashMultiply + 1) = #primitiveHashMultiply.
+	self assert: (PrimitiveTable at: PrimNumberHashMultiply + 1)
+		= #primitiveHashMultiply.
 
-	#(216 253) do:
-		[:pidx| self assert: (PrimitiveTable at: pidx + 1) = #primitiveFail].
-	self assert: (PrimitiveTable at: 215 + 1) = #primitiveFlushCacheByMethod.
+	#( 216 253 ) do: [ :pidx |
+		self assert: (PrimitiveTable at: pidx + 1) = #primitiveFail ].
+	self assert:
+		(PrimitiveTable at: 215 + 1) = #primitiveFlushCacheByMethod.
 	PrimitiveTable
 		at: 253 + 1 put: #primitiveCollectCogCodeConstituents;
 		at: 215 + 1 put: #primitiveVoidVMStateForMethod;
 		at: 216 + 1 put: #primitiveMethodXray;
-		at: 217 + 1 put: #primitiveMethodProfilingData
+		at: 217 + 1 put: #primitiveMethodProfilingData;
+		at: 219 + 1 put: #primitiveMethodProfilingDataInfoPersisted
 ]
 
 { #category : #documentation }
