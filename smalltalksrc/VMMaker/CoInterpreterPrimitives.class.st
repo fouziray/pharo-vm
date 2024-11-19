@@ -266,7 +266,7 @@ CoInterpreterPrimitives >> primitiveMethodProfilingData [
 			withValue: (objectMemory fetchPointer: i - 1 ofObject: cache).
 		index := index + 1 ].
 
-	memoryManager moveToPermSpace: fusedArray.
+"	memoryManager moveToPermSpace: fusedArray."
 	objectMemory pinObject: fusedArray.
 	cachedICProfilingTuples := fusedArray.
 
