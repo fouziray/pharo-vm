@@ -138,7 +138,10 @@ Class {
 		'deadCode',
 		'useTwoPaths',
 		'counterIndex',
-		'staticSendTrampoline'
+		'staticSendTrampoline0',
+		'staticSendTrampoline1',
+		'staticSendTrampoline2',
+		'staticSendTrampoline3'
 	],
 	#pools : [
 		'CogCompilationConstants',
@@ -2468,8 +2471,8 @@ StackToRegisterMappingCogit >> genSendDirectedSuper: selectorIndex numArgs: numA
 
 { #category : #'bytecode generator support' }
 StackToRegisterMappingCogit >> genSendStaticMessage [
-| methodLiteralIndex argumentCount methodToGoTo jumpInterpret mergeJump |
-" i need to read literal of the stack frame, found at byte1 index, after that load it to temp, we check the method is cogged or not to jump to it via trampoline"
+	| methodLiteralIndex argumentCount methodToGoTo jumpInterpret mergeJump staticSendTrampoline |
+	" i need to read literal of the stack frame, found at byte1 index, after that load it to temp, we check the method is cogged or not to jump to it via trampoline"
 
 	methodLiteralIndex := byte1.
 	
@@ -2497,11 +2500,14 @@ StackToRegisterMappingCogit >> genSendStaticMessage [
 	jumpInterpret jmpTarget: self Label.
 	
 	"If the arguments are in registers, push them to the stack before going to the interpreter"
-	argumentCount < self numRegArgs ifTrue: [
-		self PushR: ReceiverResultReg.
-		argumentCount > 0 ifTrue: [ self PushR: Arg0Reg ].
-		argumentCount > 1 ifTrue: [ self PushR: Arg1Reg ].
-	].
+	argumentCount = 0 ifTrue: [ 
+		staticSendTrampoline := staticSendTrampoline0 ].
+	argumentCount = 1 ifTrue: [ 
+		staticSendTrampoline := staticSendTrampoline1 ].
+	argumentCount = 2 ifTrue: [ 
+		staticSendTrampoline := staticSendTrampoline2 ].
+	argumentCount > 2 ifTrue: [ 
+		staticSendTrampoline := staticSendTrampoline3 ].
 	self CallRT: staticSendTrampoline. "Receiver and Args travel in the stack"
 
 	mergeJump jmpTarget: self Label.
@@ -2817,6 +2823,35 @@ StackToRegisterMappingCogit >> genSpecialSelectorComparison [
 		  genMarshalledSend: index negated - 1
 		  numArgs: 1
 		  sendTable: ordinarySendTrampolines
+]
+
+{ #category : #initialization }
+StackToRegisterMappingCogit >> genStaticSendTrampolineFor: aRoutine numArgs: numArgs called: aString arg: regOrConst0 [
+	"Generate a trampoline with four arguments.
+	 Hack: a negative value indicates an abstract register, a non-negative value indicates a constant."
+	<var: #aRoutine type: #'void *'>
+	<var: #aString type: #'char *'>
+	| startAddress |
+	<inline: false>
+	startAddress := methodZoneBase.
+	self zeroOpcodeIndex.
+	backEnd genPushRegisterArgsForNumArgs: numArgs scratchReg: SendNumArgsReg.
+	objectRepresentation selectorIndexDereferenceRoutine ifNotNil: [:routine| 
+		backEnd hasLinkRegister ifTrue: [self PushR: LinkReg].
+		self Call: routine.
+		backEnd hasLinkRegister ifTrue: [self PopR: LinkReg]. ].
+	self genTrampolineFor: aRoutine
+		called: aString
+		numArgs: 1
+		arg: regOrConst0
+		arg: nil
+		arg: nil
+		arg: nil
+		regsToSave: self emptyRegisterMask
+		pushLinkReg: true
+		resultReg: NoReg
+		appendOpcodes: true.
+	^startAddress
 ]
 
 { #category : #'bytecode generator support' }
@@ -3298,11 +3333,27 @@ StackToRegisterMappingCogit >> generateSistaRuntime [
 
 { #category : #initialization }
 StackToRegisterMappingCogit >> generateStaticSendTrampoline [
-
-	staticSendTrampoline := self
-		                        genTrampolineFor: #ceStaticSendInterpreted:
-		                        called: 'ceStaticSendInterpreted'
-		                        arg: ClassReg
+		
+	staticSendTrampoline0 := (self
+				 genStaticSendTrampolineFor: #ceStaticSendInterpreted:
+				 numArgs: 0
+				 called: (self trampolineName: 'ceStaticSend' numArgs: 0)
+				 arg: ClassReg).
+	staticSendTrampoline1 := (self
+				 genStaticSendTrampolineFor: #ceStaticSendInterpreted:
+				 numArgs: 1
+				 called: (self trampolineName: 'ceStaticSend' numArgs: 1)
+				 arg: ClassReg).
+	staticSendTrampoline2 := (self
+				 genStaticSendTrampolineFor: #ceStaticSendInterpreted:
+				 numArgs: 2
+				 called: (self trampolineName: 'ceStaticSend' numArgs: 2)
+				 arg: ClassReg).
+	staticSendTrampoline3 := (self
+				 genStaticSendTrampolineFor: #ceStaticSendInterpreted:
+				 numArgs: 3
+				 called: (self trampolineName: 'ceStaticSend' numArgs: 3)
+				 arg: ClassReg)
 ]
 
 { #category : #initialization }
@@ -4729,18 +4780,6 @@ StackToRegisterMappingCogit >> stackEntryIsBoolean: simStackEntry [
 StackToRegisterMappingCogit >> stackTopIsBoolean [
 	<inline: true>
 	^simStackPtr >= methodOrBlockNumArgs and: [self stackEntryIsBoolean: self ssTop]
-]
-
-{ #category : #accessing }
-StackToRegisterMappingCogit >> staticSendTrampoline [
-	<doNotGenerate>
-	^ staticSendTrampoline
-]
-
-{ #category : #accessing }
-StackToRegisterMappingCogit >> staticSendTrampoline: aValue [
-	<doNotGenerate>
-	staticSendTrampoline := aValue
 ]
 
 { #category : #debugging }
