@@ -2495,7 +2495,13 @@ StackToRegisterMappingCogit >> genSendStaticMessage [
 	
 	"Call the trampoline to continue execution in the interpreter"
 	jumpInterpret jmpTarget: self Label.
-	self PushR: ReceiverResultReg.
+	
+	"If the arguments are in registers, push them to the stack before going to the interpreter"
+	argumentCount < self numRegArgs ifTrue: [
+		self PushR: ReceiverResultReg.
+		argumentCount > 0 ifTrue: [ self PushR: Arg0Reg ].
+		argumentCount > 1 ifTrue: [ self PushR: Arg1Reg ].
+	].
 	self CallRT: staticSendTrampoline. "Receiver and Args travel in the stack"
 
 	mergeJump jmpTarget: self Label.
