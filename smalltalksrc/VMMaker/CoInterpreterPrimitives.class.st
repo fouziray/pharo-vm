@@ -1,26 +1,28 @@
 Class {
-	#name : #CoInterpreterPrimitives,
-	#superclass : #CoInterpreter,
+	#name : 'CoInterpreterPrimitives',
+	#superclass : 'CoInterpreter',
 	#instVars : [
 		'cachedICProfilingTuples',
 		'cachedICProfilingTuplesIndex'
 	],
-	#category : #'VMMaker-JIT'
+	#category : 'VMMaker-JIT',
+	#package : 'VMMaker',
+	#tag : 'JIT'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 CoInterpreterPrimitives >> cachedICProfilingTuples [
 
 	^ cachedICProfilingTuples
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 CoInterpreterPrimitives >> initialize [ 
 	super initialize.
 	cachedICProfilingTuples :=0.
 ]
 
-{ #category : #'arithmetic primitives' }
+{ #category : 'arithmetic primitives' }
 CoInterpreterPrimitives >> mcprimHashMultiply: receiverArg [
 	"Machine code primitive for hash multiply. c.f. primitiveHashMultiply.
 	 mcprims consume receiver and arguments as parameters and answer the
@@ -40,7 +42,7 @@ CoInterpreterPrimitives >> mcprimHashMultiply: receiverArg [
 	^objectMemory integerObjectOf: (value * HashMultiplyConstant bitAnd: 16rFFFFFFF)
 ]
 
-{ #category : #'method introspection support' }
+{ #category : 'method introspection support' }
 CoInterpreterPrimitives >> pcDataFor: cogMethod [
 	<var: #cogMethod type: #'CogMethod *'>
 	| cm nSlots nEntries data |
@@ -56,7 +58,7 @@ CoInterpreterPrimitives >> pcDataFor: cogMethod [
 	^data
 ]
 
-{ #category : #'method introspection primitives' }
+{ #category : 'method introspection primitives' }
 CoInterpreterPrimitives >> primitiveAllMethodsCompiledToMachineCode [
 	<export: true>
 	<option: #SistaCogit>
@@ -74,7 +76,7 @@ CoInterpreterPrimitives >> primitiveAllMethodsCompiledToMachineCode [
 	self pop: 1 thenPush: arrayObj
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 CoInterpreterPrimitives >> primitiveCollectCogCodeConstituents [
 	"Answer the contents of the code zone as an array of pair-wise element, address in ascending
 	 address order. Answer a string for a runtime routine or abstract label (beginning, end, etc),
@@ -95,7 +97,7 @@ CoInterpreterPrimitives >> primitiveCollectCogCodeConstituents [
 	self pop: argumentCount + 1 thenPush: constituents
 ]
 
-{ #category : #'indexing primitives' }
+{ #category : 'indexing primitives' }
 CoInterpreterPrimitives >> primitiveContextXray [
 	"Lift the veil from a context and answer an integer describing its interior state.
 	 Used for e.g. VM tests so they can verify they're testing what they think they're testing.
@@ -128,7 +130,7 @@ CoInterpreterPrimitives >> primitiveContextXray [
 	self pop: 1 thenPush: (objectMemory integerObjectOf: flags)
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 CoInterpreterPrimitives >> primitiveFlushCacheByMethod [
 	"The receiver is a compiledMethod.  Clear all entries in the method lookup cache that
 	 refer to this method, presumably because it has been redefined, overridden or removed.
@@ -137,7 +139,7 @@ CoInterpreterPrimitives >> primitiveFlushCacheByMethod [
 	cogit unlinkSendsTo: self stackTop andFreeIf: false
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 CoInterpreterPrimitives >> primitiveFlushCacheBySelector [
 	"The receiver is a message selector.  Clear all entries in the method lookup cache
 	 with this selector, presumably because an associated method has been redefined.
@@ -157,7 +159,7 @@ CoInterpreterPrimitives >> primitiveFlushCacheBySelector [
 		isMNUSelector: (selector = (objectMemory splObj: SelectorDoesNotUnderstand))
 ]
 
-{ #category : #'trampoline support' }
+{ #category : 'trampoline support' }
 CoInterpreterPrimitives >> primitiveFunctionPointerAddress [
 	<api>
 	<returnTypeC: #usqInt>
@@ -165,7 +167,7 @@ CoInterpreterPrimitives >> primitiveFunctionPointerAddress [
 		inSmalltalk: [cogit simulatedReadWriteVariableAddress: #primitiveFunctionPointer in: self]
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 CoInterpreterPrimitives >> primitiveLongRunningPrimitiveSemaphore [
 	"Primitive. Install the semaphore to be used for collecting long-running primitives, 
 	 or nil if no semaphore should be used."
@@ -200,7 +202,7 @@ CoInterpreterPrimitives >> primitiveLongRunningPrimitiveSemaphore [
 		[self siglong: reenterInterpreter jmp: ReturnToInterpreter]
 ]
 
-{ #category : #'method introspection primitives' }
+{ #category : 'method introspection primitives' }
 CoInterpreterPrimitives >> primitiveMethodPCData [
 	<export: true>
 	| methodReceiver data |
@@ -217,7 +219,7 @@ CoInterpreterPrimitives >> primitiveMethodPCData [
 	self pop: 1 thenPush: data
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 CoInterpreterPrimitives >> primitiveMethodProfilingData [
 
 	<export: true>
@@ -236,7 +238,7 @@ CoInterpreterPrimitives >> primitiveMethodProfilingData [
 	self pop: 1 thenPush: data
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 CoInterpreterPrimitives >> primitiveMethodProfilingDataInfoPersisted [
 
 	<export: true>
@@ -292,7 +294,7 @@ CoInterpreterPrimitives >> primitiveMethodProfilingDataInfoPersisted [
 	self pop: 1 thenPush: fusedArray
 ]
 
-{ #category : #'indexing primitives' }
+{ #category : 'indexing primitives' }
 CoInterpreterPrimitives >> primitiveMethodXray [
 
 	"Lift the veil from a method and answer an integer describing the interior state
@@ -348,13 +350,13 @@ CoInterpreterPrimitives >> primitiveMethodXray [
 	self pop: 1 thenPush: (objectMemory integerObjectOf: flags)
 ]
 
-{ #category : #'other primitives' }
+{ #category : 'other primitives' }
 CoInterpreterPrimitives >> primitiveMinimumUnusedHeadroom [
 	<export: true>
 	self methodReturnValue: (self integerObjectOf: self minimumUnusedHeadroom)
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 CoInterpreterPrimitives >> primitiveObjectAt [
 "Defined for CompiledMethods only"
 	| thisReceiver rawHeader realHeader index |
@@ -375,7 +377,7 @@ CoInterpreterPrimitives >> primitiveObjectAt [
 					ifFalse: [objectMemory fetchPointer: index - 1 ofObject: thisReceiver])
 ]
 
-{ #category : #'object access primitives' }
+{ #category : 'object access primitives' }
 CoInterpreterPrimitives >> primitiveObjectAtPut [
 	"Store a literal into a CompiledMethod at the given index. Defined for CompiledMethods only."
 	| thisReceiver rawHeader realHeader index newValue |
@@ -407,7 +409,7 @@ CoInterpreterPrimitives >> primitiveObjectAtPut [
 	self pop: 3 thenPush: newValue
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 CoInterpreterPrimitives >> primitiveProfileSemaphore [
 	"Primitive. Install the semaphore to be used for profiling, 
 	or nil if no semaphore should be used.
@@ -442,7 +444,7 @@ CoInterpreterPrimitives >> primitiveProfileSemaphore [
 		[self siglong: reenterInterpreter jmp: ReturnToInterpreter]
 ]
 
-{ #category : #'method introspection primitives' }
+{ #category : 'method introspection primitives' }
 CoInterpreterPrimitives >> primitiveResetCountersInMethod [
 	<export: true>
 	<option: #SistaCogit>
@@ -454,7 +456,7 @@ CoInterpreterPrimitives >> primitiveResetCountersInMethod [
 		[cogit resetCountersIn: (self cogMethodOf: methodReceiver)]
 ]
 
-{ #category : #'process primitives' }
+{ #category : 'process primitives' }
 CoInterpreterPrimitives >> primitiveSignal [
 	"Synchronously signal the semaphore.
 	 This may change the active process as a result."
@@ -469,7 +471,7 @@ CoInterpreterPrimitives >> primitiveSignal [
 		[self forProcessPrimitiveReturnToExecutivePostContextSwitch: inInterpreter]
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 CoInterpreterPrimitives >> primitiveSnapshot [
 	"Save a normal snapshot under the same name as it was loaded
 	 unless it has been renamed by the last primitiveImageName.
@@ -485,7 +487,7 @@ CoInterpreterPrimitives >> primitiveSnapshot [
 	self unreachable
 ]
 
-{ #category : #'control primitives' }
+{ #category : 'control primitives' }
 CoInterpreterPrimitives >> primitiveTerminateTo [
 	"Primitive. Terminate up the context stack from the receiver up to but not including
 	 the argument, if previousContext is on my Context stack. Make previousContext my
@@ -664,7 +666,7 @@ CoInterpreterPrimitives >> primitiveTerminateTo [
 	self assert: stackPage = stackPages mostRecentlyUsedPage
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 CoInterpreterPrimitives >> primitiveVoidVMState [
 	"Void all internal VM state in the stack and machine code zones
 
@@ -677,7 +679,7 @@ CoInterpreterPrimitives >> primitiveVoidVMState [
 	self unreachable
 ]
 
-{ #category : #'system control primitives' }
+{ #category : 'system control primitives' }
 CoInterpreterPrimitives >> primitiveVoidVMStateForMethod [
 	"The receiver (or first argument) must be a compiledMethod.  The optional (or second) argument must be a
 	 boolean. Clear all VM state associated with the method, including any machine code, or machine code pcs
@@ -734,7 +736,7 @@ CoInterpreterPrimitives >> primitiveVoidVMStateForMethod [
 	self pop: argumentCount
 ]
 
-{ #category : #'method introspection support' }
+{ #category : 'method introspection support' }
 CoInterpreterPrimitives >> profilingDataFor: cogMethod [
 
 	<var: #cogMethod type: #'CogMethod *'>
