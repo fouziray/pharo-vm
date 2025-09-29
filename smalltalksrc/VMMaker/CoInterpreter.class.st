@@ -1586,7 +1586,9 @@ CoInterpreter >> ceSend: selector super: superNormalBar to: rcvr numArgs: numArg
 						[:newCogMethod| cogMethod := newCogMethod]]].
 		 cogMethod selector = selector
 			ifTrue:
-				[cogit
+				[
+
+				cogit
 					linkSendAt: (stackPages longAt: stackPointer)
 					in: (self mframeHomeMethod: framePointer)
 					to: cogMethod
@@ -1797,19 +1799,58 @@ CoInterpreter >> ceStackOverflow: contextSwitchIfNotNil [
 
 ]
 
-{ #category : 'enilopmarts' }
-CoInterpreter >> ceStaticSendInterpreted: aCompiledMethodOop [
+{ #category : 'trampolines' }
+CoInterpreter >> ceStaticSend: methodToGoTo to: rcvr numArgs: numArgs [
+	"Entry-point for an unlinked static send in a CogMethod.  Smalltalk stack looks like
+					receiver
+					args
+		head sp ->	sender return pc
+		
+	If an MNU then defer to handleMNUInMachineCodeTo:... which will dispatch the MNU and
+	may choose to allocate a closed PIC with a fast MNU dispatch for this send.  Otherwise
+	attempt to link the send site as efficiently as possible.  All link attempts may fail; e.g.
+	because we're out of code memory.
+
+	Continue execution via either executeMethod or interpretMethodFromMachineCode:
+	depending on whether the target method is cogged or not."
 
 	<api>
-	| primitiveIndex |
-	instructionPointer := self popStack.
-	newMethod := aCompiledMethodOop.
+	<inline: false>
+	<var: #cogMethod type: #'CogMethod *'>
+	| cogMethod primitiveIndex |
+	cogit assertCStackWellAligned.
+	self assert: (objectMemory addressCouldBeOop: rcvr).
 
+	newMethod := methodToGoTo.
+	"Maybe we need to put the selector as argument?"
+	messageSelector := objectMemory nilObject.
+	argumentCount := numArgs.
 	primitiveIndex := self primitiveIndexOf: newMethod.
-	primitiveFunctionPointer := self functionPointerFor: primitiveIndex inClass: nil.
+	primitiveFunctionPointer := self
+		                            functionPointerFor: primitiveIndex
+		                            inClass: nil.
 
-	self executeNewMethod: false.
-	self returnToExecutive: false	
+	cogMethod := self
+		             ensureMethodIsCogged: newMethod
+		             maybeClosure: objectMemory nilObject.
+	"Method found and has a cog method.  Attempt to link to it.  The receiver's class may be young.
+	 If the Cogit can't store young classes in inline caches we can link to an open PIC instead."
+	(self maybeMethodHasCogMethod: newMethod) ifTrue: [
+		cogMethod := self cogMethodOf: newMethod.
+
+		cogit
+			linkSendAt: (stackPages longAt: stackPointer)
+			in: (self mframeHomeMethod: framePointer)
+			to: cogMethod
+			offset: cogit noCheckEntryOffset
+			receiver: rcvr.
+
+		instructionPointer := self popStack.
+		self executeNewMethod.
+		self unreachable ].
+	instructionPointer := self popStack.
+	self interpretMethodFromMachineCode.
+	self unreachable
 ]
 
 { #category : 'debug support' }
@@ -2535,21 +2576,22 @@ CoInterpreter >> executeFullCogBlock: cogMethod closure: closure mayContextSwitc
 { #category : 'message sending' }
 CoInterpreter >> executeNewMethod: eagerlyCompile [
 	"if not primitive, or primitive failed, activate the method"
+
 	<inline: true>
-	| inInterpreter |	
+	| inInterpreter |
 	inInterpreter := self isInstructionPointerInInterpreter:
 		                 instructionPointer.
 	self executePrimitiveFromInterpreter: inInterpreter ifFail: [
 		| methodHeader |
-		eagerlyCompile ifTrue: [
-			"Eagerly compile it if appropriate so that doits are fast."
+		1halt.
+		eagerlyCompile ifTrue: [ "Eagerly compile it if appropriate so that doits are fast."
 			methodHeader := self rawHeaderOf: newMethod.
 			(self isCogMethodReference: methodHeader) ifFalse: [
 				(self methodWithHeaderShouldBeCogged: methodHeader)
 					ifTrue: [
 						cogit cog: newMethod selector: objectMemory nilObject.
 						methodHeader := self rawHeaderOf: newMethod ]
-					ifFalse: [ self maybeFlagMethodAsInterpreted: newMethod ] ]].
+					ifFalse: [ self maybeFlagMethodAsInterpreted: newMethod ] ] ].
 		"if not primitive, or primitive failed, activate the method"
 		self activateNewMethod ]
 ]
@@ -4638,6 +4680,7 @@ CoInterpreter >> return: returnValue toExecutive: inInterpreter [
 	 longjmp-ing back to the interpreter or simply returning, depending on where we are."
 
 	cogit assertCStackWellAligned.
+	1halt.
 	(self isMachineCodeFrame: framePointer) ifTrue:
 		[self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer imbar: false line: #'__LINE__'.
 		 self push: instructionPointer.
