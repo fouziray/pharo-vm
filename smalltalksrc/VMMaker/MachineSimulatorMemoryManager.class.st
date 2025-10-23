@@ -9,6 +9,12 @@ Class {
 	#tag : 'JITSimulation'
 }
 
+{ #category : 'as yet unclassified' }
+MachineSimulatorMemoryManager >> machineSimulator [
+
+	^ machineSimulator
+]
+
 { #category : 'accessing' }
 MachineSimulatorMemoryManager >> machineSimulator: anUnicornARMv8Simulator [ 
 	machineSimulator := anUnicornARMv8Simulator

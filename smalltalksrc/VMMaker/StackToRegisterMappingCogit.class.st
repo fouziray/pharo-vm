@@ -4833,7 +4833,7 @@ StackToRegisterMappingCogit >> stackTopIsBoolean [
 	^simStackPtr >= methodOrBlockNumArgs and: [self stackEntryIsBoolean: self ssTop]
 ]
 
-{ #category : 'accessing' }
+{ #category : 'as yet unclassified' }
 StackToRegisterMappingCogit >> staticSendTrampoline0 [
 
 	<doNotGenerate>
