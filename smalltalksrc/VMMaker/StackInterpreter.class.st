@@ -623,7 +623,7 @@ StackInterpreter class >> initializeBytecodeTable [
 	^ self initializeBytecodeTableForSistaV1
 ]
 
-{ #category : 'initialization' }
+{ #category : 'as yet unclassified' }
 StackInterpreter class >> initializeBytecodeTableForSistaV1 [
 	"See e.g. the cass comment for EncoderForSistaV1"
 	"StackInterpreter initializeBytecodeTableForSistaV1"
