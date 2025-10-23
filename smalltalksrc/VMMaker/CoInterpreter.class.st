@@ -1815,7 +1815,7 @@ CoInterpreter >> ceStaticSend: methodToGoTo to: rcvr numArgs: numArgs [
 	<api>
 	<inline: false>
 	<var: #cogMethod type: #'CogMethod *'>
-	<var: #newCogMethod type: #'CogMethod *'>
+	
 	| cogMethod primitiveIndex |
 	cogit assertCStackWellAligned.
 	self assert: (objectMemory addressCouldBeOop: rcvr).
