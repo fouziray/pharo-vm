@@ -141,7 +141,8 @@ Class {
 		'staticSendTrampoline0',
 		'staticSendTrampoline1',
 		'staticSendTrampoline2',
-		'staticSendTrampoline3'
+		'staticSendTrampoline3',
+		'staticSendTrampolines'
 	],
 	#pools : [
 		'CogCompilationConstants',
