@@ -3285,7 +3285,8 @@ StackToRegisterMappingCogit >> generateMissAbortTrampolines [
 { #category : 'as yet unclassified' }
 StackToRegisterMappingCogit >> generateSendTrampolines [
 	"Override to generate code to push the register arg(s) for <= numRegArg arity sends."
-
+staticSendTrampolines:=  CArrayAccessor on: (Array new: 4). "moving init of static trampolines table"
+	
 	0 to: NumSendTrampolines - 1 do: [ :numArgs |
 		ordinarySendTrampolines at: numArgs put: (self
 				 genSendTrampolineFor: #ceSend:super:to:numArgs:
