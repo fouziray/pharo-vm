@@ -4309,7 +4309,7 @@ StackToRegisterMappingCogit >> setInterpreter: aCoInterpreter [
 	<doNotGenerate>
 	super setInterpreter: aCoInterpreter.
 
-	staticSendTrampolines:=  CArrayAccessor on: (Array new: NumSendTrampolines).
+	staticSendTrampolines:=  CArrayAccessor on: (Array new: 4).
 	methodAbortTrampolines := CArrayAccessor on: (Array new: self numRegArgs + 2).
 	picAbortTrampolines := CArrayAccessor on: (Array new: self numRegArgs + 2).
 	picMissTrampolines := CArrayAccessor on: (Array new: self numRegArgs + 2).
