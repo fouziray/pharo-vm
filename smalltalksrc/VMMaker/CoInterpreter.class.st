@@ -1853,6 +1853,21 @@ CoInterpreter >> ceStaticSend: methodToGoTo to: rcvr numArgs: numArgs [
 	self unreachable
 ]
 
+{ #category : 'as yet unclassified' }
+CoInterpreter >> ceStaticSendInterpreted: aCompiledMethodOop [
+
+	<api>
+	| primitiveIndex |
+	instructionPointer := self popStack.
+	newMethod := aCompiledMethodOop.
+
+	primitiveIndex := self primitiveIndexOf: newMethod.
+	primitiveFunctionPointer := self functionPointerFor: primitiveIndex inClass: nil.
+
+	self executeNewMethod: false.
+	self returnToExecutive: false	
+]
+
 { #category : 'debug support' }
 CoInterpreter >> ceTraceBlockActivation [
 	<api>
