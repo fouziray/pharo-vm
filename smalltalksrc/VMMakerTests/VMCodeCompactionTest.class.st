@@ -175,6 +175,56 @@ VMCodeCompactionTest >> testCompactingAnUnusedMethodCompactsRemainingMethodToThe
 ]
 
 { #category : 'tests' }
+VMCodeCompactionTest >> testCompactingSTATICShouldRelocateMonomorphicCallsite [
+
+	| firstMethod callerMethodOop calleeCogMethod selector callerCogMethod calleeMethodOop |
+	"Create a method that will be collected and force compaction of all the next ones"
+	firstMethod := self jitMethod: (self findMethod: #methodToCompile1) selector: memory trueObject.
+	firstMethod cmUsageCount: 0.
+	
+	"Method that will be linked to"
+	calleeCogMethod := self jitMethod: (self findMethod: #methodThatCallPrimitive1:) selector: memory falseObject.
+	calleeCogMethod cmUsageCount: 4.
+	calleeMethodOop := calleeCogMethod methodObject.
+
+	selector := memory falseObject.
+	callerCogMethod := self jitMethod: (self findMethod: #methodWithSend) selector: selector.
+	callerCogMethod cmUsageCount: 4.
+	callerMethodOop := callerCogMethod methodObject.
+
+	"Fill the code zone with more methods to force compaction"
+	self fillCodeZone.
+	
+	"Setup the frame to do the patch"
+	"Push receiver then send, to finally stop at the trampoline and patch the call-site"
+	self createFramefulCallFrom: callerAddress.
+	self pushAddress: memory falseObject.
+	self runFrom: callerCogMethod address + cogit noCheckEntryOffset until: sendTrampolineAddress.
+
+	cogit 
+		linkSendAt: machineSimulator getReturnAddress 
+		in: callerMethodOop 
+		to: calleeCogMethod
+		offset: cogit entryOffset 
+		receiver: memory falseObject.
+		
+	self createBaseFrame.
+	interpreter commenceCogCompiledCodeCompaction.
+	
+	"After compaction the send should arrive to the callee entry offset"
+	self createFramefulCallFrom: callerAddress.
+	self pushAddress: memory falseObject.
+
+	self
+		runFrom: (interpreter cogMethodOf: callerMethodOop) address + cogit noCheckEntryOffset
+		until: (interpreter cogMethodOf: calleeMethodOop) asInteger + cogit entryOffset.
+
+	self
+		assert: machineSimulator instructionPointerRegisterValue
+		equals: (interpreter cogMethodOf: calleeMethodOop) asInteger + cogit entryOffset
+]
+
+{ #category : 'tests' }
 VMCodeCompactionTest >> testCompactingShouldRelocateInSendsLiterals [
 
 	| firstMethod cogMethod methodOop |

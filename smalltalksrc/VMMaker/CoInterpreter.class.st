@@ -1586,7 +1586,9 @@ CoInterpreter >> ceSend: selector super: superNormalBar to: rcvr numArgs: numArg
 						[:newCogMethod| cogMethod := newCogMethod]]].
 		 cogMethod selector = selector
 			ifTrue:
-				[cogit
+				[
+
+				cogit
 					linkSendAt: (stackPages longAt: stackPointer)
 					in: (self mframeHomeMethod: framePointer)
 					to: cogMethod
@@ -2591,21 +2593,22 @@ CoInterpreter >> executeFullCogBlock: cogMethod closure: closure mayContextSwitc
 { #category : 'message sending' }
 CoInterpreter >> executeNewMethod: eagerlyCompile [
 	"if not primitive, or primitive failed, activate the method"
+
 	<inline: true>
-	| inInterpreter |	
+	| inInterpreter |
 	inInterpreter := self isInstructionPointerInInterpreter:
 		                 instructionPointer.
 	self executePrimitiveFromInterpreter: inInterpreter ifFail: [
 		| methodHeader |
-		eagerlyCompile ifTrue: [
-			"Eagerly compile it if appropriate so that doits are fast."
+		1halt.
+		eagerlyCompile ifTrue: [ "Eagerly compile it if appropriate so that doits are fast."
 			methodHeader := self rawHeaderOf: newMethod.
 			(self isCogMethodReference: methodHeader) ifFalse: [
 				(self methodWithHeaderShouldBeCogged: methodHeader)
 					ifTrue: [
 						cogit cog: newMethod selector: objectMemory nilObject.
 						methodHeader := self rawHeaderOf: newMethod ]
-					ifFalse: [ self maybeFlagMethodAsInterpreted: newMethod ] ]].
+					ifFalse: [ self maybeFlagMethodAsInterpreted: newMethod ] ] ].
 		"if not primitive, or primitive failed, activate the method"
 		self activateNewMethod ]
 ]
@@ -4694,6 +4697,7 @@ CoInterpreter >> return: returnValue toExecutive: inInterpreter [
 	 longjmp-ing back to the interpreter or simply returning, depending on where we are."
 
 	cogit assertCStackWellAligned.
+	1halt.
 	(self isMachineCodeFrame: framePointer) ifTrue:
 		[self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer imbar: false line: #'__LINE__'.
 		 self push: instructionPointer.

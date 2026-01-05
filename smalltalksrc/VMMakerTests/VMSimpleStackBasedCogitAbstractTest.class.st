@@ -842,29 +842,43 @@ VMSimpleStackBasedCogitAbstractTest >> setUpCogMethodEntry [
 
 { #category : 'running' }
 VMSimpleStackBasedCogitAbstractTest >> setUpTrampolines [
-
 	"Create a send trampoline so we can stop..."
-	sendTrampolineAddress := self compileTrampoline: [ cogit RetN: 0 ] named: #send0argsTrampoline.
-	cogit ordinarySendTrampolineAt: 0 "args" put: sendTrampolineAddress.
-	
-	send1TrampolineAddress := self compileTrampoline: [ cogit RetN: 0 ] named: #send1argsTrampoline.
-	cogit ordinarySendTrampolineAt: 1 "args" put: send1TrampolineAddress.
+	sendTrampolineAddress := self
+		                         compileTrampoline: [ cogit RetN: 0 ]
+		                         named: #send0argsTrampoline.
+	cogit ordinarySendTrampolineAt: 0 put: sendTrampolineAddress. "args"
 
-	send2TrampolineAddress := self compileTrampoline: [ cogit RetN: 0 ] named: #send2argsTrampoline.
-	cogit ordinarySendTrampolineAt: 2 "args" put: send2TrampolineAddress.
+	send1TrampolineAddress := self
+		                          compileTrampoline: [ cogit RetN: 0 ]
+		                          named: #send1argsTrampoline.
+	cogit ordinarySendTrampolineAt: 1 put: send1TrampolineAddress. "args"
 
-	send3TrampolineAddress := self compileTrampoline: [ cogit RetN: 0 ] named: #send3argsTrampoline.
-	cogit ordinarySendTrampolineAt: 3 "args" put: send3TrampolineAddress.
+	send2TrampolineAddress := self
+		                          compileTrampoline: [ cogit RetN: 0 ]
+		                          named: #send2argsTrampoline.
+	cogit ordinarySendTrampolineAt: 2 put: send2TrampolineAddress. "args"
+
+	send3TrampolineAddress := self
+		                          compileTrampoline: [ cogit RetN: 0 ]
+		                          named: #send3argsTrampoline.
+	cogit ordinarySendTrampolineAt: 3 put: send3TrampolineAddress. "args"
 
 
-	cogit ceCPICMissTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#ceCPICMissTrampoline).
-	cogit cePICAbortTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#cePICAbortTrampoline).
-	cogit ceMethodAbortTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#ceMethodAbortTrampoline).
+	cogit ceCPICMissTrampoline: (self
+			 compileTrampoline: [ cogit RetN: 0 ]
+			 named: #ceCPICMissTrampoline).
+	cogit cePICAbortTrampoline: (self
+			 compileTrampoline: [ cogit RetN: 0 ]
+			 named: #cePICAbortTrampoline).
+	cogit ceMethodAbortTrampoline: (self
+			 compileTrampoline: [ cogit RetN: 0 ]
+			 named: #ceMethodAbortTrampoline).
 
 	"Set an address as store check trampoline.
 	The bytecode below will jump to it if it is a old -> young store"
-	cogit objectRepresentation ceStoreCheckTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#ceStoreCheckTrampoline).
-
+	cogit objectRepresentation ceStoreCheckTrampoline: (self
+			 compileTrampoline: [ cogit RetN: 0 ]
+			 named: #ceStoreCheckTrampoline)
 ]
 
 { #category : 'helpers - stack' }
