@@ -12,7 +12,8 @@ Class {
 		'externalPrimJumpOffsets',
 		'externalSetPrimOffsets',
 		'introspectionDataIndex',
-		'introspectionData'
+		'introspectionData',
+		'staticSendTrampolines'
 	],
 	#pools : [
 		'VMClassIndices',
