@@ -3284,7 +3284,7 @@ StackToRegisterMappingCogit >> generateMissAbortTrampolines [
 { #category : 'as yet unclassified' }
 StackToRegisterMappingCogit >> generateSendTrampolines [
 	"Override to generate code to push the register arg(s) for <= numRegArg arity sends."
-
+self generateStaticSendTrampoline.
 	0 to: NumSendTrampolines - 1 do: [ :numArgs |
 		ordinarySendTrampolines at: numArgs put: (self
 				 genSendTrampolineFor: #ceSend:super:to:numArgs:
@@ -3296,11 +3296,10 @@ StackToRegisterMappingCogit >> generateSendTrampolines [
 				 arg: (self numArgsOrSendNumArgsReg: numArgs)) ].
 	0 to: NumSendTrampolines - 1 do: [ :numArgs |
 		staticSendTrampolines at: numArgs put: (self
-				 genTrampolineFor: #ceStaticSend:to:numArgs:
+				 genStaticSendTrampolineFor: #ceStaticSend:to:numArgs:
+				 numArgs: numArgs
 				 called: (self trampolineName: 'ceStaticSend' numArgs: numArgs)
-				 arg: TempReg
-				 arg: ReceiverResultReg
-				 arg: (self numArgsOrSendNumArgsReg: numArgs)) "method to go to" ].
+				 arg: ClassReg ) "method to go to" ].
 
 	"Generate these in the middle so they are within [firstSend, lastSend]."
 	BytecodeSetHasDirectedSuperSend ifTrue: [
