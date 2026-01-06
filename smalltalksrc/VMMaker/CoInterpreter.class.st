@@ -1821,7 +1821,6 @@ CoInterpreter >> ceStaticSend: methodToGoTo to: rcvr numArgs: numArgs [
 	| cogMethod primitiveIndex newCogMethod  |
 	cogit assertCStackWellAligned.
 	self assert: (objectMemory addressCouldBeOop: rcvr).
-
 	newMethod := methodToGoTo.
 	"Maybe we need to put the selector as argument?"
 	messageSelector := objectMemory nilObject.
@@ -2601,7 +2600,7 @@ CoInterpreter >> executeNewMethod: eagerlyCompile [
 		                 instructionPointer.
 	self executePrimitiveFromInterpreter: inInterpreter ifFail: [
 		| methodHeader |
-		1halt.
+
 		eagerlyCompile ifTrue: [ "Eagerly compile it if appropriate so that doits are fast."
 			methodHeader := self rawHeaderOf: newMethod.
 			(self isCogMethodReference: methodHeader) ifFalse: [

@@ -2838,13 +2838,39 @@ StackToRegisterMappingCogit >> genStaticSendTrampolineFor: aRoutine numArgs: num
 	startAddress := methodZoneBase.
 	self zeroOpcodeIndex.
 	backEnd genPushRegisterArgsForNumArgs: numArgs scratchReg: SendNumArgsReg.
-
+"maybe here is the source of the problem"
 	self genTrampolineFor: aRoutine
 		called: aString
 		numArgs: 1
 		arg: regOrConst0
 		arg: nil
 		arg: nil
+		arg: nil
+		regsToSave: self emptyRegisterMask
+		pushLinkReg: true
+		resultReg: NoReg
+		appendOpcodes: true.
+	^startAddress
+]
+
+{ #category : 'as yet unclassified' }
+StackToRegisterMappingCogit >> genStaticSendTrampolineFor: aRoutine receiver: receiverReg numArgs: numArgs called: aString method: regOrConst0 [
+
+	"Generate a trampoline with four arguments.
+	 Hack: a negative value indicates an abstract register, a non-negative value indicates a constant."
+	<var: #aRoutine type: #'void *'>
+	<var: #aString type: #'char *'>
+	| startAddress |
+	<inline: false>
+	startAddress := methodZoneBase.
+	self zeroOpcodeIndex.
+	backEnd genPushRegisterArgsForNumArgs: numArgs scratchReg: SendNumArgsReg.
+	self genTrampolineFor: aRoutine
+		called: aString
+		numArgs: 3
+		arg: regOrConst0
+		arg: receiverReg
+		arg: (self numArgsOrSendNumArgsReg: numArgs)
 		arg: nil
 		regsToSave: self emptyRegisterMask
 		pushLinkReg: true
@@ -3297,9 +3323,10 @@ self generateStaticSendTrampoline.
 	0 to: NumSendTrampolines - 1 do: [ :numArgs |
 		staticSendTrampolines at: numArgs put: (self
 				 genStaticSendTrampolineFor: #ceStaticSend:to:numArgs:
-				 numArgs: numArgs
+				 receiver: ReceiverResultReg
+				numArgs: numArgs
 				 called: (self trampolineName: 'ceStaticSend' numArgs: numArgs)
-				 arg: ClassReg ) "method to go to" ].
+				 method: TempReg ) "method to go to" ].
 
 	"Generate these in the middle so they are within [firstSend, lastSend]."
 	BytecodeSetHasDirectedSuperSend ifTrue: [
