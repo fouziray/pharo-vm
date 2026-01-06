@@ -141,8 +141,7 @@ Class {
 		'staticSendTrampoline0',
 		'staticSendTrampoline1',
 		'staticSendTrampoline2',
-		'staticSendTrampoline3',
-		'staticSendTrampolines'
+		'staticSendTrampoline3'
 	],
 	#pools : [
 		'CogCompilationConstants',
@@ -2451,7 +2450,7 @@ StackToRegisterMappingCogit >> genReturnTopFromMethod [
 
 { #category : 'as yet unclassified' }
 StackToRegisterMappingCogit >> genSend: selectorIndex numArgs: numArgs [
-1 halt.
+
 	self marshallSendArguments: numArgs.
 	^ self
 		  genMarshalledSend: selectorIndex
@@ -3285,8 +3284,7 @@ StackToRegisterMappingCogit >> generateMissAbortTrampolines [
 { #category : 'as yet unclassified' }
 StackToRegisterMappingCogit >> generateSendTrampolines [
 	"Override to generate code to push the register arg(s) for <= numRegArg arity sends."
-staticSendTrampolines:=  CArrayAccessor on: (Array new: 4). "moving init of static trampolines table"
-	
+
 	0 to: NumSendTrampolines - 1 do: [ :numArgs |
 		ordinarySendTrampolines at: numArgs put: (self
 				 genSendTrampolineFor: #ceSend:super:to:numArgs:

@@ -257,7 +257,8 @@ Class {
 		'statCompileMethodUsecs',
 		'jitCodeZoneWriteEnabled',
 		'cePrimReturnEnterCogCode',
-		'cePrimReturnEnterCogCodeProfiling'
+		'cePrimReturnEnterCogCodeProfiling',
+		'staticSendTrampolines'
 	],
 	#classVars : [
 		'AnnotationConstantNames',
@@ -11380,6 +11381,8 @@ Cogit >> setInterpreter: aCoInterpreter [
 	(literalsManager := backEnd class literalsManagerClass new) cogit: self.
 	ordinarySendTrampolines := CArrayAccessor on: (Array new: NumSendTrampolines).
 	superSendTrampolines := CArrayAccessor on: (Array new: NumSendTrampolines).
+	staticSendTrampolines :=  CArrayAccessor on: (Array new: 4). "moving init of static trampolines table"
+	
 	BytecodeSetHasDirectedSuperSend ifTrue:
 		[directedSuperSendTrampolines := CArrayAccessor on: (Array new: NumSendTrampolines).
 		 directedSuperBindingSendTrampolines := CArrayAccessor on: (Array new: NumSendTrampolines).
