@@ -8828,6 +8828,34 @@ Cogit >> linkSendAt: callSiteReturnAddress in: sendingMethod to: targetMethod of
 				to: callSiteReturnAddress asUnsignedInteger ].
 ]
 
+{ #category : 'in-line cacheing' }
+Cogit >> linkStaticSendAt: callSiteReturnAddress in: sendingMethod to: targetMethod offset: theEntryOffset receiver: receiver [
+	<api>
+	<var: #sendingMethod type: #'CogMethod *'>
+	<var: #targetMethod type: #'CogMethod *'>
+	| inlineCacheTag address extent |
+	self assert: (theEntryOffset = cmEntryOffset or: [theEntryOffset = cmNoCheckEntryOffset]).
+	self assert: (callSiteReturnAddress between: methodZoneBase and: methodZone freeStart).
+
+	inlineCacheTag :=    targetMethod methodObject .
+	
+	(objectRepresentation inlineCacheTagIsYoung: inlineCacheTag) ifTrue:
+		[methodZone ensureInYoungReferrers: sendingMethod].
+	address := targetMethod asInteger + theEntryOffset.
+
+	self 
+		enableCodeZoneWriteDuring: [ 	
+			extent := backEnd
+						rewriteInlineCacheAt: callSiteReturnAddress
+						tag: inlineCacheTag
+						target: address.
+		]
+		flushingCacheWith: [ 	
+			self
+				flushICacheFrom: callSiteReturnAddress asUnsignedInteger  - extent
+				to: callSiteReturnAddress asUnsignedInteger ].
+]
+
 { #category : 'analysis' }
 Cogit >> linkedSuperSendCacheTags [
 	"An example; answer the cache tags for linked super sends.  They should all be

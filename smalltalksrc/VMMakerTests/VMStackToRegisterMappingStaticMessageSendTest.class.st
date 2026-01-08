@@ -303,7 +303,7 @@ VMStackToRegisterMappingStaticMessageSendTest >> testStaticSendExecutesUnlinkedC
 { #category : 'as yet unclassified' }
 VMStackToRegisterMappingStaticMessageSendTest >> testStaticSendExecutesUnlinkedCall2 [
 
-	| selector calledCompiledMethod staticCallerCompiledMethod staticCallerCogMethod builder staticCallTargetCogMethod |
+	| selector calledCompiledMethod staticCallerCompiledMethod staticCallerCogMethod builder staticCallTargetCogMethod instructionsUnlinked instructionsLinked instructionsAfterFree instructionsBefore instructionsAfter |
 	calledCompiledMethod := self createMethodOopFromHostMethod:
 		                        self class >> #myYourself.
 
@@ -326,7 +326,8 @@ VMStackToRegisterMappingStaticMessageSendTest >> testStaticSendExecutesUnlinkedC
 	staticCallTargetCogMethod := cogit
 		                             cog: calledCompiledMethod
 		                             selector: memory nilObject.
-
+	
+	
 
 	builder := self machineCodeFrameBuilder.
 	builder returnAddress: callerAddress.
@@ -346,27 +347,43 @@ VMStackToRegisterMappingStaticMessageSendTest >> testStaticSendExecutesUnlinkedC
 		interpreter stackPointer."
 
 
-
+instructionsUnlinked := self
+		                      getInstrunctionsStartingFrom:
+		                      staticCallerCogMethod address
+		                      + cogit noCheckEntryOffset
+		                      to: staticCallTargetCogMethod address
+			                      + staticCallTargetCogMethod stackCheckOffset.
 	self
 		runFrom: staticCallerCogMethod address + cogit noCheckEntryOffset
 		until: staticCallTargetCogMethod address
 			+ staticCallTargetCogMethod stackCheckOffset.
+
+instructionsLinked := self
+		                      getInstrunctionsStartingFrom:
+		                      staticCallerCogMethod address
+		                      + cogit noCheckEntryOffset
+		                      to: staticCallTargetCogMethod address
+			                      + staticCallTargetCogMethod stackCheckOffset.	
 self assert: interpreter staticCallLinkCounter equals: 1.
 
-	self
-		runFrom: staticCallerCogMethod address + cogit noCheckEntryOffset
-		until: staticCallTargetCogMethod address
-			+ staticCallTargetCogMethod stackCheckOffset.
-self assert: interpreter staticCallLinkCounter equals: 1.
+	
 	"Here we remove the method from compiled code space and see if the call site is linked back to its original state"
 
 	self assert: (cogit coInterpreter methodHasCogMethod: staticCallTargetCogMethod  methodObject ).
 	cogit freeMethod: staticCallTargetCogMethod.
 	self deny: (cogit coInterpreter methodHasCogMethod: staticCallTargetCogMethod  methodObject ).
-	self
+	instructionsAfterFree := self
+		                     getInstrunctionsStartingFrom:
+		                     staticCallerCogMethod address
+		                     + cogit noCheckEntryOffset
+		                     to: staticCallTargetCogMethod address
+			                     + staticCallTargetCogMethod stackCheckOffset.
+			1 halt.
+self
 		runFrom: staticCallerCogMethod address + cogit noCheckEntryOffset
 		until: staticCallTargetCogMethod address
-			+ staticCallTargetCogMethod stackCheckOffset.
+			+ staticCallTargetCogMethod stackCheckOffset. 
+
 self
 		runFrom: staticCallerCogMethod address + cogit noCheckEntryOffset
 		until: staticCallTargetCogMethod address
@@ -377,7 +394,19 @@ self
 		assert: machineSimulator instructionPointerRegisterValue
 		equals: staticCallTargetCogMethod address
 			+ staticCallTargetCogMethod stackCheckOffset.
-	self assert: interpreter staticCallLinkCounter equals: 1
+	self assert: interpreter staticCallLinkCounter equals: 1.
+	
+
+	self
+		runFrom: staticCallerCogMethod address + cogit noCheckEntryOffset
+		until: staticCallTargetCogMethod address
+			+ staticCallTargetCogMethod stackCheckOffset.
+
+	
+
+	self
+		assert: (instructionsBefore collect: #asString)
+		equals: (instructionsAfter collect: #asString).
 ]
 
 { #category : 'tests - sends static' }
@@ -707,6 +736,8 @@ VMStackToRegisterMappingStaticMessageSendTest >> testStaticSendPatching [
 	self
 		deny: (instructionsBefore collect: #asString)
 		equals: (instructionsAfter collect: #asString).
+
+	self assert:( (instructionsBefore collect: #asString) at: 32) equals: ((instructionsAfter collect: #asString) at: 32).
 	self
 		deny: ((instructionsBefore collect: #asString) at: 23)
 		equals: ((instructionsAfter collect: #asString) at: 23). "

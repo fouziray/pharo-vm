@@ -1830,18 +1830,19 @@ CoInterpreter >> ceStaticSend: methodToGoTo to: rcvr numArgs: numArgs [
 		                            functionPointerFor: primitiveIndex
 		                            inClass: nil.
 
-	
+	"
 	cogMethod := self
 		             ensureMethodIsCogged: newMethod
 		             maybeClosure: objectMemory nilObject.
-		
+		"
 	"Method found and has a cog method.  Attempt to link to it.  The receiver's class may be young.
 	 If the Cogit can't store young classes in inline caches we can link to an open PIC instead."
+
 	(self maybeMethodHasCogMethod: newMethod) ifTrue: [
 		cogMethod := self cogMethodOf: newMethod.
 
 		cogit
-			linkSendAt: (stackPages longAt: stackPointer)
+			linkStaticSendAt: (stackPages longAt: stackPointer)
 			in: (self mframeHomeMethod: framePointer)
 			to: cogMethod
 			offset: cogit noCheckEntryOffset
