@@ -243,6 +243,8 @@ SimpleStackBasedCogit >> annotationForSendTable: sendTable [
 	<var: #sendTable type: #'sqInt *'>
 	sendTable == ordinarySendTrampolines ifTrue:
 		[^IsSendCall].
+	sendTable == staticSendTrampolines ifTrue:
+		[^IsSendCall].
 	BytecodeSetHasDirectedSuperSend ifTrue:
 		[sendTable == directedSuperSendTrampolines ifTrue:
 			[^IsDirectedSuperSend].

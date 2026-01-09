@@ -2806,7 +2806,7 @@ StackToRegisterMappingCogit >> genStaticSend: method numArgs: numArgs [
 	self assert: needsFrame.
 
 	sendTable := staticSendTrampolines.
-	"annotation := self annotationForSendTable: sendTable."
+	annotation := self annotationForSendTable: sendTable.
 
 	self marshallSendArguments: numArgs.
 
@@ -2821,7 +2821,7 @@ StackToRegisterMappingCogit >> genStaticSend: method numArgs: numArgs [
 
 	self genMoveConstant: method R: TempReg.
 	(self Call: (sendTable at: (numArgs min: NumSendTrampolines - 1)))
-		"annotation: annotation".
+		annotation: annotation.
 
 	self voidReceiverOptStatus.
 	^ self ssPushRegister: ReceiverResultReg

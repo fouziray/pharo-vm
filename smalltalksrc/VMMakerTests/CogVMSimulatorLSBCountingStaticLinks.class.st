@@ -27,3 +27,9 @@ CogVMSimulatorLSBCountingStaticLinks >> staticCallLinkCounter [
 	
 	^ staticSendCounter
 ]
+
+{ #category : 'accessing' }
+CogVMSimulatorLSBCountingStaticLinks >> staticCallLinkCounterReset [
+	
+	 staticSendCounter := 0.
+]

@@ -370,6 +370,118 @@ self assert: interpreter staticCallLinkCounter equals: 1.
 	"Here we remove the method from compiled code space and see if the call site is linked back to its original state"
 
 	self assert: (cogit coInterpreter methodHasCogMethod: staticCallTargetCogMethod  methodObject ).
+	"cogit freeMethod: staticCallTargetCogMethod."
+	self halt.
+	cogit unlinkIfLinkedSend: 7 pc: nil to: staticCallerCogMethod address.
+	interpreter staticCallLinkCounterReset.
+	self deny: (cogit coInterpreter methodHasCogMethod: staticCallTargetCogMethod  methodObject ).
+	instructionsAfterFree := self
+		                     getInstrunctionsStartingFrom:
+		                     staticCallerCogMethod address
+		                     + cogit noCheckEntryOffset
+		                     to: staticCallTargetCogMethod address
+			                     + staticCallTargetCogMethod stackCheckOffset.
+			1 halt.
+self
+		runFrom: staticCallerCogMethod address + cogit noCheckEntryOffset
+		until: staticCallTargetCogMethod address
+			+ staticCallTargetCogMethod stackCheckOffset. 
+
+self
+		runFrom: staticCallerCogMethod address + cogit noCheckEntryOffset
+		until: staticCallTargetCogMethod address
+			+ staticCallTargetCogMethod stackCheckOffset.
+	"self openMachineDebuggerAt: staticCallerCogMethod address + cogit noCheckEntryOffset"
+
+	self
+		assert: machineSimulator instructionPointerRegisterValue
+		equals: staticCallTargetCogMethod address
+			+ staticCallTargetCogMethod stackCheckOffset.
+	self assert: interpreter staticCallLinkCounter equals: 1.
+	
+
+	self
+		runFrom: staticCallerCogMethod address + cogit noCheckEntryOffset
+		until: staticCallTargetCogMethod address
+			+ staticCallTargetCogMethod stackCheckOffset.
+
+	
+
+	self
+		assert: (instructionsBefore collect: #asString)
+		equals: (instructionsAfter collect: #asString).
+]
+
+{ #category : 'as yet unclassified' }
+VMStackToRegisterMappingStaticMessageSendTest >> testStaticSendExecutesUnlinkedCallLinkedWithTwoDifferentMSGSends [
+
+	| selector calledCompiledMethod staticCallerCompiledMethod staticCallerCogMethod builder staticCallTargetCogMethod instructionsUnlinked instructionsLinked instructionsAfterFree instructionsBefore instructionsAfter |
+	calledCompiledMethod := self createMethodOopFromHostMethod:
+		                        self class >> #myYourself.
+
+	selector := self newOldSpaceObjectWithSlots: 0.
+
+	staticCallerCompiledMethod := methodBuilder newMethod
+		                              literalAt: 0
+		                              put: (memory integerObjectOf: 13);
+		                              literalAt: 1
+		                              put: calledCompiledMethod;
+		                              literalAt: 2 put: selector;
+		                              literalAt: 3 put: memory nilObject;
+		                              bytecodes: #[ 32 246 1 92 ];
+		                              buildMethod. "PushLiteral 1" "Static Send literal at 2" "Return top"
+
+	cogit generateSendTrampolines.
+	staticCallerCogMethod := cogit
+		                         cog: staticCallerCompiledMethod
+		                         selector: memory nilObject.
+	staticCallTargetCogMethod := cogit
+		                             cog: calledCompiledMethod
+		                             selector: memory nilObject.
+	
+	
+
+	builder := self machineCodeFrameBuilder.
+	builder returnAddress: callerAddress.
+	builder receiver: memory falseObject.
+	builder method: staticCallerCogMethod.
+	builder buildFrame.
+
+	interpreter stackPointer:
+		machineSimulator smalltalkStackPointerRegisterValue.
+	interpreter framePointer: machineSimulator framePointerRegisterValue.
+
+	"Push receiver, arg, then send"
+	"interpreter push: (memory integerObjectOf: 13)."
+	"	interpreter push: 16r320000460."
+
+	"machineSimulator smalltalkStackPointerRegisterValue:
+		interpreter stackPointer."
+
+
+instructionsUnlinked := self
+		                      getInstrunctionsStartingFrom:
+		                      staticCallerCogMethod address
+		                      + cogit noCheckEntryOffset
+		                      to: staticCallTargetCogMethod address
+			                      + staticCallTargetCogMethod stackCheckOffset.
+	self
+		runFrom: staticCallerCogMethod address + cogit noCheckEntryOffset
+		until: staticCallTargetCogMethod address
+			+ staticCallTargetCogMethod stackCheckOffset.
+
+instructionsLinked := self
+		                      getInstrunctionsStartingFrom:
+		                      staticCallerCogMethod address
+		                      + cogit noCheckEntryOffset
+		                      to: staticCallTargetCogMethod address
+			                      + staticCallTargetCogMethod stackCheckOffset.	
+self assert: interpreter staticCallLinkCounter equals: 1.
+
+	
+	"Here we remove the method from compiled code space and see if the call site is linked back to its original state"
+
+	self assert: (cogit coInterpreter methodHasCogMethod: staticCallTargetCogMethod  methodObject ).
 	cogit freeMethod: staticCallTargetCogMethod.
 	self deny: (cogit coInterpreter methodHasCogMethod: staticCallTargetCogMethod  methodObject ).
 	instructionsAfterFree := self
