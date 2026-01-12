@@ -564,6 +564,8 @@ Cogit class >> declareCVarsIn: aCCodeGenerator [
 		declareC: 'int jitCodeZoneWriteEnabled = 0';
 		var: #ordinarySendTrampolines
 		declareC: 'sqInt ordinarySendTrampolines[NumSendTrampolines]';
+		var: #staticSendTrampolines
+		declareC: 'sqInt staticSendTrampolines[NumSendTrampolines]';
 		var: #superSendTrampolines
 		declareC: 'sqInt superSendTrampolines[NumSendTrampolines]'.
 	BytecodeSetHasDirectedSuperSend ifTrue: [
