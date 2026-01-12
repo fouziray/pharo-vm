@@ -2479,7 +2479,7 @@ StackToRegisterMappingCogit >> genSendDirectedSuper: selectorIndex numArgs: numA
 { #category : 'as yet unclassified' }
 StackToRegisterMappingCogit >> genSendStaticMessage [
 
-	| methodLiteralIndex methodToGoTo |
+	| methodLiteralIndex argumentCount methodToGoTo jumpInterpret mergeJump staticSendTrampoline |
 	" i need to read literal of the stack frame, found at byte1 index, after that load it to temp, we check the method is cogged or not to jump to it via trampoline"
 	methodLiteralIndex := byte1.
 
@@ -2803,7 +2803,7 @@ StackToRegisterMappingCogit >> genStaticSend: method numArgs: numArgs [
 
 	<inline: false>
 	<var: #sendTable type: #'sqInt *'>
-	| sendTable |
+	| annotation sendTable |
 	self assert: needsFrame.
 
 	sendTable := staticSendTrampolines.
