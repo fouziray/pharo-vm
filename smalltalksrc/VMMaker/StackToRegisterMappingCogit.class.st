@@ -2005,6 +2005,7 @@ StackToRegisterMappingCogit >> genMarshalledSend: selectorIndex numArgs: numArgs
 	<inline: false>
 	<var: #sendTable type: #'sqInt *'>
 	| annotation |
+	
 	self assert: needsFrame.
 	annotation := self annotationForSendTable: sendTable.
 	"Deal with stale super sends; see SpurMemoryManager's class comment."
@@ -3310,7 +3311,7 @@ StackToRegisterMappingCogit >> generateMissAbortTrampolines [
 { #category : 'as yet unclassified' }
 StackToRegisterMappingCogit >> generateSendTrampolines [
 	"Override to generate code to push the register arg(s) for <= numRegArg arity sends."
-self generateStaticSendTrampoline.
+"self generateStaticSendTrampoline."
 	0 to: NumSendTrampolines - 1 do: [ :numArgs |
 		ordinarySendTrampolines at: numArgs put: (self
 				 genSendTrampolineFor: #ceSend:super:to:numArgs:
