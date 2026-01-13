@@ -427,6 +427,105 @@ self assert: (instructionsBefore at: 22) assemblyCodeString equals: 'ldr	x1, #40
 			+ callTargetCogMethod stackCheckOffset.
 ]
 
+{ #category : 'beforeCall' }
+VMStackToRegisterMappingStaticMessageSendTest >> testNormalSendExpectedInstructionBeforeSecondCall [
+
+	| selector calledCompiledMethod calledCompiledMethod1 callerCogMethod builder callTargetCogMethod instructionsBefore receiverClass aMethodDictionary dereferenceRoutine  |
+	calledCompiledMethod1 := self createMethodOopFromHostMethod:
+		                        self class >>#myYourself.
+	
+	selector := #myYourself forMemory: memory inMethod: nil. 
+	
+		callTargetCogMethod :=methodBuilder newMethod
+		                              literalAt: 0
+		                              put: (memory integerObjectOf: 13);
+		                              literalAt: 1
+		                              put: selector ;
+		                              bytecodes: #[ 32 129 92 ];
+		          	                  buildMethod. 
+	receiverClass := self setSmallIntegerClassIntoClassTable.
+	self setUpMethodDictionaryIn: receiverClass.
+
+	aMethodDictionary := memory
+		                     fetchPointer: MethodDictionaryIndex
+		                     ofObject: receiverClass.
+interpreter methodDictLinearSearchLimit: 100.
+	self
+		installSelector: selector
+		method: calledCompiledMethod1
+		inMethodDictionary: aMethodDictionary.
+
+	
+
+
+	
+	dereferenceRoutine := self compile: [ 
+		cogit MoveCq: selector R: ClassReg .
+		cogit RetN: 0 ].
+	cogit methodZoneBase: cogit methodZone zoneFree .
+	
+	cogit ceDereferenceSelectorIndex: dereferenceRoutine.
+cogit generateSendTrampolines.
+
+
+	callerCogMethod := cogit
+		                         cog: callTargetCogMethod
+		                         selector: memory nilObject.
+	calledCompiledMethod :=  cogit
+		                             cog: calledCompiledMethod1
+		                             selector: selector.
+
+	builder := self machineCodeFrameBuilder.
+	builder returnAddress: callerAddress.
+	builder receiver: memory falseObject.
+	builder method: callerCogMethod.
+	builder buildFrame.
+
+	interpreter stackPointer:
+		machineSimulator smalltalkStackPointerRegisterValue.
+	interpreter framePointer: machineSimulator framePointerRegisterValue.
+
+instructionsBefore := self
+		                      getInstrunctionsStartingFrom: callerCogMethod address
+		                      + cogit noCheckEntryOffset
+		                      to:  calledCompiledMethod address +  calledCompiledMethod stackCheckOffset  .
+		
+	self assert: (instructionsBefore at: 15) assemblyCodeString equals: 'bl', Character tab asString,'#', (   (cogit instVarNamed: 'ordinarySendTrampolines') first -  (instructionsBefore at: 15) address)  asString.
+	self
+		runFrom: callerCogMethod address + cogit noCheckEntryOffset
+		until: calledCompiledMethod address
+			+ calledCompiledMethod stackCheckOffset.
+
+
+	instructionsBefore := self
+		                      getInstrunctionsStartingFrom: callerCogMethod address
+		                      + cogit noCheckEntryOffset
+		                      to:  calledCompiledMethod address +  calledCompiledMethod stackCheckOffset  .
+self assert: (instructionsBefore at: 15) assemblyCodeString equals: 'bl', Character tab asString,'#', (  calledCompiledMethod  address+ cogit entryOffset -  (instructionsBefore at: 15) address)  asString.
+self assert: (instructionsBefore at: 14) assemblyCodeString equals: 'ldr	x22, #32'. " x1 here is the Class Register"
+	self assert: (memory longAt: 	(instructionsBefore at: (14 )) address + 32) equals: 1.
+	self
+		assert: machineSimulator instructionPointerRegisterValue
+		equals: calledCompiledMethod address
+			+ calledCompiledMethod stackCheckOffset.
+ 
+	self assert: (instructionsBefore at: 15) assemblyCodeString equals: 'bl', Character tab asString,'#100'.
+	self
+		runFrom: callerCogMethod address + cogit noCheckEntryOffset
+		until: calledCompiledMethod address
+			+ calledCompiledMethod stackCheckOffset.
+	self
+		runFrom: callerCogMethod address + cogit noCheckEntryOffset
+		until: calledCompiledMethod address
+			+ calledCompiledMethod stackCheckOffset.
+							
+	instructionsBefore := self
+		                      getInstrunctionsStartingFrom: callerCogMethod address
+		                      + cogit noCheckEntryOffset
+		                      to:  calledCompiledMethod address +  calledCompiledMethod stackCheckOffset  .
+		
+]
+
 { #category : 'as yet unclassified' }
 VMStackToRegisterMappingStaticMessageSendTest >> testStaticSendExecutesLinkedCall [
 
