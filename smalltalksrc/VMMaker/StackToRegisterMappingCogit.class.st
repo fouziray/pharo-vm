@@ -5010,6 +5010,19 @@ StackToRegisterMappingCogit >> tryCollapseTempVectorInitializationOfSize: slots 
 	^true
 ]
 
+{ #category : 'accessing' }
+StackToRegisterMappingCogit >> unlinkStaticSendAt: mcpc targetMethod: atargetCogMethod sendTable: sendTable [ 
+	<inline: true>
+	| unlinkedRoutine |
+	1 halt.
+	unlinkedRoutine := sendTable at: (atargetCogMethod cmNumArgs min: NumSendTrampolines - 1).
+	backEnd
+		rewriteInlineCacheAt: mcpc asInteger
+		tag: (self inlineCacheValueForSelector: atargetCogMethod memoryManager selector in: enumeratingCogMethod at: mcpc)
+		target: unlinkedRoutine.
+	codeModified := true
+]
+
 { #category : 'simulation stack' }
 StackToRegisterMappingCogit >> updateSimSpillBase [
 	"Something volatile has been pushed on the stack; update simSpillBase accordingly."

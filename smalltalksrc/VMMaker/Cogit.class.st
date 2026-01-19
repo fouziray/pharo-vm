@@ -4900,7 +4900,7 @@ Cogit >> cogMethodDoesntLookKosher: cogMethod [
 { #category : 'simulation only' }
 Cogit >> cogMethodSurrogateAt: address [
 	<doNotGenerate>
-	self assert: (address < 0 or: [(address bitAnd: objectMemory wordSize - 1) = 0]).
+	self assert: ((address < 0 or: [(address bitAnd: objectMemory wordSize - 1) = 0]) or: [(address bitAnd: objectMemory wordSize) = 0]).
 	^cogMethodSurrogateClass new
 		at: address
 		objectMemory: objectMemory
@@ -11974,10 +11974,25 @@ Cogit >> unlinkIfLinkedSend: annotation pc: mcpc to: theCogMethod [
 	| entryPoint |
 
 	(self isPureSendAnnotation: annotation) ifTrue:
-		[entryPoint := backEnd callTargetFromReturnAddress: mcpc asInteger.
+		[
+
+		entryPoint := backEnd callTargetFromReturnAddress: mcpc asInteger.
 		 entryPoint > methodZoneBase
 			ifTrue: "It's a linked send."
-				[self targetMethodAndSendTableFor: entryPoint annotation: annotation into:
+				[
+				(self backend instructionBeforeAddress: mcpc -4) aarch64Disassembled .
+				(self objectMemory isCompiledMethod:  (self backend literalBeforeFollowingAddress: mcpc -4))
+				 ifTrue:[
+						
+					self targetMethodAndSendTableFor: entryPoint annotation: annotation into:
+					[:targetMethod :sendTable| 
+					 "targetMethod asInteger = theCogMethod ifTrue:
+						["self unlinkStaticSendAt: mcpc -4 targetMethod: targetMethod sendTable: sendTable"]".
+					1 halt.
+					]
+					].
+				
+				self targetMethodAndSendTableFor: entryPoint annotation: annotation into:
 					[:targetMethod :sendTable| 
 					 targetMethod asInteger = theCogMethod ifTrue:
 						[self unlinkSendAt: mcpc targetMethod: targetMethod sendTable: sendTable]]]].
