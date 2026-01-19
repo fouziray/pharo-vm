@@ -1393,7 +1393,7 @@ instructionsBefore := self
 		equals: staticCallTargetCogMethod address
 			+ staticCallTargetCogMethod stackCheckOffset.
 	"unlink ne fait cce qu'il faut"
-1 halt.
+
 	cogit printCogMethods
 	cogit unlinkSendsTo: calledCompiledMethod  andFreeIf: true.
 	
@@ -1406,7 +1406,7 @@ instructionsBefore := self
 "	cogit freeMethod: staticCallTargetCogMethod."
 
 	self
-		deny: (instructionsBefore at: 23) assemblyCodeString
+		assert: (instructionsBefore at: 23) assemblyCodeString
 		equals: (instructionsAfterFree at: 23) assemblyCodeString.
 	self
 		assert: (instructionsAfter at: 22) assemblyCodeString

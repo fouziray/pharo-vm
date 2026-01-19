@@ -11982,15 +11982,15 @@ Cogit >> unlinkIfLinkedSend: annotation pc: mcpc to: theCogMethod [
 			ifTrue: "It's a linked send."
 				[
 				|maybleCompiledMethod|
-				maybleCompiledMethod := (self backend literalBeforeFollowingAddress: mcpc -4).
-				( (self objectMemory isInObjectMemory:  maybleCompiledMethod )  and:[self objectMemory isCompiledMethod: maybleCompiledMethod ] )
+				maybleCompiledMethod := (self backEnd literalBeforeFollowingAddress: mcpc -4).
+				( (objectMemory isInObjectMemory:  maybleCompiledMethod )  and:[objectMemory isCompiledMethod: maybleCompiledMethod ] )
 				 ifTrue:[
 					
 					self targetMethodAndSendTableFor: entryPoint annotation: annotation into:
 					[:targetMethod :sendTable| 
 					 "targetMethod asInteger = theCogMethod ifTrue:
 						["self unlinkStaticSendAt: mcpc compiledMethod: maybleCompiledMethod "]".
-					1 halt.
+		
 					]
 					].
 				
