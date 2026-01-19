@@ -11983,7 +11983,7 @@ Cogit >> unlinkIfLinkedSend: annotation pc: mcpc to: theCogMethod [
 				[
 				|maybleCompiledMethod|
 				maybleCompiledMethod := (self backEnd literalBeforeFollowingAddress: mcpc -4).
-				( (objectMemory isInObjectMemory:  maybleCompiledMethod )  and:[objectMemory isCompiledMethod: maybleCompiledMethod ] )
+				( (objectMemory isInMemory:  maybleCompiledMethod )  and:[objectMemory isCompiledMethod: maybleCompiledMethod ] )
 				 ifTrue:[
 					
 					self targetMethodAndSendTableFor: entryPoint annotation: annotation into:
