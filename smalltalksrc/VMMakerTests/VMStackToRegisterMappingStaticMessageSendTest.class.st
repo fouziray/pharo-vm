@@ -1309,7 +1309,7 @@ self openMachineDebuggerAt: staticCallerCogMethod address + cogit noCheckEntryOf
 VMStackToRegisterMappingStaticMessageSendTest >> testUnlinkingAffectsStaticSend [
 
 
-	| selector calledCompiledMethod staticCallerCompiledMethod staticCallerCogMethod builder staticCallTargetCogMethod instructionsBefore instructionsAfter |
+	| selector calledCompiledMethod staticCallerCompiledMethod staticCallerCogMethod builder staticCallTargetCogMethod instructionsBefore instructionsAfter instructionsAfterFree |
 	
 	selector := self newOldSpaceObjectWithSlots: 0.
 
@@ -1342,19 +1342,19 @@ self assert: (memory isCompiledMethod: calledCompiledMethod).
 	interpreter stackPointer:
 		machineSimulator smalltalkStackPointerRegisterValue.
 	interpreter framePointer: machineSimulator framePointerRegisterValue.
-
-	self
-		runFrom: staticCallerCogMethod address + cogit noCheckEntryOffset
-		until: staticCallTargetCogMethod address
-			+ staticCallTargetCogMethod stackCheckOffset.
-
-
-	instructionsBefore := self
+instructionsBefore := self
 		                      getInstructionsStartingFrom:
 		                      staticCallerCogMethod address
 		                      + cogit noCheckEntryOffset
 		                      to: staticCallTargetCogMethod address
 			                      + staticCallTargetCogMethod stackCheckOffset.
+
+	
+	self
+		runFrom: staticCallerCogMethod address + cogit noCheckEntryOffset
+		until: staticCallTargetCogMethod address
+			+ staticCallTargetCogMethod stackCheckOffset.
+
 
 	self
 		assert: (instructionsBefore at: 22) assemblyCodeString
@@ -1397,11 +1397,17 @@ self assert: (memory isCompiledMethod: calledCompiledMethod).
 	cogit printCogMethods
 	cogit unlinkSendsTo: calledCompiledMethod  andFreeIf: true.
 	
+	instructionsAfterFree := self
+		                      getInstructionsStartingFrom:
+		                      staticCallerCogMethod address
+		                      + cogit noCheckEntryOffset
+		                      to: staticCallTargetCogMethod address
+			                      + staticCallTargetCogMethod stackCheckOffset.
 "	cogit freeMethod: staticCallTargetCogMethod."
 
 	self
 		deny: (instructionsBefore at: 23) assemblyCodeString
-		equals: (instructionsAfter at: 23) assemblyCodeString.
+		equals: (instructionsAfterFree at: 23) assemblyCodeString.
 	self
 		assert: (instructionsAfter at: 22) assemblyCodeString
 		equals: 'ldr	x1, #40'. " x1 here is the tempReg"
@@ -1417,27 +1423,52 @@ self assert: (memory isCompiledMethod: calledCompiledMethod).
 { #category : 'beforeCall' }
 VMStackToRegisterMappingStaticMessageSendTest >> testUnlinkingHasNoEffectOnNormalSend [
 
-	| selector calledCompiledMethod staticCallerCompiledMethod staticCallerCogMethod builder staticCallTargetCogMethod instructionsBefore instructionsAfter |
+	| selector calledCompiledMethod staticCallerCompiledMethod staticCallerCogMethod builder staticCallTargetCogMethod instructionsBefore instructionsAfter receiverClass aMethodDictionary dereferenceRoutine instructionsAfterFree |
 	calledCompiledMethod := self createMethodOopFromHostMethod:
 		                        self class >> #myYourself.
 
 	selector := self newOldSpaceObjectWithSlots: 0.
-
+	self initializeSpecialSelectors .
 
 	cogit ceSmallActiveContextInFullBlockTrampoline: (self compile: [
 			 cogit.
 			 cogit RetN: 0 ]).
 
-	staticCallerCompiledMethod := methodBuilder newMethod
+		selector := #myYourself forMemory: memory inMethod: nil. 
+	
+		staticCallerCompiledMethod :=methodBuilder newMethod
 		                              literalAt: 0
 		                              put: (memory integerObjectOf: 13);
 		                              literalAt: 1
-		                              put: calledCompiledMethod;
-		                              literalAt: 2 put: selector;
-		                              literalAt: 3 put: memory nilObject;
-		                              bytecodes: #[ 32 246 1 92 ];
-		                              buildMethod. "PushLiteral 1" "Static Send literal at 2" "Return top"
+		                              put: selector ;
+		                              bytecodes: #[ 32 129 92 ];
+		          	                  buildMethod.  "PushLiteral 1" "Static Send literal at 2" "Return top"
 
+		receiverClass := self setSmallIntegerClassIntoClassTable.
+	self setUpMethodDictionaryIn: receiverClass.
+
+	aMethodDictionary := memory
+		                     fetchPointer: MethodDictionaryIndex
+		                     ofObject: receiverClass.
+interpreter methodDictLinearSearchLimit: 100.
+	self
+		installSelector: selector
+		method: calledCompiledMethod
+		inMethodDictionary: aMethodDictionary.
+
+	
+
+
+	
+	dereferenceRoutine := self compile: [ 
+		cogit MoveCq: selector R: ClassReg .
+		cogit RetN: 0 ].
+	cogit methodZoneBase: cogit methodZone zoneFree .
+	
+	cogit ceDereferenceSelectorIndex: dereferenceRoutine.
+
+	
+	
 	cogit generateSendTrampolines.
 	staticCallerCogMethod := cogit
 		                         cog: staticCallerCompiledMethod
@@ -1475,32 +1506,32 @@ VMStackToRegisterMappingStaticMessageSendTest >> testUnlinkingHasNoEffectOnNorma
 		                      to: staticCallTargetCogMethod address
 			                      + staticCallTargetCogMethod stackCheckOffset.
 
+	"compiled method in unlinksends"
+
+	cogit unlinkSendsTo: calledCompiledMethod  andFreeIf: true.
+"
+		cogit freeUnmarkedMachineCode."
+instructionsAfterFree := self
+		                      getInstructionsStartingFrom:
+		                      staticCallerCogMethod address
+		                      + cogit noCheckEntryOffset
+		                      to: staticCallTargetCogMethod address
+			                      + staticCallTargetCogMethod stackCheckOffset.
+
 	self
-		assert: (instructionsAfter at: 22) assemblyCodeString
-		equals: 'ldr	x1, #40'. " x1 here is the tempReg"
+		assert: (instructionsAfter at: 15) assemblyCodeString
+		equals: 'bl	#100'. " x1 here is the tempReg"
+	self deny: (instructionsAfterFree at: 15  ) equals: (instructionsAfter at: 15) .
 	self assert:
-		(memory isOopCompiledMethod: (machineSimulator memory longAt:
-				  (instructionsAfter at: 22) address + 40)).
+		(memory isOopCompiledMethod: (cogit methodZone methodFor: 
+				  (instructionsAfter at: 1) address + 100) methodObject ).
 	self
-		assert: (machineSimulator memory longAt:
-				 (instructionsAfter at: 22) address + 40)
-		equals: calledCompiledMethod.
+		assert: (cogit methodZone methodFor: 
+				  (instructionsAfter at: 1) address + 100) methodObject
+		equals: calledCompiledMethod "1099511702312".
 	self
-		assert: machineSimulator instructionPointerRegisterValue
+		assert: machineSimulator instructionPointerRegisterValue 
 		equals: staticCallTargetCogMethod address
 			+ staticCallTargetCogMethod stackCheckOffset.
-	
-	cogit unlinkSendsTo: staticCallTargetCogMethod address  andFreeIf: true.
-	cogit freeUnmarkedMachineCode.
-	cogit freeMethod: staticCallTargetCogMethod.
-	self
-		assert: (instructionsAfter at: 22) assemblyCodeString
-		equals: 'ldr	x1, #40'. " x1 here is the tempReg"
-	self assert:
-		(memory isOopCompiledMethod: (machineSimulator memory longAt:
-				  (instructionsAfter at: 22) address + 40)).
-	self
-		assert: (machineSimulator memory longAt:
-				 (instructionsAfter at: 22) address + 40)
-		equals: calledCompiledMethod.
+
 ]

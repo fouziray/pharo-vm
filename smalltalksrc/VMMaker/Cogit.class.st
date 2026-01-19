@@ -8438,6 +8438,7 @@ Cogit >> indexForSelector: selector in: cogMethod at: mcpc [
 	 maximum range of selector oops in specialSelectors since they're likely to cluster."
 	0 to: NumSpecialSelectors - 1 do: [ :i | 
 		| aSpecialSelector |
+
 		aSpecialSelector := coInterpreter specialSelector: i.
 		(objectMemory isOopForwarded: aSpecialSelector) ifTrue: [ 
 			aSpecialSelector := objectMemory followForwarded: aSpecialSelector ].
@@ -11972,7 +11973,7 @@ Cogit >> unlinkIfLinkedSend: annotation pc: mcpc of: theSelector [
 Cogit >> unlinkIfLinkedSend: annotation pc: mcpc to: theCogMethod [
 	<var: #mcpc type: #'char *'>
 	| entryPoint |
-
+	
 	(self isPureSendAnnotation: annotation) ifTrue:
 		[
 
@@ -11980,14 +11981,15 @@ Cogit >> unlinkIfLinkedSend: annotation pc: mcpc to: theCogMethod [
 		 entryPoint > methodZoneBase
 			ifTrue: "It's a linked send."
 				[
-				(self backend instructionBeforeAddress: mcpc -4) aarch64Disassembled .
-				(self objectMemory isCompiledMethod:  (self backend literalBeforeFollowingAddress: mcpc -4))
+				|maybleCompiledMethod|
+				maybleCompiledMethod := (self backend literalBeforeFollowingAddress: mcpc -4).
+				( (self objectMemory isInObjectMemory:  maybleCompiledMethod )  and:[self objectMemory isCompiledMethod: maybleCompiledMethod ] )
 				 ifTrue:[
-						
+					
 					self targetMethodAndSendTableFor: entryPoint annotation: annotation into:
 					[:targetMethod :sendTable| 
 					 "targetMethod asInteger = theCogMethod ifTrue:
-						["self unlinkStaticSendAt: mcpc -4 targetMethod: targetMethod sendTable: sendTable"]".
+						["self unlinkStaticSendAt: mcpc compiledMethod: maybleCompiledMethod "]".
 					1 halt.
 					]
 					].
@@ -12020,6 +12022,7 @@ Cogit >> unlinkIfLinkedSendToFree: annotation pc: mcpc ignored: superfluity [
 Cogit >> unlinkSendAt: mcpc targetMethod: targetMethod sendTable: sendTable [
 	<inline: true>
 	| unlinkedRoutine |
+
 	unlinkedRoutine := sendTable at: (targetMethod cmNumArgs min: NumSendTrampolines - 1).
 	backEnd
 		rewriteInlineCacheAt: mcpc asInteger

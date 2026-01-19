@@ -5011,6 +5011,20 @@ StackToRegisterMappingCogit >> tryCollapseTempVectorInitializationOfSize: slots 
 ]
 
 { #category : 'accessing' }
+StackToRegisterMappingCogit >> unlinkStaticSendAt: mcpc compiledMethod: aCalledCompiledMethod [ 
+	
+<inline: true>
+	| unlinkedRoutine |
+
+	unlinkedRoutine := staticSendTrampolines at: (( coInterpreter argumentCountOf:  aCalledCompiledMethod ) min: NumSendTrampolines - 1).
+	backEnd
+		rewriteInlineCacheAt: mcpc asInteger
+		tag: aCalledCompiledMethod 
+		target: unlinkedRoutine.
+	codeModified := true
+]
+
+{ #category : 'accessing' }
 StackToRegisterMappingCogit >> unlinkStaticSendAt: mcpc targetMethod: atargetCogMethod sendTable: sendTable [ 
 	<inline: true>
 	| unlinkedRoutine |
