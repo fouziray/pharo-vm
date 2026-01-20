@@ -7520,7 +7520,7 @@ SpurMemoryManager >> isInNewSpace: objOop [
 
 { #category : 'object testing' }
 SpurMemoryManager >> isInObjectMemory: anOop [
-
+<api>
 	^ anOop >= memoryMap startOfObjectMemory 
 ]
 
