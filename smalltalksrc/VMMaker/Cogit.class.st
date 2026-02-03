@@ -8831,30 +8831,33 @@ Cogit >> linkSendAt: callSiteReturnAddress in: sendingMethod to: targetMethod of
 
 { #category : 'in-line cacheing' }
 Cogit >> linkStaticSendAt: callSiteReturnAddress in: sendingMethod to: targetMethod offset: theEntryOffset receiver: receiver [
+
 	<api>
 	<var: #sendingMethod type: #'CogMethod *'>
 	<var: #targetMethod type: #'CogMethod *'>
 	| inlineCacheTag address extent |
-	self assert: (theEntryOffset = cmEntryOffset or: [theEntryOffset = cmNoCheckEntryOffset]).
-	self assert: (callSiteReturnAddress between: methodZoneBase and: methodZone freeStart).
+	self assert: (theEntryOffset = cmEntryOffset or: [
+			 theEntryOffset = cmNoCheckEntryOffset ]).
+	self assert: (callSiteReturnAddress
+			 between: methodZoneBase
+			 and: methodZone freeStart).
 
-	inlineCacheTag :=    targetMethod methodObject .
-	
-	(objectRepresentation inlineCacheTagIsYoung: inlineCacheTag) ifTrue:
-		[methodZone ensureInYoungReferrers: sendingMethod].
+	inlineCacheTag := targetMethod methodObject.
+
+	(objectRepresentation inlineCacheTagIsYoung: inlineCacheTag) ifTrue: [
+		methodZone ensureInYoungReferrers: sendingMethod ].
 	address := targetMethod asInteger + theEntryOffset.
 
-	self 
-		enableCodeZoneWriteDuring: [ 	
-			extent := backEnd
-			rewriteStaticInlineCacheAt: callSiteReturnAddress 
-			tag: inlineCacheTag
-			target: address
-		]
-		flushingCacheWith: [ 	
+	self
+		enableCodeZoneWriteDuring: [
+			extent := backEnd 
+				          rewriteStaticInlineCacheAt: callSiteReturnAddress
+				          tag: inlineCacheTag
+				          target: address ]
+		flushingCacheWith: [
 			self
-				flushICacheFrom: callSiteReturnAddress asUnsignedInteger  - extent
-				to: callSiteReturnAddress asUnsignedInteger ].
+				flushICacheFrom: callSiteReturnAddress asUnsignedInteger - extent
+				to: callSiteReturnAddress asUnsignedInteger ]
 ]
 
 { #category : 'analysis' }

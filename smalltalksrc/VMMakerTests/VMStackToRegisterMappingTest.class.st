@@ -32,6 +32,62 @@ VMStackToRegisterMappingTest >> setUp [
 ]
 
 { #category : 'tests' }
+VMStackToRegisterMappingTest >> testCorruptingMemory [
+
+| callSiteReturnAddress badInstruction |
+
+cogit := Cogit new.
+cogit initialize.
+
+"Step 2: Set up the exact memory layout that causes the issue"
+cogit methodZone 
+    baseAddress: 16r320000000;
+    zoneEnd: 16r322000000.
+
+
+
+callSiteReturnAddress := 16r32011c840. "Typical return address we saw"
+
+"Create an LDR literal instruction that points to wrong address (corruption)"
+"This simulates what happens when the PC-relative offset gets corrupted"
+badInstruction := 16r91000000 + ((16rFC0000 >> 5) bitAnd: 16r7FFFF). 
+"Points to 0x31ff1c890 instead of valid 0x3201xxxx range"
+
+Transcript 
+    show: 'Setting up corrupted PC-relative load at '; 
+    show: (callSiteReturnAddress - 8) hexString;
+    show: ' with instruction '; show: badInstruction hexString;
+    cr.
+
+"Step 4: Plant the corrupted instruction"
+cogit uint32AtPointer: callSiteReturnAddress - 8 put: badInstruction.
+
+[
+	 
+    
+    "This should trigger the pcRelativeAddressAt corruption"
+    | cacheTag callTarget |
+    cacheTag := 16r10000000000.
+    callTarget := cogit pcRelativeAddressAt: 16r320040000.
+    
+    cogit 
+        rewriteStaticInlineCacheAt: callSiteReturnAddress
+        tag: cacheTag
+        target: callTarget.
+        
+    Transcript show: 'UNEXPECTED: Rewrite succeeded - may need different corruption'; cr.
+] on: Error do: [:err |
+    Transcript 
+        show: 'REPRODUCTION SUCCESS: '; 
+        show: err description;
+        cr;
+        show: 'This matches the original crash pattern!'; cr.
+    ^ true
+].
+
+]
+
+{ #category : 'tests' }
 VMStackToRegisterMappingTest >> testFlushBelowTop [
 
 	| stop stackPointerBefore framePointer |

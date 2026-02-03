@@ -1818,7 +1818,7 @@ CoInterpreter >> ceStaticSend: methodToGoTo to: rcvr numArgs: numArgs [
 	<inline: false>
 	<var: #cogMethod type: #'CogMethod *'>
 	<var: #newCogMethod type: #'CogMethod *'>
-	| cogMethod primitiveIndex newCogMethod  |
+	| cogMethod primitiveIndex newCogMethod |
 	cogit assertCStackWellAligned.
 	self assert: (objectMemory addressCouldBeOop: rcvr).
 	newMethod := methodToGoTo.
@@ -4698,7 +4698,6 @@ CoInterpreter >> return: returnValue toExecutive: inInterpreter [
 	 longjmp-ing back to the interpreter or simply returning, depending on where we are."
 
 	cogit assertCStackWellAligned.
-	1halt.
 	(self isMachineCodeFrame: framePointer) ifTrue:
 		[self assertValidExecutionPointe: instructionPointer r: framePointer s: stackPointer imbar: false line: #'__LINE__'.
 		 self push: instructionPointer.

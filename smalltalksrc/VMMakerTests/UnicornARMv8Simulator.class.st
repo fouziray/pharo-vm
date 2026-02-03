@@ -245,9 +245,13 @@ UnicornARMv8Simulator >> simulateJumpCallOf: address memory: aMemory [
 	"This method builds a stack frame as expected by the simulator, not as defined by ARM aapcs-abi.
 	In ARM aapcs, every method can define for itself, wether it wants to push lr (nextpc), and wether it 
 	uses a frame pointer. The standard never mentions a fp. It merely defines r4-r11 to be callee-saved."
+	 "This check ensures, that we conform with ARM abi. Before doing anything to the stack, we ensure 2-word alignment."
+	self sp \\ 8 = 4 ifTrue: [ 
+		self stackPointerRegisterValue: self sp - 4.
+		memory longAt: self sp put: 0. 
+	].
+	self assert: self sp  \\ 8 = 0.
 	
-	self assert: self sp \\ 8 = 0. "This check ensures, that we conform with ARM abi. Before doing anything to the stack, we ensure 2-word alignment."
-
 	self pushWord: self linkRegisterValue.
 	self pushWord: self fp.
 	self framePointerRegisterValue: self stackPointerRegisterValue.

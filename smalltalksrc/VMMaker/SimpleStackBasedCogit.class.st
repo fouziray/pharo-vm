@@ -2380,7 +2380,8 @@ SimpleStackBasedCogit >> genSendDirectedSuper: selectorIndex numArgs: numArgs [
 
 { #category : 'bytecode generators' }
 SimpleStackBasedCogit >> genSendLiteralSelector0ArgsBytecode [
-	^self genSend: (byte0 bitAnd: 15) numArgs: 0
+
+	^ self genSend: (byte0 bitAnd: 15) numArgs: 0
 ]
 
 { #category : 'bytecode generators' }
