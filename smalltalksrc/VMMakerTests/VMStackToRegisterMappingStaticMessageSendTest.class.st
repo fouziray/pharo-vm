@@ -218,7 +218,7 @@ VMStackToRegisterMappingStaticMessageSendTest >> testInstructionLoadBeforeStatic
 { #category : 'behavior' }
 VMStackToRegisterMappingStaticMessageSendTest >> testNormalSendBEHAVIOUR [
 
-	| targetSel calledCompiledMethod callerCM callerCogMethod builder callTargetCogMethod result calledSelector receiverClass aMethodDictionary dereferenceRoutine |
+	| targetSel calledCompiledMethod callerCM callerCogMethod builder callTargetCogMethod result calledSelector receiverClass aMethodDictionary dereferenceRoutine instructionsBefore |
 	callerCM := self createMethodOopFromHostMethod:
 		            SmallInteger >> #sendWithouArg.
 	targetSel := memory fetchPointer: 1 ofObject: callerCM.
@@ -236,12 +236,12 @@ VMStackToRegisterMappingStaticMessageSendTest >> testNormalSendBEHAVIOUR [
 		installSelector: calledSelector
 		method: callerCM
 		inMethodDictionary: aMethodDictionary.
-		
+
 	calledCompiledMethod := cogit cog: callerCM selector: calledSelector.
 	callTargetCogMethod := self createMethodOopFromHostMethod:
 		                       Object >> #yourself.
 
-self
+	self
 		installSelector: targetSel
 		method: callTargetCogMethod
 		inMethodDictionary: aMethodDictionary.
@@ -260,9 +260,6 @@ self
 	cogit ceDereferenceSelectorIndex: dereferenceRoutine.
 	cogit generateSendTrampolines.
 
-
-
-
 	"
 	callerCogMethod := cogit cog: callTargetCogMethod selector: selector."
 	builder := self machineCodeFrameBuilder.
@@ -275,12 +272,20 @@ self
 		machineSimulator smalltalkStackPointerRegisterValue.
 
 	interpreter framePointer: machineSimulator framePointerRegisterValue.
+	instructionsBefore := self
+		                      getInstructionsStartingFrom:
+		                      calledCompiledMethod address
+		                      + cogit noCheckEntryOffset
+		                      to:
+		                      calledCompiledMethod address
+		                      + calledCompiledMethod blockSize.
 
-
-	self
-		runFrom:
-		calledCompiledMethod address + calledCompiledMethod stackCheckOffset
-		until: callerAddress.
+1 halt.
+		self
+			runFrom:
+			calledCompiledMethod address
+			+ calledCompiledMethod stackCheckOffset
+			until: callerAddress .
 
 	result := machineSimulator receiverRegisterValue.
 	self assert: (memory integerValueOf: result) equals: 100
@@ -513,8 +518,7 @@ VMStackToRegisterMappingStaticMessageSendTest >> testNormalSendExpectedInstructi
 		                        self class >>#myYourself.
 	
 	selector := #myYourself forMemory: memory inMethod: nil. 
-	
-		callTargetCogMethod :=methodBuilder newMethod
+	callTargetCogMethod :=methodBuilder newMethod
 		                              literalAt: 0
 		                              put: (memory integerObjectOf: 13);
 		                              literalAt: 1
@@ -527,15 +531,11 @@ VMStackToRegisterMappingStaticMessageSendTest >> testNormalSendExpectedInstructi
 	aMethodDictionary := memory
 		                     fetchPointer: MethodDictionaryIndex
 		                     ofObject: receiverClass.
-interpreter methodDictLinearSearchLimit: 100.
+	interpreter methodDictLinearSearchLimit: 100.
 	self
 		installSelector: selector
 		method: calledCompiledMethod1
 		inMethodDictionary: aMethodDictionary.
-
-	
-
-
 	
 	dereferenceRoutine := self compile: [ 
 		cogit MoveCq: selector R: ClassReg .
@@ -543,7 +543,7 @@ interpreter methodDictLinearSearchLimit: 100.
 	cogit methodZoneBase: cogit methodZone zoneFree .
 	
 	cogit ceDereferenceSelectorIndex: dereferenceRoutine.
-cogit generateSendTrampolines.
+	cogit generateSendTrampolines.
 
 
 	callerCogMethod := cogit
@@ -569,6 +569,7 @@ instructionsBefore := self
 		                      to:  calledCompiledMethod address +  calledCompiledMethod stackCheckOffset  .
 		
 	self assert: (instructionsBefore at: 15) assemblyCodeString equals: 'bl', Character tab asString,'#', (   (cogit instVarNamed: 'ordinarySendTrampolines') first -  (instructionsBefore at: 15) address)  asString.
+1 halt.
 	self
 		runFrom: callerCogMethod address + cogit noCheckEntryOffset
 		until: calledCompiledMethod address
@@ -701,7 +702,7 @@ VMStackToRegisterMappingStaticMessageSendTest >> testStaticSendBEHAVIOUR [
 { #category : 'behavior' }
 VMStackToRegisterMappingStaticMessageSendTest >> testStaticSendBEHAVIOURWithoutArg [
 
-	| callerMethod calledMethod callerCogMethod calledCompiledMethod builder result |
+	| callerMethod calledMethod callerCogMethod calledCompiledMethod builder result instructionsBefore |
 	cogit generateSendTrampolines.
 	"	self initializeStackMemory."
 	callerMethod := self createMethodOopFromHostMethod:
@@ -713,7 +714,6 @@ VMStackToRegisterMappingStaticMessageSendTest >> testStaticSendBEHAVIOURWithoutA
 	calledCompiledMethod := cogit
 		                        cog: calledMethod
 		                        selector: memory nilObject.
-	self halt.
 	machineSimulator sendNumberOfArgumentsRegisterValue: 0.
 	self prepareCall.
 	builder := self machineCodeFrameBuilder.
@@ -729,12 +729,19 @@ VMStackToRegisterMappingStaticMessageSendTest >> testStaticSendBEHAVIOURWithoutA
 	interpreter stackPointer:
 		machineSimulator smalltalkStackPointerRegisterValue.
 	interpreter framePointer: machineSimulator framePointerRegisterValue.
-machineSimulator baseRegisterValue: cogit varBaseAddress.
+	machineSimulator baseRegisterValue: cogit varBaseAddress.
 	machineSimulator pc:
 		callerCogMethod address + callerCogMethod stackCheckOffset.
 	self openMachineDebuggerAt:
 		callerCogMethod address + callerCogMethod stackCheckOffset.
-
+	instructionsBefore := self
+		                      getInstructionsStartingFrom:
+		                      callerCogMethod address
+		                      + cogit noCheckEntryOffset
+		                      to:
+		                      callerCogMethod address
+		                      + callerCogMethod blockSize.
+1 halt.
 	self
 		runFrom: callerCogMethod address + callerCogMethod stackCheckOffset
 		until: callerAddress.

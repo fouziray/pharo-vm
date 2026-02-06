@@ -2812,9 +2812,9 @@ StackToRegisterMappingCogit >> genStaticSend: method numArgs: numArgs [
 	self marshallSendArguments: numArgs.
 
 	"Will jump to no check entry point, so put forwarder resolution here in the callsite."
-	objectRepresentation
+"	objectRepresentation
 		genEnsureOopInRegNotForwarded: ReceiverResultReg
-		scratchReg: TempReg.
+		scratchReg: TempReg."
 	"0 through (NumSendTrampolines - 2) numArgs sends have the arg count implciti in the trampoline.
 	 The last send trampoline (NumSendTrampolines - 1) passes numArgs in SendNumArgsReg."
 	numArgs >= (NumSendTrampolines - 1) ifTrue: [
