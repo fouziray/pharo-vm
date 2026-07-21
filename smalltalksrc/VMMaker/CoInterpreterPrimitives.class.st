@@ -186,6 +186,63 @@ CoInterpreterPrimitives >> primitiveLongRunningPrimitiveSemaphore [
 		[self siglong: reenterInterpreter jmp: ReturnToInterpreter]
 ]
 
+{ #category : 'as yet unclassified' }
+CoInterpreterPrimitives >> primitiveMethodCacheSetting [
+
+	<export: true>
+	| methodReceiver data returnedData cache dataSize cacheSize totalSize fusedArray index |
+	1 halt.
+	argumentCount ~= 0 ifTrue: [
+		^ self primitiveFailFor: PrimErrBadNumArgs ].
+	methodReceiver := self stackTop.
+	data := 0.
+	(self methodHasCogMethod: methodReceiver) ifTrue: [
+		data := self profilingDataFor: (self cogMethodOf: methodReceiver).
+		data = -1 ifTrue: [ ^ self primitiveFailFor: PrimErrNoMemory ] ].
+	data = 0 ifTrue: [
+		data := objectMemory
+			        instantiateClass: (objectMemory splObj: ClassArray)
+			        indexableSize: 0 ].
+	cache := cachedICProfilingTuples.
+	returnedData := objectMemory fetchPointer: 0 ofObject: data.
+	cache = 0 ifTrue: [
+		cache := objectMemory
+			         instantiateClass: (objectMemory splObj: ClassArray)
+			         indexableSize: 0 ].
+
+	"Determine sizes and create a new fused array"
+	dataSize := objectMemory slotSizeOf: returnedData.
+	cacheSize := objectMemory slotSizeOf: cache.
+	totalSize := dataSize + cacheSize.
+
+	fusedArray := objectMemory
+		              instantiateClass: (objectMemory splObj: ClassArray)
+		              indexableSize: totalSize.
+
+	"Copy contents of data array into fused array"
+	index := 1.
+	1 to: dataSize do: [ :i |
+		memoryManager
+			storePointer: index - 1
+			ofObject: fusedArray
+			withValue: (objectMemory fetchPointer: i - 1 ofObject: returnedData).
+		index := index + 1 ].
+
+	"Copy contents of cache array into fused array"
+	1 to: cacheSize do: [ :i |
+		memoryManager
+			storePointer: index - 1
+			ofObject: fusedArray
+			withValue: (objectMemory fetchPointer: i - 1 ofObject: cache).
+		index := index + 1 ].
+
+"	memoryManager moveToPermSpace: fusedArray."
+	objectMemory pinObject: fusedArray.
+	cachedICProfilingTuples := fusedArray.
+
+	self pop: 1 thenPush: fusedArray
+]
+
 { #category : 'method introspection primitives' }
 CoInterpreterPrimitives >> primitiveMethodPCData [
 	<export: true>
