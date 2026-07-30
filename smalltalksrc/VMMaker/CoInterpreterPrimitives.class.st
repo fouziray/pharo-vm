@@ -190,57 +190,48 @@ CoInterpreterPrimitives >> primitiveLongRunningPrimitiveSemaphore [
 CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 
 	<export: true>
-	| methodReceiver data returnedData cache dataSize cacheSize totalSize fusedArray index |
-	1 halt.
+	| methodReceiver data returnedData cache dataSize cacheSize totalSize fusedArray index pic startBcpc mcpc typesArray |
 	argumentCount ~= 0 ifTrue: [
 		^ self primitiveFailFor: PrimErrBadNumArgs ].
-	methodReceiver := self stackTop.
-	data := 0.
-	(self methodHasCogMethod: methodReceiver) ifTrue: [
-		data := self profilingDataFor: (self cogMethodOf: methodReceiver).
-		data = -1 ifTrue: [ ^ self primitiveFailFor: PrimErrNoMemory ] ].
-	data = 0 ifTrue: [
-		data := objectMemory
-			        instantiateClass: (objectMemory splObj: ClassArray)
-			        indexableSize: 0 ].
-	cache := cachedICProfilingTuples.
-	returnedData := objectMemory fetchPointer: 0 ofObject: data.
-	cache = 0 ifTrue: [
-		cache := objectMemory
-			         instantiateClass: (objectMemory splObj: ClassArray)
-			         indexableSize: 0 ].
 
-	"Determine sizes and create a new fused array"
-	dataSize := objectMemory slotSizeOf: returnedData.
-	cacheSize := objectMemory slotSizeOf: cache.
-	totalSize := dataSize + cacheSize.
+	methodReceiver := self stackValue: 0.
+	(self methodHasCogMethod: methodReceiver) ifFalse: [
+		cogit cog: methodReceiver selector: objectMemory nilObject ].
 
-	fusedArray := objectMemory
-		              instantiateClass: (objectMemory splObj: ClassArray)
-		              indexableSize: totalSize.
+	(self methodHasCogMethod: methodReceiver) ifTrue: [ "in case the header doesn't point to a cogged method. We can cog it"
+		pic := self stackValue: 1.
 
-	"Copy contents of data array into fused array"
-	index := 1.
-	1 to: dataSize do: [ :i |
-		memoryManager
-			storePointer: index - 1
-			ofObject: fusedArray
-			withValue: (objectMemory fetchPointer: i - 1 ofObject: returnedData).
-		index := index + 1 ].
+		messageSelector := objectMemory stringForCString: 'yourself'.
 
-	"Copy contents of cache array into fused array"
-	1 to: cacheSize do: [ :i |
-		memoryManager
-			storePointer: index - 1
-			ofObject: fusedArray
-			withValue: (objectMemory fetchPointer: i - 1 ofObject: cache).
-		index := index + 1 ].
+		"build the pic from inside the primitive"
 
-"	memoryManager moveToPermSpace: fusedArray."
-	objectMemory pinObject: fusedArray.
-	cachedICProfilingTuples := fusedArray.
+		typesArray := self stackValue: 3.
+		self assert: (objectMemory isIndexable: typesArray).
+		self methodDictLinearSearchLimit: 30.
+		(1 to: (objectMemory numSlotsOf: typesArray)) do: [ :i |
+			| class |
+			class := objectMemory fetchPointer: i - 1 ofObject: typesArray.
 
-	self pop: 1 thenPush: fusedArray
+			self assert: (objectMemory fetchClassOf: class) ~= objectMemory nilObject. 
+			cogit coInterpreter lookupMethodInClass:
+				(objectMemory fetchClassOf: class) ].
+
+
+
+
+
+		startBcpc := self startPCOfMethod: methodReceiver.
+		mcpc := cogit
+			        mcPCFor: startBcpc + (self stackValue: 3)
+			        startBcpc: startBcpc
+			        in: (self cogMethodOf: methodReceiver).
+		cogit
+			linkSendAt: mcpc
+			in: methodReceiver
+			to: pic
+			offset: cogit entryOffset
+			receiver: (objectMemory integerObjectOf: 1)
+		"here supposed to rewrite the mcpc instruction to the pic" ]
 ]
 
 { #category : 'method introspection primitives' }
