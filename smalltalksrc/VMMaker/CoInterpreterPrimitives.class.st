@@ -190,7 +190,7 @@ CoInterpreterPrimitives >> primitiveLongRunningPrimitiveSemaphore [
 CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 
 	<export: true>
-	| methodReceiver data returnedData cache dataSize cacheSize totalSize fusedArray index pic startBcpc mcpc typesArray |
+	| methodReceiver data returnedData cache dataSize cacheSize totalSize fusedArray index pic startBcpc mcpc typesArray targetList cogMethod  cogMethod2|
 	argumentCount ~= 0 ifTrue: [
 		^ self primitiveFailFor: PrimErrBadNumArgs ].
 
@@ -200,29 +200,46 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 
 	(self methodHasCogMethod: methodReceiver) ifTrue: [ "in case the header doesn't point to a cogged method. We can cog it"
 		pic := self stackValue: 1.
-
-		messageSelector := objectMemory stringForCString: 'yourself'.
+		1 halt.
 
 		"build the pic from inside the primitive"
 
 		typesArray := self stackValue: 3.
 		self assert: (objectMemory isIndexable: typesArray).
 		self methodDictLinearSearchLimit: 30.
+		targetList := OrderedCollection new.
 		(1 to: (objectMemory numSlotsOf: typesArray)) do: [ :i |
 			| class |
 			class := objectMemory fetchPointer: i - 1 ofObject: typesArray.
 
-			self assert: (objectMemory fetchClassOf: class) ~= objectMemory nilObject. 
+			self assert:
+				(objectMemory fetchClassOf: class) ~= objectMemory nilObject.
+
 			cogit coInterpreter lookupMethodInClass:
-				(objectMemory fetchClassOf: class) ].
-
-
-
-
-
+				(objectMemory fetchClassOf: class).
+			targetList add: newMethod ].
+		cogMethod := cogit cog: targetList first selector: messageSelector.
+"		cogMethod2 := cogit cog: targetList second selector: messageSelector."
+		1 halt.
+		pic := cogit
+			       cogPICSelector: messageSelector
+			       numArgs: 1
+			       Case0Method: cogMethod 
+			       Case1Method: cogMethod methodObject
+			       tag: (cogit objectRepresentation inlineCacheTagForInstance:
+					        (objectMemory integerObjectOf: 7))
+			       isMNUCase: false.
+	self assert: pic cPICNumCases = 2 .
+		cogit
+	cogExtendPIC: pic
+	CaseNMethod: cogMethod methodObject
+	tag: (cogit objectRepresentation inlineCacheTagForInstance:
+					        (objectMemory integerObjectOf: 7))
+	isMNUCase: false.
+	self assert: pic cPICNumCases = 3. 
 		startBcpc := self startPCOfMethod: methodReceiver.
 		mcpc := cogit
-			        mcPCFor: startBcpc + (self stackValue: 3)
+			        mcPCFor: startBcpc + (self stackValue: 2)
 			        startBcpc: startBcpc
 			        in: (self cogMethodOf: methodReceiver).
 		cogit
