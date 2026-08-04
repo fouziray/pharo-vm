@@ -8811,6 +8811,7 @@ StackInterpreter >> lookupMethodFor: selector InDictionary: dictionary [
 StackInterpreter >> lookupMethodInClass: class [
 	| currentClass superClass dictionary found |
 	<inline: false>
+
 	self assert: (self addressCouldBeClassObj: class).
 	currentClass := class.
 	[currentClass ~= objectMemory nilObject] whileTrue:

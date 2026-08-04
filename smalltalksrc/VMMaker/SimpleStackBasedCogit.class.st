@@ -2820,6 +2820,14 @@ SimpleStackBasedCogit >> generateTracingTrampolines [
 			regsToSave: CallerSavedRegisterMask.
 ]
 
+{ #category : 'in-line cacheing' }
+SimpleStackBasedCogit >> inlineCacheTagForClass: classOop [
+	"Answer the relevant inline cache tag for a class.
+	 c.f. inlineCacheTagForInstance:"
+	<doNotGenerate>
+	^ objectRepresentation inlineCacheTagForClass: classOop
+]
+
 { #category : 'register management' }
 SimpleStackBasedCogit >> isCallerSavedReg: reg [
 	<inline: true>

@@ -24,7 +24,7 @@ ManifestVMMaker class >> ruleExcessiveArgumentsRuleV1FalsePositive [
 ManifestVMMaker class >> ruleLongMethodsRuleV1FalsePositive [
 
 	<ignoreForCoverage>
-	^ #(#(#(#RGClassDefinition #(#DruidJIT)) #'2023-04-26T00:25:44.408297+02:00') #(#(#RGMethodDefinition #(#CogObjectRepresentationForSpur #genGetClassObjectOf:into:scratchReg:instRegIsReceiver: #false)) #'2024-03-20T14:24:36.77799+01:00') )
+	^ #(#(#(#RGClassDefinition #(#DruidJIT)) #'2023-04-26T00:25:44.408297+02:00') #(#(#RGMethodDefinition #(#CogObjectRepresentationForSpur #genGetClassObjectOf:into:scratchReg:instRegIsReceiver: #false)) #'2024-03-20T14:24:36.77799+01:00') #(#(#RGPackageDefinition #(#VMMaker)) #'2026-08-04T10:31:09.365237+02:00') )
 ]
 
 { #category : 'code-critics' }

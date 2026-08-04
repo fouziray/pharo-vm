@@ -865,6 +865,8 @@ VMSimpleStackBasedCogitAbstractTest >> setUpTrampolines [
 
 	send3TrampolineAddress := self compileTrampoline: [ cogit RetN: 0 ] named: #send3argsTrampoline.
 	cogit ordinarySendTrampolineAt: 3 "args" put: send3TrampolineAddress.
+	cogit firstSendTrampoline: sendTrampolineAddress.
+	cogit lastSendTrampoline: sendTrampolineAddress.
 
 
 	cogit ceCPICMissTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#ceCPICMissTrampoline).
