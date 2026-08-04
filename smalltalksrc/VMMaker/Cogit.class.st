@@ -7864,8 +7864,8 @@ Cogit >> generateSendTrampolines [
 					  arg: (self trampolineArgConstant: true)
 					  arg: ReceiverResultReg
 					  arg: (self numArgsOrSendNumArgsReg: numArgs))].
-	firstSend := ordinarySendTrampolines at: 0.
-	lastSend := superSendTrampolines at: NumSendTrampolines - 1
+	firstSendTrampoline := ordinarySendTrampolines at: 0.
+	lastSendTrampoline := superSendTrampolines at: NumSendTrampolines - 1
 ]
 
 { #category : 'initialization' }
