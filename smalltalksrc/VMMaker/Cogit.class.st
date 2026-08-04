@@ -208,8 +208,6 @@ Class {
 		'superSendTrampolines',
 		'directedSuperSendTrampolines',
 		'directedSuperBindingSendTrampolines',
-		'firstSend',
-		'lastSend',
 		'realCEEnterCogCodePopReceiverReg',
 		'realCECallCogCodePopReceiverReg',
 		'realCECallCogCodePopReceiverAndClassRegs',
@@ -250,7 +248,9 @@ Class {
 		'picEndOfCodeLabel',
 		'picEndOfCodeOffset',
 		'picPrototype',
-		'cePICMissTrampoline'
+		'cePICMissTrampoline',
+		'firstSendTrampoline',
+		'lastSendTrampoline'
 	],
 	#classVars : [
 		'AnnotationConstantNames',
@@ -6142,6 +6142,11 @@ Cogit >> firstPrototypeMethodOop [
 		ifFalse: [16r5EAF00D]
 ]
 
+{ #category : 'accessing' }
+Cogit >> firstSendTrampoline: anInteger [ 
+	firstSendTrampoline := anInteger
+]
+
 { #category : 'compile abstract instructions' }
 Cogit >> fixupAt: fixupPC [
 	<inline: true>
@@ -8419,7 +8424,7 @@ Cogit >> isSendReturnPC: retpc [
 	(backEnd isCallPrecedingReturnPC: retpc) ifFalse:
 		[^false].
 	target := backEnd callTargetFromReturnAddress: retpc.
-	^(target between: firstSend and: lastSend)
+	^(target between: firstSendTrampoline and: lastSendTrampoline)
 	   or: [target between: methodZoneBase and: methodZone freeStart]
 ]
 
@@ -8460,6 +8465,11 @@ Cogit >> lastOpcode [
 	^self abstractInstructionAt: opcodeIndex - 1
 ]
 
+{ #category : 'accessing' }
+Cogit >> lastSendTrampoline: anInteger [ 
+	lastSendTrampoline := anInteger
+]
+
 { #category : 'compile abstract instructions' }
 Cogit >> latestContinuationPCFor: descriptor at: pc exts: nExts in: aMethodObj [
 	"Assuming the descriptor is that for a branch or block,
@@ -8473,9 +8483,26 @@ Cogit >> latestContinuationPCFor: descriptor at: pc exts: nExts in: aMethodObj [
 
 { #category : 'in-line cacheing' }
 Cogit >> linkSendAt: callSiteReturnAddress in: sendingMethod to: targetMethod offset: theEntryOffset receiver: receiver [
+
+	<api>
+	^ self
+		  linkSendAt: callSiteReturnAddress
+		  in: sendingMethod
+		  to: targetMethod
+		  offset: theEntryOffset
+		  receiverCacheTag:
+		  (objectRepresentation inlineCacheTagForInstance: receiver)
+]
+
+{ #category : 'in-line cacheing' }
+Cogit >> linkSendAt: callSiteReturnAddress in: sendingMethod to: targetMethod offset: theEntryOffset receiverCacheTag: aCacheTag [
 	<api>
 	<var: #sendingMethod type: #'CogMethod *'>
 	<var: #targetMethod type: #'CogMethod *'>
+	
+	"the receiver cache tag is the cache type tag for the receiver, used at the callsite.
+	See inlineCacheTagForInstance:"
+	
 	| inlineCacheTag address extent |
 	self assert: (theEntryOffset = cmEntryOffset or: [theEntryOffset = cmNoCheckEntryOffset]).
 	self assert: (callSiteReturnAddress between: methodZoneBase and: methodZone freeStart).

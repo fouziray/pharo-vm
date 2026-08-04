@@ -1568,6 +1568,7 @@ CogObjectRepresentationFor32BitSpur >> illegalClassTag [
 CogObjectRepresentationFor32BitSpur >> inlineCacheTagForClass: classOop [
 	"Answer the relevant inline cache tag for a class.
 	 c.f. inlineCacheTagForInstance:"
+	<api>
 	| hash |
 	hash := objectMemory classTagForClass: classOop.
 	^hash <= objectMemory tagMask

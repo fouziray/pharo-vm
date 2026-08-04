@@ -99,8 +99,8 @@ VMSpurMemoryManagerTest >> createArrayClass [
 	memory
 		storePointer: 16 "not necessarily ok, this is not enforced by the VM"
 		ofObject: memory classTableFirstPage
-		withValue: ourArrayClass
-
+		withValue: ourArrayClass.
+	^ ourArrayClass
 ]
 
 { #category : 'helpers' }

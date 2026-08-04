@@ -2203,6 +2203,7 @@ CogObjectRepresentationFor64BitSpur >> illegalClassTag [
 CogObjectRepresentationFor64BitSpur >> inlineCacheTagForClass: classOop [
 	"Answer the relevant inline cache tag for a class.
 	 c.f. inlineCacheTagForInstance:"
+	<api>
 	^objectMemory classTagForClass: classOop
 ]
 

@@ -186,69 +186,157 @@ CoInterpreterPrimitives >> primitiveLongRunningPrimitiveSemaphore [
 		[self siglong: reenterInterpreter jmp: ReturnToInterpreter]
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'system control primitives' }
 CoInterpreterPrimitives >> primitiveMethodCacheSetting [
+	"
+	Links a method MC at a send site to a set of target types/methods.
+	
+	Expected usage:
+	
+	picLinker link: sourceMethod at: bcpc toTypes: typeArray withTargetMethods: targetMethodArray
+	
+	- sourceMethod is a CompiledMethod or CompiledBlock. Linking happens in its machine code counterpart.
+	  If the method does not have machine code, try to compile it. If fails, fail the primitive.
+	- bcpc is the pc at the CompiledMethod/Block corresponding to the bytecode instruction following the send. The bcpc is mapped to a mcpc.
+	  If not a send site, fail. If the pc is already linked, unlink it and relink.
+	- typeArray is an array of Classes/Behaviours representing the type of receivers to be cached. Fail if not.
+	- targetMethodArray is an array of CompiledMethods to be linked in the cache. Fail if not.
+	
+	TypeArray and targetMethodArray are supposed to be the same size.
+	Fail if not.
+	"
 
 	<export: true>
-	| methodReceiver data returnedData cache dataSize cacheSize totalSize fusedArray index pic startBcpc mcpc typesArray targetList cogMethod  cogMethod2|
-	argumentCount ~= 0 ifTrue: [
+	| pic bcpc mcpc typesArray targetMethodArray sourceCogMethod sourceMethod |
+	"Validate we were invoked with at least all 4 arguments stated above"
+	argumentCount < 4 ifTrue: [
 		^ self primitiveFailFor: PrimErrBadNumArgs ].
 
-	methodReceiver := self stackValue: 0.
-	(self methodHasCogMethod: methodReceiver) ifFalse: [
-		cogit cog: methodReceiver selector: objectMemory nilObject ].
+	"Extract values from the stack"
+	targetMethodArray := self stackValue: 0.
+	typesArray := self stackValue: 1.
+	bcpc := self stackValue: 2.
+	sourceMethod := self stackValue: 3.
 
-	(self methodHasCogMethod: methodReceiver) ifTrue: [ "in case the header doesn't point to a cogged method. We can cog it"
-		pic := self stackValue: 1.
-		1 halt.
+	"Validate as much as possible.
+	Do not do irreversible side effects here."
+	((objectMemory isNonImmediate: sourceMethod) and: [
+		 objectMemory isCompiledMethod: sourceMethod ]) ifFalse: [
+		^ self primitiveFailFor: PrimErrBadMethod ].
+	(objectMemory isIntegerObject: bcpc) ifFalse: [
+		^ self primitiveFailFor: PrimErrBadArgument ].
+	(objectMemory isArray: typesArray) ifFalse: [
+		^ self primitiveFailFor: PrimErrBadArgument ].
+	0 to: (objectMemory stSizeOf: typesArray) - 1 do: [ :i |
+		| maybeType |
+		maybeType := objectMemory fetchPointer: i ofObject: typesArray.
+		((objectMemory isNonImmediate: maybeType) and: [
+			 self addressCouldBeClassObj: maybeType ]) ifFalse: [
+			^ self primitiveFailFor: PrimErrBadArgument ] ].
 
-		"build the pic from inside the primitive"
+	(objectMemory isArray: targetMethodArray) ifFalse: [
+		^ self primitiveFailFor: PrimErrBadArgument ].
+	0 to: (objectMemory stSizeOf: targetMethodArray) - 1 do: [ :i |
+		| maybeCompiledMethod |
+		maybeCompiledMethod := objectMemory
+			                       fetchPointer: i
+			                       ofObject: targetMethodArray.
+		((objectMemory isNonImmediate: maybeCompiledMethod) and: [
+			 objectMemory isCompiledMethod: maybeCompiledMethod ]) ifFalse: [
+			^ self primitiveFailFor: PrimErrBadArgument ] ].
 
-		typesArray := self stackValue: 3.
-		self assert: (objectMemory isIndexable: typesArray).
-		self methodDictLinearSearchLimit: 30.
-		targetList := OrderedCollection new.
-		(1 to: (objectMemory numSlotsOf: typesArray)) do: [ :i |
-			| class |
-			class := objectMemory fetchPointer: i - 1 ofObject: typesArray.
+	"we check the arrays are of same size"
+	(objectMemory stSizeOf: targetMethodArray)
+	= (objectMemory stSizeOf: typesArray) ifFalse: [
+		^ self primitiveFailFor: PrimErrBadArgument ].
+	
+	(objectMemory stSizeOf: targetMethodArray) > 6
+		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
 
-			self assert:
-				(objectMemory fetchClassOf: class) ~= objectMemory nilObject.
+	"Compile source method if needed, fail if did not work"
+	(self methodHasCogMethod: sourceMethod) ifFalse: [
+		cogit cog: sourceMethod selector: objectMemory nilObject.
+		(self methodHasCogMethod: sourceMethod) ifFalse: [
+			^ self primitiveFailed ] ].
 
-			cogit coInterpreter lookupMethodInClass:
-				(objectMemory fetchClassOf: class).
-			targetList add: newMethod ].
-		cogMethod := cogit cog: targetList first selector: messageSelector.
-"		cogMethod2 := cogit cog: targetList second selector: messageSelector."
-		1 halt.
-		pic := cogit
-			       cogPICSelector: messageSelector
-			       numArgs: 1
-			       Case0Method: cogMethod 
-			       Case1Method: cogMethod methodObject
-			       tag: (cogit objectRepresentation inlineCacheTagForInstance:
-					        (objectMemory integerObjectOf: 7))
-			       isMNUCase: false.
-	self assert: pic cPICNumCases = 2 .
-		cogit
-	cogExtendPIC: pic
-	CaseNMethod: cogMethod methodObject
-	tag: (cogit objectRepresentation inlineCacheTagForInstance:
-					        (objectMemory integerObjectOf: 7))
-	isMNUCase: false.
-	self assert: pic cPICNumCases = 3. 
-		startBcpc := self startPCOfMethod: methodReceiver.
-		mcpc := cogit
-			        mcPCFor: startBcpc + (self stackValue: 2)
-			        startBcpc: startBcpc
-			        in: (self cogMethodOf: methodReceiver).
+	"From now, we know that the method is compiled.
+	Get the cog method, and map the BCPC.
+	We should check that the MCPC is a send here, but currently there is no code for that."
+	sourceCogMethod := self cogMethodOf: sourceMethod.
+	mcpc := cogit
+		        mcPCFor: (objectMemory integerValueOf: bcpc)
+		        startBcpc: (self startPCOfMethod: sourceMethod)
+		        in: sourceCogMethod.
+	
+	"The bytecode PC is wrong.
+	We could only validate it after compiling..."
+
+	(mcpc > 0 and: [ cogit isSendReturnPC: mcpc ])
+		ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ].
+	
+	(objectMemory stSizeOf: targetMethodArray) = 1 ifTrue: [ 
+		"Requested monomorphic link"
+		| targetType targetMethod targetCogMethod |
+		targetType := objectMemory fetchPointer: 0 ofObject: typesArray.
+		targetMethod := objectMemory fetchPointer: 0 ofObject: targetMethodArray.
+		targetCogMethod := self ensureMethodIsCogged: targetMethod maybeClosure: objectMemory nilObject.
 		cogit
 			linkSendAt: mcpc
-			in: methodReceiver
+			in: sourceCogMethod
+			to: targetCogMethod
+			offset: cogit entryOffset
+			receiverCacheTag: (cogit inlineCacheTagForClass: targetType)
+	] ifFalse: [ 
+		| firstCogMethod secondCogMethod sizeOfTargets|
+		"Requested polymorphic link"
+		"build the pic from inside the primitive"
+		
+		sizeOfTargets := (objectMemory stSizeOf: targetMethodArray). 
+		(sizeOfTargets > 0) ifTrue:[
+			firstCogMethod := self
+		             ensureMethodIsCogged: (objectMemory fetchPointer: 0 ofObject: targetMethodArray) 
+		             maybeClosure: objectMemory nilObject.
+		 secondCogMethod := self
+		             ensureMethodIsCogged: (objectMemory fetchPointer: 1 ofObject: targetMethodArray) 
+		             maybeClosure: objectMemory nilObject.
+		
+		pic := cogit
+		       cogPICSelector: messageSelector
+		       numArgs: 1
+		       Case0Method: firstCogMethod
+		       Case1Method: secondCogMethod methodObject
+		       tag: (cogit inlineCacheTagForClass: ( objectMemory fetchPointer: 1 ofObject: typesArray ) )
+		       isMNUCase: false. 
+			]. 
+		sizeOfTargets > 2 ifTrue:[ 2 to: (sizeOfTargets ) -1 do:[ :i |
+				|targetCogMethod|
+			 targetCogMethod := self
+		             ensureMethodIsCogged: (objectMemory fetchPointer: i -1 ofObject: targetMethodArray) 
+		             maybeClosure: objectMemory nilObject.
+				cogit
+				cogExtendPIC: pic
+				CaseNMethod: targetCogMethod methodObject
+				tag: (cogit inlineCacheTagForClass: ( objectMemory fetchPointer: i -1 ofObject: typesArray ))
+				isMNUCase: false.
+			]. 
+			cogit
+			linkSendAt: mcpc
+			in: sourceCogMethod
 			to: pic
 			offset: cogit entryOffset
-			receiver: (objectMemory integerObjectOf: 1)
-		"here supposed to rewrite the mcpc instruction to the pic" ]
+			receiverCacheTag: (cogit inlineCacheTagForClass:(objectMemory fetchPointer: 1 ofObject: typesArray)).
+		
+		].
+		 
+		
+		 ]. 
+	
+
+	"here supposed to rewrite the mcpc instruction to the pic"
+
+	"Finally cleanup the stack.
+	Pop the arguments, push the result, which is nil here"
+	self pop: argumentCount + 1 "the receiver" thenPush: objectMemory nilObject
 ]
 
 { #category : 'method introspection primitives' }
