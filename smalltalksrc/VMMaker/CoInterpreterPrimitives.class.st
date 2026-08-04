@@ -250,6 +250,9 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 	= (objectMemory stSizeOf: typesArray) ifFalse: [
 		^ self primitiveFailFor: PrimErrBadArgument ].
 	
+	(objectMemory stSizeOf: targetMethodArray) = 0
+		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
+	
 	(objectMemory stSizeOf: targetMethodArray) > 6
 		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
 
@@ -292,45 +295,40 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 		"build the pic from inside the primitive"
 		
 		sizeOfTargets := (objectMemory stSizeOf: targetMethodArray). 
-		(sizeOfTargets > 0) ifTrue:[
-			firstCogMethod := self
-		             ensureMethodIsCogged: (objectMemory fetchPointer: 0 ofObject: targetMethodArray) 
-		             maybeClosure: objectMemory nilObject.
-		 secondCogMethod := self
-		             ensureMethodIsCogged: (objectMemory fetchPointer: 1 ofObject: targetMethodArray) 
-		             maybeClosure: objectMemory nilObject.
-		
+		firstCogMethod := self
+             ensureMethodIsCogged: (objectMemory fetchPointer: 0 ofObject: targetMethodArray) 
+             maybeClosure: objectMemory nilObject.
+		secondCogMethod := self
+             ensureMethodIsCogged: (objectMemory fetchPointer: 1 ofObject: targetMethodArray) 
+             maybeClosure: objectMemory nilObject.
+
 		pic := cogit
 		       cogPICSelector: messageSelector
-		       numArgs: 1
+		       numArgs: firstCogMethod cmNumArgs "Assume for now that all methods have same numArgs. We should validate it and test it!"
 		       Case0Method: firstCogMethod
 		       Case1Method: secondCogMethod methodObject
-		       tag: (cogit inlineCacheTagForClass: ( objectMemory fetchPointer: 1 ofObject: typesArray ) )
-		       isMNUCase: false. 
-			]. 
-		sizeOfTargets > 2 ifTrue:[ 2 to: (sizeOfTargets ) -1 do:[ :i |
-				|targetCogMethod|
-			 targetCogMethod := self
-		             ensureMethodIsCogged: (objectMemory fetchPointer: i -1 ofObject: targetMethodArray) 
-		             maybeClosure: objectMemory nilObject.
-				cogit
+		       tag: (cogit inlineCacheTagForClass: (objectMemory fetchPointer: 1 ofObject: typesArray) )
+		       isMNUCase: false.
+
+		2 to: sizeOfTargets - 1 do:[ :i |
+			| targetCogMethod |
+			targetCogMethod := self
+				ensureMethodIsCogged: (objectMemory fetchPointer: i  ofObject: targetMethodArray) 
+				maybeClosure: objectMemory nilObject.
+			cogit
 				cogExtendPIC: pic
 				CaseNMethod: targetCogMethod methodObject
-				tag: (cogit inlineCacheTagForClass: ( objectMemory fetchPointer: i -1 ofObject: typesArray ))
+				tag: (cogit inlineCacheTagForClass: (objectMemory fetchPointer: i  ofObject: typesArray))
 				isMNUCase: false.
-			]. 
-			cogit
+		]. 
+	
+		cogit
 			linkSendAt: mcpc
 			in: sourceCogMethod
 			to: pic
 			offset: cogit entryOffset
-			receiverCacheTag: (cogit inlineCacheTagForClass:(objectMemory fetchPointer: 1 ofObject: typesArray)).
-		
-		].
-		 
-		
-		 ]. 
-	
+			receiverCacheTag: (cogit inlineCacheTagForClass:(objectMemory fetchPointer: 0 ofObject: typesArray)).
+	]. 
 
 	"here supposed to rewrite the mcpc instruction to the pic"
 
