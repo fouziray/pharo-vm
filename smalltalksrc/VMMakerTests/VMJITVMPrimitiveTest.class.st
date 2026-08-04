@@ -6,10 +6,81 @@ Class {
 	#tag : 'JitTests'
 }
 
+{ #category : 'special selectors' }
+VMJITVMPrimitiveTest >> associateSpecialSelectorArrayTotTest [
+| splObjectArrayFromImage |
+splObjectArrayFromImage := PointerUtils oopForObject:  (Smalltalk specialSelectors) pin.
+	memory specialObjectsOop:splObjectArrayFromImage .    
+]
+
+{ #category : 'tests' }
+VMJITVMPrimitiveTest >> installSelector: aSelectorOop method: aMethodOop inMethodDictionary: aMethodDictionary [
+	
+	| anArrayOfMethods |
+	anArrayOfMethods := memory
+		                    fetchPointer: MethodArrayIndex
+		                    ofObject: aMethodDictionary.
+	memory
+		storePointer:
+		(memory methodDictionaryHash: aSelectorOop mask: 11) + 2
+		ofObject: aMethodDictionary
+		withValue: aSelectorOop.
+	memory
+		storePointer: (memory methodDictionaryHash: aSelectorOop mask: 11)
+		ofObject: anArrayOfMethods
+		withValue: aMethodOop
+]
+
+{ #category : 'primitive cache setting' }
+VMJITVMPrimitiveTest >> linkPicWithCases: sizeOfPic withIntegerAtPosition: aPosition [
+
+	"We create two target type and methods arrays, with sizes > to the size of pic limit (6).
+	
+	We fill it with types and fresh methods, making sure that the nth position has the integer type, which we will look for matching"
+	| targetTypes targetMethods |
+	targetTypes := self newArrayWithSlots: sizeOfPic.
+	targetMethods := self newArrayWithSlots: sizeOfPic.
+
+	1 to: sizeOfPic do: [:i|
+		| targetType targetMethod |
+		
+		targetType := i == aPosition ifTrue: [
+			self setSmallIntegerClassIntoClassTable.
+		] ifFalse: [
+			self setSmallFloatClassIntoClassTable.
+		].
+		memory
+			storePointer: i - 1
+			ofObject: targetTypes
+			withValue: targetType.
+		
+		targetMethod := methodBuilder 
+			bytecodes: #[
+				16r4C "push self"
+				16r5C "ret top"
+			];
+			buildMethod.
+		memory
+			storePointer: i - 1
+			ofObject: targetMethods
+			withValue: targetMethod.
+	].
+	^ { targetTypes . targetMethods }
+]
+
+{ #category : 'accessing' }
+VMJITVMPrimitiveTest >> sendSiteToSet [
+
+	obj1  yourself.
+	^ 12 
+]
+
 { #category : 'tests - primitiveMethodXray' }
 VMJITVMPrimitiveTest >> setUp [
 
 	super setUp.
+
+	interpreter messageSelector: memory nilObject.
 
 	self setUpTrampolines.
 	self setUpCogMethodEntry.
@@ -285,13 +356,12 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingMonomorphicWithWrongBytec
 ]
 
 { #category : 'primitive cache setting' }
-VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic2Cases [
+VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic2CasesMatchFirstType [
 
-	| sizeOfPic targetTypes targetMethods sourceMethod arrayClass bcpc targetMethod |
+	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays |
+
+	positionToMatch := 1.
 	
-	interpreter messageSelector: (memory pinObject: (memory stringForCString: #yourself)) .
-	
-	sizeOfPic:= 2.
 	sourceMethod := methodBuilder
 		bytecodes: #[ 
 			16r4C "push self"
@@ -299,33 +369,15 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic2Cases [
 			16r5C "ret top"
 		];
 		buildMethod.
-	targetMethod := methodBuilder 
-		bytecodes: #[ 
-			16r4C "push self"
-			16r5C "ret top"
-		];
-		buildMethod.
-		
+			
 	"Go 2 bytes after the beginning of the method.
 	This is the byte following the send!"
 	bcpc := (interpreter startPCOfMethod: sourceMethod) + 2. 
-	arrayClass := self createArrayClass.
-
-	"We create two target type and methods arrays, with sizes > to the size of pic limit (6)"
-	targetTypes := self newArrayWithSlots: sizeOfPic.
-	targetMethods := self newArrayWithSlots: sizeOfPic.
-
-0 to: sizeOfPic - 1 do: [ :i |
-		memory
-			storePointer: i
-			ofObject: targetMethods
-			withValue: sourceMethod.
-		memory
-			storePointer: i
-			ofObject: targetTypes
-			withValue: arrayClass ].
-
-
+	
+	targetArrays := self linkPicWithCases: 2 withIntegerAtPosition: positionToMatch.
+	targetTypes := targetArrays first.
+	targetMethods := targetArrays second.
+	
 
 	"sourceMethod"
 	interpreter push: sourceMethod.
@@ -339,16 +391,22 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic2Cases [
 	interpreter argumentCount: 4.
 	interpreter primitiveMethodCacheSetting.
 
+	self
+		prepareStackForSendReceiver: (memory integerObjectOf: 3) 
+		arguments: { }.
+
+	self
+		runFrom: (interpreter cogMethodOf: sourceMethod ) address + cogit noCheckEntryOffset
+		until: (interpreter cogMethodOf: (memory fetchPointer: positionToMatch - 1 ofObject: targetMethods)) address + cogit noCheckEntryOffset 
 ]
 
 { #category : 'primitive cache setting' }
-VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic3Cases [
+VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic2CasesMatchSecondType [
 
-	| sizeOfPic targetTypes targetMethods sourceMethod arrayClass bcpc targetMethod |
+	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays |
+
+	positionToMatch := 2.
 	
-	interpreter messageSelector: (memory pinObject: (memory stringForCString: #yourself)) .
-	
-	sizeOfPic:= 3.
 	sourceMethod := methodBuilder
 		bytecodes: #[ 
 			16r4C "push self"
@@ -356,33 +414,15 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic3Cases [
 			16r5C "ret top"
 		];
 		buildMethod.
-	targetMethod := methodBuilder 
-		bytecodes: #[ 
-			16r4C "push self"
-			16r5C "ret top"
-		];
-		buildMethod.
-		
+			
 	"Go 2 bytes after the beginning of the method.
 	This is the byte following the send!"
 	bcpc := (interpreter startPCOfMethod: sourceMethod) + 2. 
-	arrayClass := self createArrayClass.
-
-	"We create two target type and methods arrays, with sizes > to the size of pic limit (6)"
-	targetTypes := self newArrayWithSlots: sizeOfPic.
-	targetMethods := self newArrayWithSlots: sizeOfPic.
-
-0 to: sizeOfPic - 1 do: [ :i |
-		memory
-			storePointer: i
-			ofObject: targetMethods
-			withValue: sourceMethod.
-		memory
-			storePointer: i
-			ofObject: targetTypes
-			withValue: arrayClass ].
-
-
+	
+	targetArrays := self linkPicWithCases: 2 withIntegerAtPosition: positionToMatch.
+	targetTypes := targetArrays first.
+	targetMethods := targetArrays second.
+	
 
 	"sourceMethod"
 	interpreter push: sourceMethod.
@@ -396,6 +436,148 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic3Cases [
 	interpreter argumentCount: 4.
 	interpreter primitiveMethodCacheSetting.
 
+	self
+		prepareStackForSendReceiver: (memory integerObjectOf: 3) 
+		arguments: { }.
+
+	self
+		runFrom: (interpreter cogMethodOf: sourceMethod ) address + cogit noCheckEntryOffset
+		until: (interpreter cogMethodOf: (memory fetchPointer: positionToMatch - 1 ofObject: targetMethods)) address + cogit noCheckEntryOffset 
+]
+
+{ #category : 'primitive cache setting' }
+VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic3CasesMatchFirstType [
+
+	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays |
+
+	positionToMatch := 1.
+	
+	sourceMethod := methodBuilder
+		bytecodes: #[ 
+			16r4C "push self"
+			16r80 "send 0 arg"
+			16r5C "ret top"
+		];
+		buildMethod.
+			
+	"Go 2 bytes after the beginning of the method.
+	This is the byte following the send!"
+	bcpc := (interpreter startPCOfMethod: sourceMethod) + 2. 
+	
+	targetArrays := self linkPicWithCases: 3 withIntegerAtPosition: positionToMatch.
+	targetTypes := targetArrays first.
+	targetMethods := targetArrays second.
+	
+
+	"sourceMethod"
+	interpreter push: sourceMethod.
+	"bcpc"
+	interpreter push: (memory integerObjectOf: bcpc).
+	"target types"
+	interpreter push: targetTypes.
+	"target methods"
+	interpreter push: targetMethods.
+
+	interpreter argumentCount: 4.
+	interpreter primitiveMethodCacheSetting.
+
+	self
+		prepareStackForSendReceiver: (memory integerObjectOf: 3) 
+		arguments: { }.
+
+	self
+		runFrom: (interpreter cogMethodOf: sourceMethod ) address + cogit noCheckEntryOffset
+		until: (interpreter cogMethodOf: (memory fetchPointer: positionToMatch - 1 ofObject: targetMethods)) address + cogit noCheckEntryOffset 
+]
+
+{ #category : 'primitive cache setting' }
+VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic3CasesMatchSecondType [
+
+	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays |
+
+	positionToMatch := 2.
+	
+	sourceMethod := methodBuilder
+		bytecodes: #[ 
+			16r4C "push self"
+			16r80 "send 0 arg"
+			16r5C "ret top"
+		];
+		buildMethod.
+			
+	"Go 2 bytes after the beginning of the method.
+	This is the byte following the send!"
+	bcpc := (interpreter startPCOfMethod: sourceMethod) + 2. 
+	
+	targetArrays := self linkPicWithCases: 3 withIntegerAtPosition: positionToMatch.
+	targetTypes := targetArrays first.
+	targetMethods := targetArrays second.
+	
+
+	"sourceMethod"
+	interpreter push: sourceMethod.
+	"bcpc"
+	interpreter push: (memory integerObjectOf: bcpc).
+	"target types"
+	interpreter push: targetTypes.
+	"target methods"
+	interpreter push: targetMethods.
+
+	interpreter argumentCount: 4.
+	interpreter primitiveMethodCacheSetting.
+
+	self
+		prepareStackForSendReceiver: (memory integerObjectOf: 3) 
+		arguments: { }.
+
+	self
+		runFrom: (interpreter cogMethodOf: sourceMethod ) address + cogit noCheckEntryOffset
+		until: (interpreter cogMethodOf: (memory fetchPointer: positionToMatch - 1 ofObject: targetMethods)) address + cogit noCheckEntryOffset 
+]
+
+{ #category : 'primitive cache setting' }
+VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic3CasesMatchThirdType [
+
+	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays |
+
+	positionToMatch := 3.
+	
+	sourceMethod := methodBuilder
+		bytecodes: #[ 
+			16r4C "push self"
+			16r80 "send 0 arg"
+			16r5C "ret top"
+		];
+		buildMethod.
+			
+	"Go 2 bytes after the beginning of the method.
+	This is the byte following the send!"
+	bcpc := (interpreter startPCOfMethod: sourceMethod) + 2. 
+	
+	targetArrays := self linkPicWithCases: 3 withIntegerAtPosition: positionToMatch.
+	targetTypes := targetArrays first.
+	targetMethods := targetArrays second.
+	
+
+	"sourceMethod"
+	interpreter push: sourceMethod.
+	"bcpc"
+	interpreter push: (memory integerObjectOf: bcpc).
+	"target types"
+	interpreter push: targetTypes.
+	"target methods"
+	interpreter push: targetMethods.
+
+	interpreter argumentCount: 4.
+	interpreter primitiveMethodCacheSetting.
+
+	self
+		prepareStackForSendReceiver: (memory integerObjectOf: 3) 
+		arguments: { }.
+
+	self
+		runFrom: (interpreter cogMethodOf: sourceMethod ) address + cogit noCheckEntryOffset
+		until: (interpreter cogMethodOf: (memory fetchPointer: positionToMatch - 1 ofObject: targetMethods)) address + cogit noCheckEntryOffset 
 ]
 
 { #category : 'primitive cache setting' }
@@ -931,13 +1113,12 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingMonomorphicWithWrongBytec
 ]
 
 { #category : 'primitive cache setting' }
-VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic2Cases [
+VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic2CasesMatchFirstType [
 
-	| sizeOfPic targetTypes targetMethods sourceMethod arrayClass bcpc targetMethod |
+	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays |
+
+	positionToMatch := 1.
 	
-	interpreter messageSelector: (memory pinObject: (memory stringForCString: #yourself)) .
-	
-	sizeOfPic:= 2.
 	sourceMethod := methodBuilder
 		bytecodes: #[ 
 			16r4C "push self"
@@ -945,33 +1126,15 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic2Cases [
 			16r5C "ret top"
 		];
 		buildMethod.
-	targetMethod := methodBuilder 
-		bytecodes: #[ 
-			16r4C "push self"
-			16r5C "ret top"
-		];
-		buildMethod.
-		
+			
 	"Go 2 bytes after the beginning of the method.
 	This is the byte following the send!"
 	bcpc := (interpreter startPCOfMethod: sourceMethod) + 2. 
-	arrayClass := self createArrayClass.
-
-	"We create two target type and methods arrays, with sizes > to the size of pic limit (6)"
-	targetTypes := self newArrayWithSlots: sizeOfPic.
-	targetMethods := self newArrayWithSlots: sizeOfPic.
-
-0 to: sizeOfPic - 1 do: [ :i |
-		memory
-			storePointer: i
-			ofObject: targetMethods
-			withValue: sourceMethod.
-		memory
-			storePointer: i
-			ofObject: targetTypes
-			withValue: arrayClass ].
-
-
+	
+	targetArrays := self linkPicWithCases: 2 withIntegerAtPosition: positionToMatch.
+	targetTypes := targetArrays first.
+	targetMethods := targetArrays second.
+	
 
 	"sourceMethod"
 	interpreter push: sourceMethod.
@@ -985,16 +1148,22 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic2Cases [
 	interpreter argumentCount: 4.
 	interpreter primitiveMethodCacheSetting.
 
+	self
+		prepareStackForSendReceiver: (memory integerObjectOf: 3) 
+		arguments: { }.
+
+	self
+		runFrom: (interpreter cogMethodOf: sourceMethod ) address + cogit noCheckEntryOffset
+		until: (interpreter cogMethodOf: (memory fetchPointer: positionToMatch - 1 ofObject: targetMethods)) address + cogit noCheckEntryOffset 
 ]
 
 { #category : 'primitive cache setting' }
-VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic3Cases [
+VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic2CasesMatchSecondType [
 
-	| sizeOfPic targetTypes targetMethods sourceMethod arrayClass bcpc targetMethod |
+	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays |
+
+	positionToMatch := 2.
 	
-	interpreter messageSelector: (memory pinObject: (memory stringForCString: #yourself)) .
-	
-	sizeOfPic:= 3.
 	sourceMethod := methodBuilder
 		bytecodes: #[ 
 			16r4C "push self"
@@ -1002,33 +1171,15 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic3Cases [
 			16r5C "ret top"
 		];
 		buildMethod.
-	targetMethod := methodBuilder 
-		bytecodes: #[ 
-			16r4C "push self"
-			16r5C "ret top"
-		];
-		buildMethod.
-		
+			
 	"Go 2 bytes after the beginning of the method.
 	This is the byte following the send!"
 	bcpc := (interpreter startPCOfMethod: sourceMethod) + 2. 
-	arrayClass := self createArrayClass.
-
-	"We create two target type and methods arrays, with sizes > to the size of pic limit (6)"
-	targetTypes := self newArrayWithSlots: sizeOfPic.
-	targetMethods := self newArrayWithSlots: sizeOfPic.
-
-0 to: sizeOfPic - 1 do: [ :i |
-		memory
-			storePointer: i
-			ofObject: targetMethods
-			withValue: sourceMethod.
-		memory
-			storePointer: i
-			ofObject: targetTypes
-			withValue: arrayClass ].
-
-
+	
+	targetArrays := self linkPicWithCases: 2 withIntegerAtPosition: positionToMatch.
+	targetTypes := targetArrays first.
+	targetMethods := targetArrays second.
+	
 
 	"sourceMethod"
 	interpreter push: sourceMethod.
@@ -1042,6 +1193,148 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic3Cases [
 	interpreter argumentCount: 4.
 	interpreter primitiveMethodCacheSetting.
 
+	self
+		prepareStackForSendReceiver: (memory integerObjectOf: 3) 
+		arguments: { }.
+
+	self
+		runFrom: (interpreter cogMethodOf: sourceMethod ) address + cogit noCheckEntryOffset
+		until: (interpreter cogMethodOf: (memory fetchPointer: positionToMatch - 1 ofObject: targetMethods)) address + cogit noCheckEntryOffset 
+]
+
+{ #category : 'primitive cache setting' }
+VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic3CasesMatchFirstType [
+
+	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays |
+
+	positionToMatch := 1.
+	
+	sourceMethod := methodBuilder
+		bytecodes: #[ 
+			16r4C "push self"
+			16r80 "send 0 arg"
+			16r5C "ret top"
+		];
+		buildMethod.
+			
+	"Go 2 bytes after the beginning of the method.
+	This is the byte following the send!"
+	bcpc := (interpreter startPCOfMethod: sourceMethod) + 2. 
+	
+	targetArrays := self linkPicWithCases: 3 withIntegerAtPosition: positionToMatch.
+	targetTypes := targetArrays first.
+	targetMethods := targetArrays second.
+	
+
+	"sourceMethod"
+	interpreter push: sourceMethod.
+	"bcpc"
+	interpreter push: (memory integerObjectOf: bcpc).
+	"target types"
+	interpreter push: targetTypes.
+	"target methods"
+	interpreter push: targetMethods.
+
+	interpreter argumentCount: 4.
+	interpreter primitiveMethodCacheSetting.
+
+	self
+		prepareStackForSendReceiver: (memory integerObjectOf: 3) 
+		arguments: { }.
+
+	self
+		runFrom: (interpreter cogMethodOf: sourceMethod ) address + cogit noCheckEntryOffset
+		until: (interpreter cogMethodOf: (memory fetchPointer: positionToMatch - 1 ofObject: targetMethods)) address + cogit noCheckEntryOffset 
+]
+
+{ #category : 'primitive cache setting' }
+VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic3CasesMatchSecondType [
+
+	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays |
+
+	positionToMatch := 2.
+	
+	sourceMethod := methodBuilder
+		bytecodes: #[ 
+			16r4C "push self"
+			16r80 "send 0 arg"
+			16r5C "ret top"
+		];
+		buildMethod.
+			
+	"Go 2 bytes after the beginning of the method.
+	This is the byte following the send!"
+	bcpc := (interpreter startPCOfMethod: sourceMethod) + 2. 
+	
+	targetArrays := self linkPicWithCases: 3 withIntegerAtPosition: positionToMatch.
+	targetTypes := targetArrays first.
+	targetMethods := targetArrays second.
+	
+
+	"sourceMethod"
+	interpreter push: sourceMethod.
+	"bcpc"
+	interpreter push: (memory integerObjectOf: bcpc).
+	"target types"
+	interpreter push: targetTypes.
+	"target methods"
+	interpreter push: targetMethods.
+
+	interpreter argumentCount: 4.
+	interpreter primitiveMethodCacheSetting.
+
+	self
+		prepareStackForSendReceiver: (memory integerObjectOf: 3) 
+		arguments: { }.
+
+	self
+		runFrom: (interpreter cogMethodOf: sourceMethod ) address + cogit noCheckEntryOffset
+		until: (interpreter cogMethodOf: (memory fetchPointer: positionToMatch - 1 ofObject: targetMethods)) address + cogit noCheckEntryOffset 
+]
+
+{ #category : 'primitive cache setting' }
+VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic3CasesMatchThirdType [
+
+	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays |
+
+	positionToMatch := 3.
+	
+	sourceMethod := methodBuilder
+		bytecodes: #[ 
+			16r4C "push self"
+			16r80 "send 0 arg"
+			16r5C "ret top"
+		];
+		buildMethod.
+			
+	"Go 2 bytes after the beginning of the method.
+	This is the byte following the send!"
+	bcpc := (interpreter startPCOfMethod: sourceMethod) + 2. 
+	
+	targetArrays := self linkPicWithCases: 3 withIntegerAtPosition: positionToMatch.
+	targetTypes := targetArrays first.
+	targetMethods := targetArrays second.
+	
+
+	"sourceMethod"
+	interpreter push: sourceMethod.
+	"bcpc"
+	interpreter push: (memory integerObjectOf: bcpc).
+	"target types"
+	interpreter push: targetTypes.
+	"target methods"
+	interpreter push: targetMethods.
+
+	interpreter argumentCount: 4.
+	interpreter primitiveMethodCacheSetting.
+
+	self
+		prepareStackForSendReceiver: (memory integerObjectOf: 3) 
+		arguments: { }.
+
+	self
+		runFrom: (interpreter cogMethodOf: sourceMethod ) address + cogit noCheckEntryOffset
+		until: (interpreter cogMethodOf: (memory fetchPointer: positionToMatch - 1 ofObject: targetMethods)) address + cogit noCheckEntryOffset 
 ]
 
 { #category : 'primitive cache setting' }

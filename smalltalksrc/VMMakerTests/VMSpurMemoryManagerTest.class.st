@@ -309,7 +309,8 @@ VMSpurMemoryManagerTest >> installFloatClass [
 	memory
 		storePointer: ClassFloatCompactIndex
 		ofObject: memory classTableFirstPage
-		withValue: classFloat
+		withValue: classFloat.
+	^ classFloat
 
 	"This simulated classFloat class is necessary because the 32bits VM cannot instanciate boxed floats by itself"
 ]
