@@ -4605,6 +4605,7 @@ Cogit >> cogExtendPIC: cPIC CaseNMethod: caseNMethod tag: caseNTag isMNUCase: is
 	 its unchecked entry-point.  If caseNMethod is not cogged, jump to the fast interpreter
 	 dispatch, and if isMNUCase then dispatch to fast MNU invocation and mark the cPIC as
 	 having the MNU case for cache flushing."
+	<api>
  	<var: #cPIC type: #'CogMethod *'>
 	| operand target address |
 	self enableCodeZoneWriteDuring: [  
@@ -4848,6 +4849,7 @@ Cogit >> cogPICSelector: selector numArgs: numArgs Case0Method: case0CogMethod C
 		- a CompiledMethod; link to ceInterpretMethodFromPIC:
 		- a CompiledMethod; link to ceMNUFromPICMNUMethod:receiver:"
 
+	<api>
 	<var: #pic type: #'CogMethod*'>
 	<var: #case0CogMethod type: #'CogMethod *'>
 	<returnTypeC: #'CogMethod *'>
@@ -9754,6 +9756,7 @@ Cogit >> maybeUnsafeJumpContinuation: latestContinuation at: bcpc for: descripto
 Cogit >> mcPCFor: bcpc startBcpc: startbcpc in: cogMethod [
 	"Answer the absolute machine code pc matching the zero-relative bytecode pc argument
 	 in cogMethod, given the start of the bytecodes for cogMethod's block or method object."
+	<api>
 	<var: #cogMethod type: #'CogMethod *'>
 	<returnTypeC: #usqInt>
 	^self
