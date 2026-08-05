@@ -260,7 +260,7 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 	(self methodHasCogMethod: sourceMethod) ifFalse: [
 		cogit cog: sourceMethod selector: objectMemory nilObject.
 		(self methodHasCogMethod: sourceMethod) ifFalse: [
-			^ self primitiveFailed ] ].
+			^ self primitiveFail ] ].
 
 	"From now, we know that the method is compiled.
 	Get the cog method, and map the BCPC.
