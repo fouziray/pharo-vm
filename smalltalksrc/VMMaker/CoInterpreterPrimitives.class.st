@@ -303,7 +303,7 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
              maybeClosure: objectMemory nilObject.
 
 		pic := cogit
-		       cogPICSelector: messageSelector
+		       publicCogPICSelector: messageSelector
 		       numArgs: firstCogMethod cmNumArgs "Assume for now that all methods have same numArgs. We should validate it and test it!"
 		       Case0Method: firstCogMethod
 		       Case1Method: secondCogMethod methodObject
@@ -320,7 +320,7 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 				CaseNMethod: targetCogMethod methodObject
 				tag: (cogit inlineCacheTagForClass: (objectMemory fetchPointer: i  ofObject: typesArray))
 				isMNUCase: false.
-		]. 
+		].
 	
 		cogit
 			linkSendAt: mcpc

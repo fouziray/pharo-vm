@@ -4849,7 +4849,6 @@ Cogit >> cogPICSelector: selector numArgs: numArgs Case0Method: case0CogMethod C
 		- a CompiledMethod; link to ceInterpretMethodFromPIC:
 		- a CompiledMethod; link to ceMNUFromPICMNUMethod:receiver:"
 
-	<api>
 	<var: #pic type: #'CogMethod*'>
 	<var: #case0CogMethod type: #'CogMethod *'>
 	<returnTypeC: #'CogMethod *'>
@@ -8687,7 +8686,7 @@ Cogit >> linkSendAt: callSiteReturnAddress in: sendingMethod to: targetMethod of
 	self assert: (callSiteReturnAddress between: methodZoneBase and: methodZone freeStart).
 	inlineCacheTag := theEntryOffset = cmNoCheckEntryOffset
 						ifTrue: [targetMethod selector "i.e. no change"]
-						ifFalse: [objectRepresentation inlineCacheTagForInstance: receiver].
+						ifFalse: [ aCacheTag ].
 	address := targetMethod asInteger + theEntryOffset.
 
 	self 
@@ -10629,6 +10628,31 @@ Cogit >> profileDataFor: cogMethod withDetails: withDetails [
 		ifFalse: [(withDetails and: [cogMethod cmType = CMPolymorphicIC])
 					ifTrue: [self createCPICData: cogMethod]
 					ifFalse: [cogMethod selector]]
+]
+
+{ #category : 'in-line cacheing' }
+Cogit >> publicCogPICSelector: selector numArgs: numArgs Case0Method: case0CogMethod Case1Method: case1MethodOrNil tag: case1Tag isMNUCase: isMNUCase [
+	"Attempt to create a two-case PIC for case0CogMethod and  case1Method,case1Tag.
+	 The tag for case0CogMethod is at the send site and so doesn't need to be generated.
+	 case1Method may be any of
+		- a Cog method; link to its unchecked entry-point
+		- a CompiledMethod; link to ceInterpretMethodFromPIC:
+		- a CompiledMethod; link to ceMNUFromPICMNUMethod:receiver:"
+
+	<api>
+	<var: #pic type: #'CogMethod*'>
+	<var: #case0CogMethod type: #'CogMethod *'>
+	<returnTypeC: #'CogMethod *'>
+	| pic |
+	self enableCodeZoneWriteDuring: [
+		pic := self
+			       cogPICSelector: selector
+			       numArgs: numArgs
+			       Case0Method: case0CogMethod
+			       Case1Method: case1MethodOrNil
+			       tag: case1Tag
+			       isMNUCase: isMNUCase ].
+	^ pic
 ]
 
 { #category : 'accessing' }
