@@ -215,8 +215,9 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 	"Extract values from the stack"
 	targetMethodArray := self stackValue: 0.
 	typesArray := self stackValue: 1.
-	bcpc := self stackValue: 2.
-	sourceMethod := self stackValue: 3.
+	messageSelector:= self stackValue: 2.
+	bcpc := self stackValue: 3.
+	sourceMethod := self stackValue: 4.
 
 	"Validate as much as possible.
 	Do not do irreversible side effects here."
@@ -262,6 +263,10 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 		(self methodHasCogMethod: sourceMethod) ifFalse: [
 			^ self primitiveFail ] ].
 
+	"we check the messageSelector is set, not nil"
+	messageSelector = objectMemory nilObject ifTrue:[
+			^ self primitiveFailFor: PrimErrBadArgument 
+			].
 	"From now, we know that the method is compiled.
 	Get the cog method, and map the BCPC.
 	We should check that the MCPC is a send here, but currently there is no code for that."
@@ -302,6 +307,7 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
              ensureMethodIsCogged: (objectMemory fetchPointer: 1 ofObject: targetMethodArray) 
              maybeClosure: objectMemory nilObject.
 
+
 		pic := cogit
 		       publicCogPICSelector: messageSelector
 		       numArgs: firstCogMethod cmNumArgs "Assume for now that all methods have same numArgs. We should validate it and test it!"
@@ -316,7 +322,7 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 				ensureMethodIsCogged: (objectMemory fetchPointer: i  ofObject: targetMethodArray) 
 				maybeClosure: objectMemory nilObject.
 			cogit
-				cogExtendPIC: pic
+				cogExtendPIC: (pic) 
 				CaseNMethod: targetCogMethod methodObject
 				tag: (cogit inlineCacheTagForClass: (objectMemory fetchPointer: i  ofObject: typesArray))
 				isMNUCase: false.

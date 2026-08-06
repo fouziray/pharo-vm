@@ -88,11 +88,13 @@ VMJITVMPrimitiveTest >> setUp [
 ]
 
 { #category : 'primitive cache setting' }
-VMJITVMPrimitiveTest >> testPrimitiveMethodCacheReSettingPolymorphic [
+VMJITVMPrimitiveTest >> testPrimitiveMethodCachePICselectorNil [
+
 	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays |
 
 	positionToMatch := 3.
 	
+
 	sourceMethod := methodBuilder
 		bytecodes: #[ 
 			16r4C "push self"
@@ -114,6 +116,101 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheReSettingPolymorphic [
 	interpreter push: sourceMethod.
 	"bcpc"
 	interpreter push: (memory integerObjectOf: bcpc).
+	"target types"
+
+	interpreter push:  (  memory nilObject).
+	interpreter push: targetTypes.
+	"target methods"
+	interpreter push: targetMethods.
+
+	interpreter argumentCount: 4.
+	interpreter primitiveMethodCacheSetting.
+
+	self assert: interpreter failed.
+	self assert: interpreter primFailCode equals: PrimErrBadArgument .
+]
+
+{ #category : 'primitive cache setting' }
+VMJITVMPrimitiveTest >> testPrimitiveMethodCachePICselectorNotNil [
+
+	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays targetSelector |
+
+	positionToMatch := 2.
+	
+	sourceMethod := methodBuilder
+		bytecodes: #[ 
+			16r4C "push self"
+			16r80 "send 0 arg"
+			16r5C "ret top"
+		];
+		buildMethod.
+			
+	"Go 2 bytes after the beginning of the method.
+	This is the byte following the send!"
+	bcpc := (interpreter startPCOfMethod: sourceMethod) + 2. 
+	
+	targetArrays := self linkPicWithCases: 3 withIntegerAtPosition: positionToMatch.
+	targetTypes := targetArrays first.
+	targetMethods := targetArrays second.
+	
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
+	
+	"sourceMethod"
+	interpreter push: sourceMethod.
+	"bcpc"
+	interpreter push: (memory integerObjectOf: bcpc).
+	
+	"selector"
+	interpreter push:  (targetSelector).
+	
+	"target types"
+	interpreter push: targetTypes.
+	"target methods"
+	interpreter push: targetMethods.
+
+	interpreter argumentCount: 4.
+	interpreter primitiveMethodCacheSetting.
+
+	self
+		prepareStackForSendReceiver: (memory integerObjectOf: 3) 
+		arguments: { }.
+
+	self
+		runFrom: (interpreter cogMethodOf: sourceMethod ) address + cogit noCheckEntryOffset
+		until: (interpreter cogMethodOf: (memory fetchPointer: positionToMatch - 1 ofObject: targetMethods)) address + cogit noCheckEntryOffset 
+]
+
+{ #category : 'primitive cache setting' }
+VMJITVMPrimitiveTest >> testPrimitiveMethodCacheReSettingPolymorphic [
+	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays targetSelector |
+
+	positionToMatch := 3.
+	
+	sourceMethod := methodBuilder
+		bytecodes: #[ 
+			16r4C "push self"
+			16r80 "send 0 arg"
+			16r5C "ret top"
+		];
+		buildMethod.
+			
+	"Go 2 bytes after the beginning of the method.
+	This is the byte following the send!"
+	bcpc := (interpreter startPCOfMethod: sourceMethod) + 2. 
+	
+	targetArrays := self linkPicWithCases: 3 withIntegerAtPosition: positionToMatch.
+	targetTypes := targetArrays first.
+	targetMethods := targetArrays second.
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
+
+	"sourceMethod"
+	interpreter push: sourceMethod.
+	"bcpc"
+	interpreter push: (memory integerObjectOf: bcpc).
+	
+	"selector"
+	interpreter push:  (targetSelector).
+	
 	"target types"
 	interpreter push: targetTypes.
 	"target methods"
@@ -141,6 +238,10 @@ targetArrays := self linkPicWithCases: 3 withIntegerAtPosition: positionToMatch.
 	interpreter push: sourceMethod.
 	"bcpc"
 	interpreter push: (memory integerObjectOf: bcpc).
+	
+	"selector"
+	interpreter push:  ( targetSelector ).
+	
 	"target types"
 	interpreter push: targetTypes.
 	"target methods"
@@ -163,7 +264,7 @@ targetArrays := self linkPicWithCases: 3 withIntegerAtPosition: positionToMatch.
 { #category : 'primitive cache setting' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingMonomorphic [
 
-	| targetTypes targetMethods sourceMethod arrayClass bcpc targetMethod |
+	| targetTypes targetMethods sourceMethod arrayClass bcpc targetMethod targetSelector |
 	sourceMethod := methodBuilder
 		bytecodes: #[ 
 			16r4C "push self"
@@ -187,6 +288,9 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingMonomorphic [
 	targetTypes := self newArrayWithSlots: 1.
 	targetMethods := self newArrayWithSlots: 1.
 
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
+	
+	
 	memory
 		storePointer: 0
 		ofObject: targetMethods
@@ -201,6 +305,10 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingMonomorphic [
 	interpreter push: sourceMethod.
 	"bcpc"
 	interpreter push: (memory integerObjectOf: bcpc).
+	
+	"selector"
+	interpreter push:  (targetSelector).
+	
 	"target types"
 	interpreter push: targetTypes.
 	"target methods"
@@ -221,7 +329,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingMonomorphic [
 { #category : 'primitive cache setting' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingMonomorphicCompilesSourceMethod [
 
-	| targetTypes targetMethods sourceMethod arrayClass bcpc targetMethod |
+	| targetTypes targetMethods sourceMethod arrayClass bcpc targetMethod targetSelector |
 	sourceMethod := methodBuilder
 		bytecodes: #[ 
 			16r4C "push self"
@@ -241,7 +349,9 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingMonomorphicCompilesSource
 	"We create two target type and methods arrays, with sizes > to the size of pic limit (6)"
 	targetTypes := self newArrayWithSlots: 1.
 	targetMethods := self newArrayWithSlots: 1.
-
+	
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
+	
 	memory
 		storePointer: 0
 		ofObject: targetMethods
@@ -256,6 +366,10 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingMonomorphicCompilesSource
 	interpreter push: sourceMethod.
 	"bcpc"
 	interpreter push: bcpc.
+
+	"selector"
+	interpreter push:  (targetSelector).
+
 	"target types"
 	interpreter push: targetTypes.
 	"target methods"
@@ -270,7 +384,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingMonomorphicCompilesSource
 { #category : 'primitive cache setting' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingMonomorphicCompilesTargetMethod [
 
-	| targetTypes targetMethods sourceMethod arrayClass bcpc targetMethod |
+	| targetTypes targetMethods sourceMethod arrayClass bcpc targetMethod targetSelector |
 	
 	interpreter messageSelector: (memory pinObject: (memory stringForCString: #yourself)).
 	
@@ -299,7 +413,9 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingMonomorphicCompilesTarget
 	"We create two target type and methods arrays, with sizes > to the size of pic limit (6)"
 	targetTypes := self newArrayWithSlots: 1.
 	targetMethods := self newArrayWithSlots: 1.
-
+	
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
+	
 	memory
 		storePointer: 0
 		ofObject: targetMethods
@@ -314,6 +430,10 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingMonomorphicCompilesTarget
 	interpreter push: sourceMethod.
 	"bcpc"
 	interpreter push: (memory integerObjectOf: bcpc).
+
+	"selector"
+	interpreter push:  (targetSelector).
+
 	"target types"
 	interpreter push: targetTypes.
 	"target methods"
@@ -328,7 +448,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingMonomorphicCompilesTarget
 { #category : 'primitive cache setting' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingMonomorphicWithWrongBytecodePCFails [
 
-	| targetTypes targetMethods sourceMethod arrayClass bcpc targetMethod |
+	| targetTypes targetMethods sourceMethod arrayClass bcpc targetMethod targetSelector |
 	sourceMethod := methodBuilder
 		bytecodes: #[ 
 			16r4C "push self"
@@ -352,6 +472,9 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingMonomorphicWithWrongBytec
 	targetTypes := self newArrayWithSlots: 1.
 	targetMethods := self newArrayWithSlots: 1.
 
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
+	
+
 	memory
 		storePointer: 0
 		ofObject: targetMethods
@@ -366,6 +489,10 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingMonomorphicWithWrongBytec
 	interpreter push: sourceMethod.
 	"bcpc"
 	interpreter push: bcpc.
+
+	"selector"
+	interpreter push:  (targetSelector).
+	
 	"target types"
 	interpreter push: targetTypes.
 	"target methods"
@@ -380,7 +507,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingMonomorphicWithWrongBytec
 { #category : 'primitive cache setting' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic2CasesMatchFirstType [
 
-	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays |
+	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays targetSelector |
 
 	positionToMatch := 1.
 	
@@ -400,11 +527,16 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic2CasesMatchFir
 	targetTypes := targetArrays first.
 	targetMethods := targetArrays second.
 	
-
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
+	
 	"sourceMethod"
 	interpreter push: sourceMethod.
 	"bcpc"
 	interpreter push: (memory integerObjectOf: bcpc).
+
+	"selector"
+	interpreter push:  (targetSelector).
+
 	"target types"
 	interpreter push: targetTypes.
 	"target methods"
@@ -425,7 +557,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic2CasesMatchFir
 { #category : 'primitive cache setting' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic2CasesMatchSecondType [
 
-	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays |
+	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays targetSelector |
 
 	positionToMatch := 2.
 	
@@ -444,12 +576,18 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic2CasesMatchSec
 	targetArrays := self linkPicWithCases: 2 withIntegerAtPosition: positionToMatch.
 	targetTypes := targetArrays first.
 	targetMethods := targetArrays second.
-	
+
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
 
 	"sourceMethod"
 	interpreter push: sourceMethod.
 	"bcpc"
 	interpreter push: (memory integerObjectOf: bcpc).
+
+	"selector"
+	interpreter push:  (targetSelector).
+	
+
 	"target types"
 	interpreter push: targetTypes.
 	"target methods"
@@ -470,7 +608,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic2CasesMatchSec
 { #category : 'primitive cache setting' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic3CasesMatchFirstType [
 
-	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays |
+	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays targetSelector |
 
 	positionToMatch := 1.
 	
@@ -489,12 +627,17 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic3CasesMatchFir
 	targetArrays := self linkPicWithCases: 3 withIntegerAtPosition: positionToMatch.
 	targetTypes := targetArrays first.
 	targetMethods := targetArrays second.
-	
 
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
+		
 	"sourceMethod"
 	interpreter push: sourceMethod.
 	"bcpc"
 	interpreter push: (memory integerObjectOf: bcpc).
+	
+	"selector"
+	interpreter push:  (targetSelector).
+	
 	"target types"
 	interpreter push: targetTypes.
 	"target methods"
@@ -515,7 +658,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic3CasesMatchFir
 { #category : 'primitive cache setting' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic3CasesMatchSecondType [
 
-	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays |
+	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays targetSelector |
 
 	positionToMatch := 2.
 	
@@ -535,16 +678,23 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic3CasesMatchSec
 	targetTypes := targetArrays first.
 	targetMethods := targetArrays second.
 	
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
+	
 
 	"sourceMethod"
 	interpreter push: sourceMethod.
 	"bcpc"
 	interpreter push: (memory integerObjectOf: bcpc).
+	
+	"selector"
+	interpreter push: targetSelector.
+	
 	"target types"
 	interpreter push: targetTypes.
 	"target methods"
 	interpreter push: targetMethods.
-
+	
+	
 	interpreter argumentCount: 4.
 	interpreter primitiveMethodCacheSetting.
 
@@ -560,7 +710,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic3CasesMatchSec
 { #category : 'primitive cache setting' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic3CasesMatchThirdType [
 
-	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays |
+	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays targetSelector |
 
 	positionToMatch := 3.
 	
@@ -579,12 +729,15 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic3CasesMatchThi
 	targetArrays := self linkPicWithCases: 3 withIntegerAtPosition: positionToMatch.
 	targetTypes := targetArrays first.
 	targetMethods := targetArrays second.
-	
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
 
 	"sourceMethod"
 	interpreter push: sourceMethod.
 	"bcpc"
 	interpreter push: (memory integerObjectOf: bcpc).
+	"selector"
+	interpreter push: (targetSelector).
+	
 	"target types"
 	interpreter push: targetTypes.
 	"target methods"
@@ -605,14 +758,19 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic3CasesMatchThi
 { #category : 'primitive cache setting' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingWithBCPCNotAnInteger [
 
-	| emptyArray sourceMethod |
+	| emptyArray sourceMethod targetSelector |
 	emptyArray := self newArrayWithSlots: 0.
 	sourceMethod := methodBuilder buildMethod.
+	
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
 
 	"sourceMethod"
 	interpreter push: sourceMethod.
 	"bcpc"
 	interpreter push: memory nilObject.
+	"selector"
+	interpreter push: (targetSelector).
+	
 	"target types"
 	interpreter push: emptyArray.
 	"target methods"
@@ -686,12 +844,15 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingWithSourceMethodNotAMetho
 { #category : 'primitive cache setting' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingWithTargetMethodsAndTargetTypesSizesDoNotMatch [
 
-	| targetTypes targetMethods sourceMethod |
+	| targetTypes targetMethods sourceMethod targetSelector |
 	sourceMethod := methodBuilder buildMethod.
 
 	"We create two target type and methods arrays, with different sizes"
 	targetTypes := self newArrayWithSlots: 0.
 	targetMethods := self newArrayWithSlots: 1.
+	
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
+
 	memory
 		storePointer: 0
 		ofObject: targetMethods
@@ -702,6 +863,9 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingWithTargetMethodsAndTarge
 	interpreter push: sourceMethod.
 	"bcpc"
 	interpreter push: (memory integerObjectOf: 17).
+	"selector"
+	interpreter push: (targetSelector).
+	
 	"target types"
 	interpreter push: targetTypes.
 	"target methods"
@@ -717,13 +881,15 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingWithTargetMethodsAndTarge
 { #category : 'primitive cache setting' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingWithTargetMethodsAndTargetTypesSizesExceedPICLimit [
 
-	| targetTypes targetMethods sourceMethod arrayClass |
+	| targetTypes targetMethods sourceMethod arrayClass targetSelector |
 	sourceMethod := methodBuilder buildMethod.
 	arrayClass := self createArrayClass.
 
 	"We create two target type and methods arrays, with sizes > to the size of pic limit (6)"
 	targetTypes := self newArrayWithSlots: 7.
 	targetMethods := self newArrayWithSlots: 7.
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
+	
 	0 to: 6 do: [ :i |
 		memory
 			storePointer: i
@@ -734,11 +900,14 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingWithTargetMethodsAndTarge
 			ofObject: targetTypes
 			withValue: arrayClass ].
 
-
 	"sourceMethod"
 	interpreter push: sourceMethod.
 	"bcpc"
 	interpreter push: (memory integerObjectOf: 17).
+
+	"selector"
+	interpreter push:  (targetSelector).
+
 	"target types"
 	interpreter push: targetTypes.
 	"target methods"
@@ -754,11 +923,15 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingWithTargetMethodsAndTarge
 { #category : 'primitive cache setting' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingWithTargetMethodsIsArrayWithIntegers [
 
-	| emptyArray targetMethods sourceMethod |
+	| emptyArray targetMethods sourceMethod targetSelector |
 	emptyArray := self newArrayWithSlots: 0.
 
 	"we create an array with a an integer instead of a type"
 	targetMethods := self newArrayWithSlots: 1.
+
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
+
+	
 	memory
 		storePointer: 0
 		ofObject: targetMethods
@@ -769,6 +942,10 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingWithTargetMethodsIsArrayW
 	interpreter push: sourceMethod.
 	"bcpc"
 	interpreter push: (memory integerObjectOf: 17).
+	
+	"selector"
+	interpreter push:  (targetSelector).
+
 	"target types"
 	interpreter push: emptyArray.
 	"target methods"
@@ -784,11 +961,14 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingWithTargetMethodsIsArrayW
 { #category : 'primitive cache setting' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingWithTargetMethodsIsArrayWithNonMethods [
 
-	| emptyArray targetMethods sourceMethod |
+	| emptyArray targetMethods sourceMethod targetSelector |
 	emptyArray := self newArrayWithSlots: 0.
 
 	"we create an array with a nil instead of a type"
 	targetMethods := self newArrayWithSlots: 1.
+
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
+
 	memory
 		storePointer: 0
 		ofObject: targetMethods
@@ -799,6 +979,10 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingWithTargetMethodsIsArrayW
 	interpreter push: sourceMethod.
 	"bcpc"
 	interpreter push: (memory integerObjectOf: 17).
+		
+	"selector"
+	interpreter push:  (targetSelector).
+
 	"target types"
 	interpreter push: emptyArray.
 	"target methods"
@@ -814,14 +998,20 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingWithTargetMethodsIsArrayW
 { #category : 'primitive cache setting' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingWithTargetMethodsNotAnArray [
 
-	| emptyArray sourceMethod |
+	| emptyArray sourceMethod targetSelector |
 	emptyArray := self newArrayWithSlots: 0.
 	sourceMethod := methodBuilder buildMethod.
+	
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
 
 	"sourceMethod"
 	interpreter push: sourceMethod.
 	"bcpc"
 	interpreter push: (memory integerObjectOf: 17).
+		
+	"selector"
+	interpreter push:  (targetSelector).
+
 	"target types"
 	interpreter push: emptyArray.
 	"target methods"
@@ -837,11 +1027,14 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingWithTargetMethodsNotAnArr
 { #category : 'primitive cache setting' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingWithTargetTypesIsArrayWithImmediateNonTypes [
 
-	| emptyArray targetTypes sourceMethod |
+	| emptyArray targetTypes sourceMethod targetSelector |
 	emptyArray := self newArrayWithSlots: 0.
 	
 	"we create an array with a an integer instead of a type"
 	targetTypes := self newArrayWithSlots: 1.
+	
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
+	
 	memory
 		storePointer: 0
 		ofObject: targetTypes
@@ -852,6 +1045,10 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingWithTargetTypesIsArrayWit
 	interpreter push: sourceMethod.
 	"bcpc"
 	interpreter push: (memory integerObjectOf: 17).
+		
+	"selector"
+	interpreter push:  (targetSelector).
+
 	"target types"
 	interpreter push: targetTypes.
 	"target methods"
@@ -867,11 +1064,14 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingWithTargetTypesIsArrayWit
 { #category : 'primitive cache setting' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingWithTargetTypesIsArrayWithNonTypes [
 
-	| emptyArray targetTypes sourceMethod |
+	| emptyArray targetTypes sourceMethod targetSelector |
 	emptyArray := self newArrayWithSlots: 0.
 	
 	"we create an array with a nil instead of a type"
 	targetTypes := self newArrayWithSlots: 1.
+	
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
+
 	memory
 		storePointer: 0
 		ofObject: targetTypes
@@ -882,6 +1082,10 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingWithTargetTypesIsArrayWit
 	interpreter push: sourceMethod.
 	"bcpc"
 	interpreter push: (memory integerObjectOf: 17).
+		
+	"selector"
+	interpreter push:  (targetSelector).
+
 	"target types"
 	interpreter push: targetTypes.
 	"target methods"
@@ -897,14 +1101,20 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingWithTargetTypesIsArrayWit
 { #category : 'primitive cache setting' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingWithTargetTypesNotAnArray [
 
-	| emptyArray sourceMethod |
+	| emptyArray sourceMethod targetSelector |
 	emptyArray := self newArrayWithSlots: 0.
 	sourceMethod := methodBuilder buildMethod.
+
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
 
 	"sourceMethod"
 	interpreter push: sourceMethod.
 	"bcpc"
 	interpreter push: (memory integerObjectOf: 17).
+		
+	"selector"
+	interpreter push:  (targetSelector).
+
 	"target types"
 	interpreter push: memory nilObject.
 	"target methods"

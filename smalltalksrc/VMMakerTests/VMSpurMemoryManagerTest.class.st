@@ -766,6 +766,30 @@ VMSpurMemoryManagerTest >> setMethodClassIntoClassTable [
 ]
 
 { #category : 'tests' }
+VMSpurMemoryManagerTest >> setSmallFloatClassIntoClassTable [
+
+	| class |
+	"install the class in both 1 and 3 index of class table
+	see SpurMemoryManager >> fetchClassOf: for more informations"
+	class := self
+		newClassInOldSpaceWithSlots: 0
+		instSpec: memory forwardedFormat.
+	memory setHashBitsOf: class to: memory smallFloatTag.
+
+	memory
+		storePointer: memory smallFloatTag
+		ofObject: memory classTableFirstPage
+		withValue: class.
+	
+	memory
+		storePointer: 3
+		ofObject: memory classTableFirstPage
+		withValue: class.
+	^class
+	
+]
+
+{ #category : 'tests' }
 VMSpurMemoryManagerTest >> setSmallIntegerClassIntoClassTable [
 
 	| class |
