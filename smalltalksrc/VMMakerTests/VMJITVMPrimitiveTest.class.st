@@ -75,6 +75,20 @@ VMJITVMPrimitiveTest >> sendSiteToSet [
 	^ 12 
 ]
 
+{ #category : 'initialization' }
+VMJITVMPrimitiveTest >> setArrayClassIntoClassTable [
+
+	| aClass |
+	aClass := self
+		          newClassInOldSpaceWithSlots: 0
+		          instSpec: Array instSpec.
+	memory setHashBitsOf: aClass to: ClassArrayCompactIndex.
+	memory
+		storePointer: ClassArrayCompactIndex
+		ofObject: memory classTableFirstPage
+		withValue: aClass
+]
+
 { #category : 'tests - primitiveMethodXray' }
 VMJITVMPrimitiveTest >> setUp [
 
@@ -750,6 +764,54 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic3CasesMatchThi
 		prepareStackForSendReceiver: (memory integerObjectOf: 3) 
 		arguments: { }.
 
+	self
+		runFrom: (interpreter cogMethodOf: sourceMethod ) address + cogit noCheckEntryOffset
+		until: (interpreter cogMethodOf: (memory fetchPointer: positionToMatch - 1 ofObject: targetMethods)) address + cogit noCheckEntryOffset 
+]
+
+{ #category : 'primitive cache setting' }
+VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphicCalledWithUnseenType [
+	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays targetSelector |
+
+	positionToMatch := 3.
+	
+	sourceMethod := methodBuilder
+		bytecodes: #[ 
+			16r4C "push self"
+			16r80 "send 0 arg"
+			16r5C "ret top"
+		];
+		buildMethod.
+	"The unseen type, we don't install it in the pic, but use it to see if pic probes and extends entries correctly"
+	self setArrayClassIntoClassTable .		
+	"Go 2 bytes after the beginning of the method.
+	This is the byte following the send!"
+	bcpc := (interpreter startPCOfMethod: sourceMethod) + 2. 
+	
+	targetArrays := self linkPicWithCases: 3 withIntegerAtPosition: positionToMatch.
+	targetTypes := targetArrays first.
+	targetMethods := targetArrays second.
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
+
+	"sourceMethod"
+	interpreter push: sourceMethod.
+	"bcpc"
+	interpreter push: (memory integerObjectOf: bcpc).
+	"selector"
+	interpreter push: (targetSelector).
+	
+	"target types"
+	interpreter push: targetTypes.
+	"target methods"
+	interpreter push: targetMethods.
+
+	interpreter argumentCount: 4.
+	interpreter primitiveMethodCacheSetting.
+
+	self
+		prepareStackForSendReceiver: (self new64BitIndexableFromArray: {1. 2}) 
+		arguments: { }.
+1 halt.
 	self
 		runFrom: (interpreter cogMethodOf: sourceMethod ) address + cogit noCheckEntryOffset
 		until: (interpreter cogMethodOf: (memory fetchPointer: positionToMatch - 1 ofObject: targetMethods)) address + cogit noCheckEntryOffset 
