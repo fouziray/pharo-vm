@@ -207,7 +207,7 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 	"
 
 	<export: true>
-	| pic bcpc mcpc typesArray targetMethodArray sourceCogMethod sourceMethod |
+	| pic bcpc mcpc typesArray targetMethodArray sourceCogMethod sourceMethod callsiteSelector |
 	"Validate we were invoked with at least all 4 arguments stated above"
 	argumentCount < 4 ifTrue: [
 		^ self primitiveFailFor: PrimErrBadNumArgs ].
@@ -215,7 +215,7 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 	"Extract values from the stack"
 	targetMethodArray := self stackValue: 0.
 	typesArray := self stackValue: 1.
-	messageSelector:= self stackValue: 2.
+	callsiteSelector := self stackValue: 2.
 	bcpc := self stackValue: 3.
 	sourceMethod := self stackValue: 4.
 
@@ -309,7 +309,7 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 
 
 		pic := cogit
-		       publicCogPICSelector: messageSelector
+		       publicCogPICSelector: callsiteSelector
 		       numArgs: firstCogMethod cmNumArgs "Assume for now that all methods have same numArgs. We should validate it and test it!"
 		       Case0Method: firstCogMethod
 		       Case1Method: secondCogMethod methodObject

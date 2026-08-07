@@ -775,12 +775,14 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphicCalledWithUnse
 
 	positionToMatch := 3.
 	
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
 	sourceMethod := methodBuilder
 		bytecodes: #[ 
 			16r4C "push self"
 			16r80 "send 0 arg"
 			16r5C "ret top"
 		];
+	literalAt: 1 put: targetSelector;
 		buildMethod.
 	"The unseen type, we don't install it in the pic, but use it to see if pic probes and extends entries correctly"
 	self setArrayClassIntoClassTable .		
@@ -791,7 +793,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphicCalledWithUnse
 	targetArrays := self linkPicWithCases: 3 withIntegerAtPosition: positionToMatch.
 	targetTypes := targetArrays first.
 	targetMethods := targetArrays second.
-	targetSelector := memory pinObject: (memory stringForCString: #yourself).
+
 
 	"sourceMethod"
 	interpreter push: sourceMethod.
@@ -812,6 +814,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphicCalledWithUnse
 		prepareStackForSendReceiver: (self new64BitIndexableFromArray: {1. 2}) 
 		arguments: { }.
 1 halt.
+" self openMachineDebugger "
 	self
 		runFrom: (interpreter cogMethodOf: sourceMethod ) address + cogit noCheckEntryOffset
 		until: (interpreter cogMethodOf: (memory fetchPointer: positionToMatch - 1 ofObject: targetMethods)) address + cogit noCheckEntryOffset 
