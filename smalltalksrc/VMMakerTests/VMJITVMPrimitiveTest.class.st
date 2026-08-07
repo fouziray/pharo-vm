@@ -774,12 +774,18 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphicCalledWithUnse
 	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays targetSelector missTargetMethod missType missReceiver thePIC theReceiver |
 
 	positionToMatch := 3.
+	
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
 	sourceMethod := methodBuilder
 		bytecodes: #[ 
 			16r4C "push self"
 			16r80 "send 0 arg"
 			16r5C "ret top"
-		]; buildMethod.
+		];
+	literalAt: 1 put: targetSelector;
+		buildMethod.
+	"The unseen type, we don't install it in the pic, but use it to see if pic probes and extends entries correctly"
+	self setArrayClassIntoClassTable .		
 	"Go 2 bytes after the beginning of the method.
 	This is the byte following the send!"
 	bcpc := (interpreter startPCOfMethod: sourceMethod) + 2. 
@@ -826,8 +832,8 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphicCalledWithUnse
 	self
 		prepareStackForSendReceiver: missReceiver
 		arguments: { }.
-
-	"First let's arrive to the pic miss trampoline"
+1 halt.
+" self openMachineDebugger "
 	self
 		runFrom: (interpreter cogMethodOf: sourceMethod) address + cogit noCheckEntryOffset
 		until: cogit ceCPICMissTrampoline.
