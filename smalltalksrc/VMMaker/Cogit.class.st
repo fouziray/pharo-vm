@@ -1046,7 +1046,7 @@ Cogit class >> initializePrimitiveTable [
 		
 		(216 genNonImplementedPrimitive -1 #maycallback) "primitive method xray"
 
-		"(218 primitiveDoNamedPrimitiveWithArgs)"
+		(218 genNonImplementedPrimitive -1 #maycallback) "primitive set callsite IC"
 		"(219 primitiveFail)"	"reserved for Cog primitives"
 
 		"(220 primitiveFail)"		"reserved for Cog primitives"
@@ -3658,6 +3658,7 @@ Cogit >> ceCPICMiss: cPIC receiver: receiver [
 	<story: #pic>
 	<var: #cPIC type: #'CogMethod *'>
 	| callerReturnAddress newTargetMethodOrNil errorSelectorOrNil |
+	1halt.
 	self simulationOnly: [
 		cPIC isInteger ifTrue: [
 			^ self
