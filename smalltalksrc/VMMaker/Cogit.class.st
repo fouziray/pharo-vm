@@ -1044,7 +1044,7 @@ Cogit class >> initializePrimitiveTable [
 		
 		(216 genNonImplementedPrimitive -1 #maycallback) "primitive method xray"
 
-		"(218 primitiveDoNamedPrimitiveWithArgs)"
+		(218 genNonImplementedPrimitive -1 #maycallback) "primitive set callsite IC"
 		"(219 primitiveFail)"	"reserved for Cog primitives"
 
 		"(220 primitiveFail)"		"reserved for Cog primitives"
@@ -3507,6 +3507,90 @@ Cogit >> ceBaseFrameReturnTrampoline: anInteger [
 	<doNotGenerate>
 	
 	ceBaseFrameReturnTrampoline := anInteger
+]
+
+{ #category : 'in-line cacheing' }
+Cogit >> ceCPICMiss: cPIC receiver: receiver [
+	"Code entry closed PIC miss.  A send has fallen
+	 through a closed (finite) polymorphic inline cache.
+	 Either extend it or patch the send site to an open PIC.
+	 The stack looks like:
+			receiver
+			args
+	  sp=>	sender return address"
+
+	<api>
+	<story: #pic>
+	<var: #cPIC type: #'CogMethod *'>
+	| callerReturnAddress newTargetMethodOrNil errorSelectorOrNil |
+	1halt.
+	self simulationOnly: [
+		cPIC isInteger ifTrue: [
+			^ self
+				  ceCPICMiss: (self cogMethodSurrogateAt: cPIC)
+				  receiver: receiver ] ].
+
+	(objectMemory isOopForwarded: receiver) ifTrue: [
+		^ coInterpreter ceSendFromInLineCacheMiss: cPIC ].
+
+	callerReturnAddress := coInterpreter stackTop.
+	self deny: (backEnd inlineCacheTagAt: callerReturnAddress)
+		= self isMNUPicAbortDiscriminatorValue.
+
+	"Transition to megamorphic if the PIC is full"
+	MaxCPICCases <= cPIC cPICNumCases ifTrue: [
+		self
+			patchToMegamorphicICFor: cPIC selector
+			numArgs: cPIC cmNumArgs
+			receiver: receiver.
+		^ coInterpreter ceSendFromInLineCacheMiss: cPIC ].
+
+	self
+		lookup: cPIC selector
+		for: receiver
+		methodAndErrorSelectorInto: [ :method :errsel |
+			newTargetMethodOrNil := method.
+			errorSelectorOrNil := errsel ].
+
+	"      method | errorSelector             | situation
+	 -------------+---------------------------+-------------------------------------------------------------
+	          nil | SelectorCannotInterpret   | There was an error during the lookup (ill-formed class)
+	          nil | SelectorDoesNotUnderstand | Didn't find the method nor the DNU implementation
+	  foundMethod | SelectorCannotInterpret   | Found something that isn't a CompiledMethod (#run:with:in:)
+	  foundMethod | *                         | foundMethod is young (may not be a CompiledMethod!)"
+	(errorSelectorOrNil = SelectorCannotInterpret or: [
+		 newTargetMethodOrNil isNil or: [
+			 objectMemory isYoung: newTargetMethodOrNil ] ]) ifTrue: [
+		self
+			patchToMegamorphicICFor: cPIC selector
+			numArgs: cPIC cmNumArgs
+			receiver: receiver.
+		^ coInterpreter ceSendFromInLineCacheMiss: cPIC ].
+
+	"      method | errorSelector             | situation
+	 -------------+---------------------------+---------------------------------------------------------
+	  foundMethod | SelectorDoesNotUnderstand | Didn't find the method but found the DNU implementation
+	  foundMethod | nil                       | Found the method
+
+	Now extend the PIC with the new case."
+	self
+		cogExtendPIC: cPIC
+		CaseNMethod: newTargetMethodOrNil
+		tag: (objectRepresentation inlineCacheTagForInstance: receiver)
+		isMNUCase: errorSelectorOrNil = SelectorDoesNotUnderstand.
+
+	"Jump back into the pic at its entry in case this is an MNU."
+	coInterpreter
+		executeCogPIC: cPIC
+		fromLinkedSendWithReceiver: receiver
+		andCacheTag: (backEnd inlineCacheTagAt: callerReturnAddress).
+	self unreachable
+]
+
+{ #category : 'accessing' }
+Cogit >> ceCPICMissTrampoline [
+	<doNotGenerate>
+	^ ceCPICMissTrampoline
 ]
 
 { #category : 'simulation only' }
