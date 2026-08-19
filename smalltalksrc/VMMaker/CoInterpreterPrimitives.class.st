@@ -288,6 +288,7 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 		targetType := objectMemory fetchPointer: 0 ofObject: typesArray.
 		targetMethod := objectMemory fetchPointer: 0 ofObject: targetMethodArray.
 		targetCogMethod := self ensureMethodIsCogged: targetMethod maybeClosure: objectMemory nilObject.
+		cogit setSelectorOf: targetCogMethod to: callsiteSelector.
 		cogit
 			linkSendAt: mcpc
 			in: sourceCogMethod

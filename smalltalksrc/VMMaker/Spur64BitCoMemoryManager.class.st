@@ -180,15 +180,15 @@ Spur64BitCoMemoryManager >> methodHeaderOf: methodObj [
 	<api>
 	<inline: true>
 	| header |
-	self assert: (self isCompiledMethod: methodObj).
+	self assert: ( self isCompiledMethod: methodObj ).
 	header := self rawHeaderOf: methodObj.
-	^(self isIntegerObject: header)
-		ifTrue: [header]
+	^ ( self isIntegerObject: header )
+		ifTrue: [ header ]
 		ifFalse:
-			[self assert: header asUnsignedInteger < memoryMap newSpaceStart.
-			 self assert: (coInterpreter cCoerceSimple: header to: #'CogMethod *') objectHeader
+			[ self assert: header asUnsignedInteger < memoryMap newSpaceStart.
+			 self assert: ( coInterpreter cCoerceSimple: header to: #'CogMethod *' ) objectHeader
 						= self nullHeaderForMachineCodeMethod.
-			(coInterpreter cCoerceSimple: header to: #'CogMethod *') methodHeader]
+			( coInterpreter cCoerceSimple: header to: #'CogMethod *' ) methodHeader ]
 ]
 
 { #category : 'trampoline support' }
