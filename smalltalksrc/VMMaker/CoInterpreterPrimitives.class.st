@@ -270,7 +270,7 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 			^ self primitiveFail ] ].
 
 	"we check the messageSelector is set, not nil"
-	messageSelector = objectMemory nilObject ifTrue:[
+	callsiteSelector = objectMemory nilObject ifTrue:[
 			^ self primitiveFailFor: PrimErrBadArgument 
 			].
 	"From now, we know that the method is compiled.
