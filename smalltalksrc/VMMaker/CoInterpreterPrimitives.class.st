@@ -197,6 +197,7 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 	
 	- sourceMethod is a CompiledMethod or CompiledBlock. Linking happens in its machine code counterpart.
 	  If the method does not have machine code, try to compile it. If fails, fail the primitive.
+	- numCopied. Expected 0 for CompiledMethod or the number of copied values for CompiledBlock.
 	- bcpc is the pc at the CompiledMethod/Block corresponding to the bytecode instruction following the send. The bcpc is mapped to a mcpc.
 	  If not a send site, fail. If the pc is already linked, unlink it and relink.
 	- typeArray is an array of Classes/Behaviours representing the type of receivers to be cached. Fail if not.
@@ -207,9 +208,9 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 	"
 
 	<export: true>
-	| pic bcpc mcpc typesArray targetMethodArray sourceCogMethod sourceMethod callsiteSelector |
-	"Validate we were invoked with at least all 4 arguments stated above"
-	argumentCount < 4 ifTrue: [
+	| pic bcpc mcpc typesArray targetMethodArray sourceCogMethod sourceMethod callsiteSelector numCopied |
+	"Validate we were invoked with at least all 5 arguments stated above"
+	argumentCount < 5 ifTrue: [
 		^ self primitiveFailFor: PrimErrBadNumArgs ].
 
 	"Extract values from the stack"
@@ -217,7 +218,8 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 	typesArray := self stackValue: 1.
 	callsiteSelector := self stackValue: 2.
 	bcpc := self stackValue: 3.
-	sourceMethod := self stackValue: 4.
+	numCopied := self stackValue: 4.
+	sourceMethod := self stackValue: 5.
 
 	"Validate as much as possible.
 	Do not do irreversible side effects here."
@@ -225,6 +227,8 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 		 objectMemory isCompiledMethod: sourceMethod ]) ifFalse: [
 		^ self primitiveFailFor: PrimErrBadMethod ].
 	(objectMemory isIntegerObject: bcpc) ifFalse: [
+		^ self primitiveFailFor: PrimErrBadArgument ].
+	(objectMemory isIntegerObject: numCopied) ifFalse: [
 		^ self primitiveFailFor: PrimErrBadArgument ].
 	(objectMemory isArray: typesArray) ifFalse: [
 		^ self primitiveFailFor: PrimErrBadArgument ].
@@ -258,8 +262,10 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
 
 	"Compile source method if needed, fail if did not work"
-	(self methodHasCogMethod: sourceMethod) ifFalse: [
-		cogit cog: sourceMethod selector: objectMemory nilObject.
+	(self methodHasCogMethod: sourceMethod) ifFalse: [ | isBlock |
+		isBlock := numCopied > 0
+			ifTrue: [ cogit cogFullBlockMethod: sourceMethod numCopied: numCopied ]
+			ifFalse: [ cogit cog: sourceMethod selector: objectMemory nilObject ].
 		(self methodHasCogMethod: sourceMethod) ifFalse: [
 			^ self primitiveFail ] ].
 
