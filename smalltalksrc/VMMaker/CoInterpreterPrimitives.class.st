@@ -263,7 +263,7 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 
 	"Compile source method if needed, fail if did not work"
 	(self methodHasCogMethod: sourceMethod) ifFalse: [ | isBlock |
-		isBlock := numCopied > 0
+		isBlock := numCopied > -1
 			ifTrue: [ cogit cogFullBlockMethod: sourceMethod numCopied: numCopied ]
 			ifFalse: [ cogit cog: sourceMethod selector: objectMemory nilObject ].
 		(self methodHasCogMethod: sourceMethod) ifFalse: [
