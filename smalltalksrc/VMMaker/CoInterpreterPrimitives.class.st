@@ -313,7 +313,8 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 		secondCogMethod := self
              ensureMethodIsCogged: (objectMemory fetchPointer: 1 ofObject: targetMethodArray) 
              maybeClosure: objectMemory nilObject.
-
+		cogit setSelectorOf: firstCogMethod to: callsiteSelector.
+		cogit setSelectorOf: secondCogMethod to: callsiteSelector.
 		pic := cogit
 		       publicCogPICSelector: callsiteSelector
 		       numArgs: firstCogMethod cmNumArgs "Assume for now that all methods have same numArgs. We should validate it and test it!"
@@ -327,6 +328,7 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 			targetCogMethod := self
 				ensureMethodIsCogged: (objectMemory fetchPointer: i  ofObject: targetMethodArray) 
 				maybeClosure: objectMemory nilObject.
+			cogit setSelectorOf: targetCogMethod to: callsiteSelector.
 			cogit
 				cogExtendPIC: (pic) 
 				CaseNMethod: targetCogMethod methodObject
