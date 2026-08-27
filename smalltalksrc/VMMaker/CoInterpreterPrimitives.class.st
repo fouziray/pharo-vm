@@ -263,7 +263,7 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 
 	"Compile source method if needed, fail if did not work"
 	(self methodHasCogMethod: sourceMethod) ifFalse: [ | isBlock |
-		isBlock := numCopied > -1
+		isBlock := numCopied > -1 "some Block don't copy variables, so we consider -1 as the source method"
 			ifTrue: [ cogit cogFullBlockMethod: sourceMethod numCopied: numCopied ]
 			ifFalse: [ cogit cog: sourceMethod selector: objectMemory nilObject ].
 		(self methodHasCogMethod: sourceMethod) ifFalse: [
@@ -300,7 +300,9 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 			in: sourceCogMethod
 			to: targetCogMethod
 			offset: cogit entryOffset
-			receiverCacheTag: (cogit inlineCacheTagForClass: targetType)
+			receiverCacheTag: (cogit inlineCacheTagForClass: targetType).
+			
+		self assert: (memoryManager getMemoryMap isInCodeZone: targetCogMethod).
 	] ifFalse: [ 
 		| firstCogMethod secondCogMethod sizeOfTargets|
 		"Requested polymorphic link"
@@ -329,12 +331,17 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 				ensureMethodIsCogged: (objectMemory fetchPointer: i  ofObject: targetMethodArray) 
 				maybeClosure: objectMemory nilObject.
 			cogit setSelectorOf: targetCogMethod to: callsiteSelector.
+
+			self assert: (memoryManager getMemoryMap isInCodeZone: targetCogMethod).
+
 			cogit
 				cogExtendPIC: (pic) 
 				CaseNMethod: targetCogMethod methodObject
 				tag: (cogit inlineCacheTagForClass: (objectMemory fetchPointer: i  ofObject: typesArray))
 				isMNUCase: false.
 		].
+
+		self assert: (memoryManager getMemoryMap isInCodeZone: pic).
 	
 		cogit
 			linkSendAt: mcpc
