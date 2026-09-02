@@ -210,14 +210,14 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 	<export: true>
 	| pic bcpc mcpc typesArray targetMethodArray sourceCogMethod sourceMethod callsiteSelector numCopied isSuper |
 	"Validate we were invoked with at least all 5 arguments stated above"
-	argumentCount < 5 ifTrue: [
+	argumentCount < 7 ifTrue: [
 		^ self primitiveFailFor: PrimErrBadNumArgs ].
 
 	"Extract values from the stack"
 	targetMethodArray := self stackValue: 0.
 	typesArray := self stackValue: 1.
 	callsiteSelector := self stackValue: 2.
-	isSuper:= self stackValue: 3.
+	isSuper := self stackValue: 3.
 	bcpc := self stackValue: 4.
 	numCopied := self stackValue: 5.
 	sourceMethod := self stackValue: 6.
@@ -265,9 +265,10 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 
 	"Compile source method if needed, fail if did not work"
 	(self methodHasCogMethod: sourceMethod) ifFalse: [ | isBlock |
-		isBlock := numCopied > -1 "some Block don't copy variables, so we consider -1 as the source method"
+		isBlock := (objectMemory integerValueOf: numCopied) > -1  "some Block don't copy variables, so we consider -1 as the source method"
 			ifTrue: [ cogit cogFullBlockMethod: sourceMethod numCopied: numCopied ]
-			ifFalse: [ cogit cog: sourceMethod selector: objectMemory nilObject ].
+			ifFalse: [ cogit cog: sourceMethod selector: (self findSelectorOfMethod: sourceMethod) .
+				objectMemory nilObject ].
 		(self methodHasCogMethod: sourceMethod) ifFalse: [
 			^ self primitiveFail ] ].
 
@@ -279,6 +280,8 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 	Get the cog method, and map the BCPC.
 	We should check that the MCPC is a send here, but currently there is no code for that."
 	sourceCogMethod := self cogMethodOf: sourceMethod.
+	1halt.
+	self maybeSelectorOfMethod: sourceMethod.
 	mcpc := cogit
 		        mcPCFor: (objectMemory integerValueOf: bcpc)
 		        startBcpc: (self startPCOfMethod: sourceMethod)
@@ -345,7 +348,7 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 				maybeClosure: objectMemory nilObject.
 			cogit setSelectorOf: targetCogMethod to: callsiteSelector.
 
-			self assert: (memoryManager getMemoryMap isInCodeZone: targetCogMethod).
+			self assert: (objectMemory getMemoryMap isInCodeZone: targetCogMethod).
 
 			cogit
 				cogExtendPIC: (pic) 
@@ -354,7 +357,7 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 				isMNUCase: false.
 		].
 
-		self assert: (memoryManager getMemoryMap isInCodeZone: pic).
+		self assert: (objectMemory getMemoryMap isInCodeZone: pic).
 	
 		cogit
 			linkSendAt: mcpc
