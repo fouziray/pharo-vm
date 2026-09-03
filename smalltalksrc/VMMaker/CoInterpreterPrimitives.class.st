@@ -266,9 +266,10 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 	"Compile source method if needed, fail if did not work"
 	(self methodHasCogMethod: sourceMethod) ifFalse: [ | isBlock |
 		isBlock := (objectMemory integerValueOf: numCopied) > -1  "some Block don't copy variables, so we consider -1 as the source method"
-			ifTrue: [ cogit cogFullBlockMethod: sourceMethod numCopied: numCopied ]
-			ifFalse: [ cogit cog: sourceMethod selector: (self findSelectorOfMethod: sourceMethod) .
-				objectMemory nilObject ].
+			ifTrue: [
+				 cogit cogFullBlockMethod: sourceMethod numCopied: numCopied ]
+			ifFalse: [ 
+				cogit cog: sourceMethod selector: (self findSelectorOfMethod: sourceMethod) ].
 		(self methodHasCogMethod: sourceMethod) ifFalse: [
 			^ self primitiveFail ] ].
 
@@ -280,7 +281,7 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 	Get the cog method, and map the BCPC.
 	We should check that the MCPC is a send here, but currently there is no code for that."
 	sourceCogMethod := self cogMethodOf: sourceMethod.
-	1halt.
+
 	self maybeSelectorOfMethod: sourceMethod.
 	mcpc := cogit
 		        mcPCFor: (objectMemory integerValueOf: bcpc)
