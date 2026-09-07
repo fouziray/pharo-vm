@@ -208,18 +208,19 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 	"
 
 	<export: true>
-	| pic bcpc mcpc typesArray targetMethodArray sourceCogMethod sourceMethod callsiteSelector numCopied |
+	| pic bcpc mcpc typesArray targetMethodArray sourceCogMethod sourceMethod callsiteSelector numCopied isSuper |
 	"Validate we were invoked with at least all 5 arguments stated above"
-	argumentCount < 5 ifTrue: [
+	argumentCount < 6 ifTrue: [
 		^ self primitiveFailFor: PrimErrBadNumArgs ].
 
 	"Extract values from the stack"
 	targetMethodArray := self stackValue: 0.
 	typesArray := self stackValue: 1.
 	callsiteSelector := self stackValue: 2.
-	bcpc := self stackValue: 3.
-	numCopied := self stackValue: 4.
-	sourceMethod := self stackValue: 5.
+	isSuper := self stackValue: 3.
+	bcpc := self stackValue: 4.
+	numCopied := self stackValue: 5.
+	sourceMethod := self stackValue: 6.
 
 	"Validate as much as possible.
 	Do not do irreversible side effects here."
@@ -295,12 +296,25 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 		targetMethod := objectMemory fetchPointer: 0 ofObject: targetMethodArray.
 		targetCogMethod := self ensureMethodIsCogged: targetMethod maybeClosure: objectMemory nilObject.
 		cogit setSelectorOf: targetCogMethod to: callsiteSelector.
-		cogit
-			linkSendAt: mcpc
-			in: sourceCogMethod
-			to: targetCogMethod
-			offset: cogit entryOffset
-			receiverCacheTag: (cogit inlineCacheTagForClass: targetType)
+		
+		isSuper ifTrue:[
+			
+			cogit
+				linkSendAt: mcpc
+				in: sourceCogMethod
+				to: targetCogMethod
+				offset: cogit noCheckEntryOffset 
+				receiverCacheTag: (cogit inlineCacheTagForClass: targetType).
+			]
+		 ifFalse:[
+			
+			cogit
+				linkSendAt: mcpc
+				in: sourceCogMethod
+				to: targetCogMethod
+				offset: cogit entryOffset
+				receiverCacheTag: (cogit inlineCacheTagForClass: targetType)
+			]
 	] ifFalse: [ 
 		| firstCogMethod secondCogMethod sizeOfTargets|
 		"Requested polymorphic link"
