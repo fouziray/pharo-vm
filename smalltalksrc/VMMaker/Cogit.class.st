@@ -3658,6 +3658,7 @@ Cogit >> ceCPICMiss: cPIC receiver: receiver [
 	<story: #pic>
 	<var: #cPIC type: #'CogMethod *'>
 	| callerReturnAddress newTargetMethodOrNil errorSelectorOrNil |
+	1halt.
 	self simulationOnly: [
 		cPIC isInteger ifTrue: [
 			^ self

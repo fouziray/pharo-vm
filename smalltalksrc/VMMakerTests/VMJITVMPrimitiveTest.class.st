@@ -13,6 +13,20 @@ splObjectArrayFromImage := PointerUtils oopForObject:  (Smalltalk specialSelecto
 	memory specialObjectsOop:splObjectArrayFromImage .    
 ]
 
+{ #category : 'helpers' }
+VMJITVMPrimitiveTest >> installFullBlockClosureClass [ 
+	| aClass |
+	aClass := self
+		newClassInOldSpaceWithSlots: 0
+		instSpec: FullBlockClosure instSpec.
+	memory setHashBitsOf: aClass to: ClassFullBlockClosureCompactIndex.
+	memory
+		storePointer: ClassFullBlockClosureCompactIndex
+		ofObject: memory classTableFirstPage
+		withValue: aClass
+
+]
+
 { #category : 'tests' }
 VMJITVMPrimitiveTest >> installSelector: aSelectorOop method: aMethodOop inMethodDictionary: aMethodDictionary [
 	
@@ -66,6 +80,60 @@ VMJITVMPrimitiveTest >> linkPicWithCases: sizeOfPic withIntegerAtPosition: aPosi
 			withValue: targetMethod.
 	].
 	^ { targetTypes . targetMethods }
+]
+
+{ #category : 'helpers' }
+VMJITVMPrimitiveTest >> newBlockClosureWithCompiledBlock: compiledBlock numArgs: numArgs numCopiedValues: numCopied [
+
+	| closure numSlots header |
+	numSlots := FullClosureFirstCopiedValueIndex + numCopied.
+
+
+	closure := memory
+		           eeInstantiateSmallClassIndex:
+		           ClassFullBlockClosureCompactIndex
+		           format: memory indexablePointersFormat
+		           numSlots: numSlots.
+	header := memory
+		          headerForSlots: numSlots
+		          format: memory indexablePointersFormat
+		          classIndex: ClassFullBlockClosureCompactIndex.
+
+
+	memory
+		storePointer: FullClosureOuterContextIndex
+		ofObject: closure
+		withValue: header;
+		storePointer: FullClosureCompiledBlockIndex
+		ofObject: closure
+		withValue: compiledBlock;
+		storePointer: FullClosureNumArgsIndex
+		ofObject: closure
+		withValue: (memory integerObjectOf: numArgs);
+		storePointer: FullClosureReceiverIndex
+		ofObject: closure
+		withValue: memory nilObject.
+	^ closure
+]
+
+{ #category : 'helpers' }
+VMJITVMPrimitiveTest >> newString: aString [ 
+	| vmString |
+	
+	vmString := self
+		newOldSpaceObjectWithSlots: aString size
+		format: memory firstByteFormat
+		classIndex: (memory fetchClassTagOf: memory classString).
+
+	aString
+		doWithIndex: [ :char :index | 
+			memory
+				storeByte: index - 1
+				ofObject: vmString
+				withValue: char asInteger ].
+
+	^ vmString
+
 ]
 
 { #category : 'accessing' }
@@ -262,6 +330,92 @@ targetArrays := self linkPicWithCases: 3 withIntegerAtPosition: positionToMatch.
 	interpreter push: targetMethods.
 
 	interpreter argumentCount: 4.
+	interpreter primitiveMethodCacheSetting.
+	
+	self
+		prepareStackForSendReceiver: (memory integerObjectOf: 3) 
+		arguments: { }.
+
+	self
+		runFrom: (interpreter cogMethodOf: sourceMethod ) address + cogit noCheckEntryOffset
+		until: (interpreter cogMethodOf: (memory fetchPointer: positionToMatch - 1 ofObject: targetMethods)) address + cogit noCheckEntryOffset.
+		
+
+]
+
+{ #category : 'primitive cache setting' }
+VMJITVMPrimitiveTest >> testPrimitiveMethodCacheReSettingPolymorphicNewVersion [
+	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays targetSelector |
+
+	positionToMatch := 3.
+	
+	
+	"Go 2 bytes after the beginning of the method.
+	This is the byte following the send!"
+	
+	targetArrays := self linkPicWithCases: 3 withIntegerAtPosition: positionToMatch.
+	targetTypes := targetArrays first.
+	targetMethods := targetArrays second.
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
+
+
+	sourceMethod := methodBuilder
+		bytecodes: #[ 
+			16r4C "push self"
+			16r80 "send 0 arg"
+			16r5C "ret top"
+		];
+	 literals: { self newString: #selec . targetArrays first  };
+		buildMethod.
+bcpc := (interpreter startPCOfMethod: sourceMethod) + 2. 
+				
+
+	"sourceMethod"
+	interpreter push: sourceMethod.
+	interpreter push: (memory integerObjectOf:-1).
+	"bcpc"
+	interpreter push: (memory integerObjectOf: bcpc).
+	interpreter push:  (memory booleanObjectOf: false).
+	"selector"
+	interpreter push:  (targetSelector).
+	
+	"target types"
+	interpreter push: targetTypes.
+	"target methods"
+	interpreter push: targetMethods.
+
+	interpreter argumentCount: 7.
+	interpreter primitiveMethodCacheSetting.
+
+	self
+		prepareStackForSendReceiver: (memory integerObjectOf: 3) 
+		arguments: { }.
+
+	self
+		runFrom: (interpreter cogMethodOf: sourceMethod ) address + cogit noCheckEntryOffset
+		until: (interpreter cogMethodOf: (memory fetchPointer: positionToMatch - 1 ofObject: targetMethods)) address + cogit noCheckEntryOffset.
+		
+"We reset the source method to contain a newer pic.
+We create a new pic, the target methods have new oop.
+Then check if the rewriting on a previously set site works"
+targetArrays := self linkPicWithCases: 3 withIntegerAtPosition: positionToMatch.
+	targetTypes := targetArrays first.
+	targetMethods := targetArrays second.
+	
+	"sourceMethod"
+	interpreter push: sourceMethod.
+	"bcpc"
+	interpreter push: (memory integerObjectOf: bcpc).
+	
+	"selector"
+	interpreter push:  ( targetSelector ).
+	
+	"target types"
+	interpreter push: targetTypes.
+	"target methods"
+	interpreter push: targetMethods.
+
+	interpreter argumentCount: 7.
 	interpreter primitiveMethodCacheSetting.
 	
 	self
@@ -771,24 +925,35 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphic3CasesMatchThi
 
 { #category : 'primitive cache setting' }
 VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphicCalledWithUnseenType [
-	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays targetSelector |
+	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays targetSelector missTargetMethod missType missReceiver thePIC theReceiver |
 
 	positionToMatch := 3.
-	
-	targetSelector := memory pinObject: (memory stringForCString: #yourself).
 	sourceMethod := methodBuilder
 		bytecodes: #[ 
 			16r4C "push self"
 			16r80 "send 0 arg"
 			16r5C "ret top"
-		];
-	literalAt: 1 put: targetSelector;
-		buildMethod.
-	"The unseen type, we don't install it in the pic, but use it to see if pic probes and extends entries correctly"
-	self setArrayClassIntoClassTable .		
+		]; buildMethod.
 	"Go 2 bytes after the beginning of the method.
 	This is the byte following the send!"
 	bcpc := (interpreter startPCOfMethod: sourceMethod) + 2. 
+
+	
+	"This is the method to be called after the PIC misses"
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
+	missTargetMethod := methodBuilder 
+			bytecodes: #[
+				16r4C "push self"
+				16r5C "ret top"
+			];
+			buildMethod.
+
+	"Install the method in the global cache so it is found on the PIC miss and no lookup is needed."
+	missType := self newClassInOldSpaceWithSlots: 0 instSpec: 0.
+	memory ensureBehaviorHash: missType.
+	interpreter newMethod: missTargetMethod.
+	interpreter messageSelector: targetSelector.
+	interpreter addNewMethodToCache: missType.
 	
 	targetArrays := self linkPicWithCases: 3 withIntegerAtPosition: positionToMatch.
 	targetTypes := targetArrays first.
@@ -800,8 +965,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphicCalledWithUnse
 	"bcpc"
 	interpreter push: (memory integerObjectOf: bcpc).
 	"selector"
-	interpreter push: (targetSelector).
-	
+	interpreter push: targetSelector.
 	"target types"
 	interpreter push: targetTypes.
 	"target methods"
@@ -810,14 +974,102 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphicCalledWithUnse
 	interpreter argumentCount: 4.
 	interpreter primitiveMethodCacheSetting.
 
+	cogit cog: missTargetMethod selector: memory nilObject.
+
+	missReceiver := memory instantiateClass: missType.
 	self
-		prepareStackForSendReceiver: (self new64BitIndexableFromArray: {1. 2}) 
+		prepareStackForSendReceiver: missReceiver
 		arguments: { }.
-1 halt.
-" self openMachineDebugger "
+
+	"First let's arrive to the pic miss trampoline"
 	self
-		runFrom: (interpreter cogMethodOf: sourceMethod ) address + cogit noCheckEntryOffset
-		until: (interpreter cogMethodOf: (memory fetchPointer: positionToMatch - 1 ofObject: targetMethods)) address + cogit noCheckEntryOffset 
+		runFrom: (interpreter cogMethodOf: sourceMethod) address + cogit noCheckEntryOffset
+		until: cogit ceCPICMissTrampoline.
+	
+	"Ideally now we should test that the trampoline links and compiles to the right method.
+	But that is difficult to do because the trampoline method never comes back, and requires a tricky refactoring to do it properly"
+]
+
+{ #category : 'primitive cache setting' }
+VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphicWithinBlockClosure [
+	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays targetSelector missTargetMethod missType missReceiver thePIC theReceiver  compiledBlock closureOop |
+
+	positionToMatch := 3.
+	sourceMethod := methodBuilder
+		bytecodes: #[ 
+			16r4C "push self"
+			16r80 "send 0 arg"
+			16r5C "ret top"
+		]; buildMethod.
+	1 halt.
+		self installFullBlockClosureClass.
+compiledBlock := methodBuilder
+	bytecodes: #[
+		16r4C "push self"
+		16r5C "ret top"
+	];
+	buildMethod.
+	closureOop := self newBlockClosureWithCompiledBlock: compiledBlock numArgs: 0 numCopiedValues: 0.
+	interpreter startPCOfMethod: sourceMethod.
+	interpreter startPCOfBlock: closureOop. 
+		1 halt.
+	"We need to load the block from a compiled method : "
+
+interpreter startPCOfMethodHeader: closureOop.
+	"Go 2 bytes after the beginning of the method.
+	This is the byte following the send!"
+	bcpc := (interpreter startPCOfMethod: closureOop) + 2. 
+
+	
+	"This is the method to be called after the PIC misses"
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
+	missTargetMethod := methodBuilder 
+			bytecodes: #[
+				16r4C "push self"
+				16r5C "ret top"
+			];
+			buildMethod.
+
+	"Install the method in the global cache so it is found on the PIC miss and no lookup is needed."
+	missType := self newClassInOldSpaceWithSlots: 0 instSpec: 0.
+	memory ensureBehaviorHash: missType.
+	interpreter newMethod: missTargetMethod.
+	interpreter messageSelector: targetSelector.
+	interpreter addNewMethodToCache: missType.
+	
+	targetArrays := self linkPicWithCases: 3 withIntegerAtPosition: positionToMatch.
+	targetTypes := targetArrays first.
+	targetMethods := targetArrays second.
+
+
+	"sourceMethod"
+	interpreter push: closureOop .
+	"bcpc"
+	interpreter push: (memory integerObjectOf: bcpc).
+	"selector"
+	interpreter push: targetSelector.
+	"target types"
+	interpreter push: targetTypes.
+	"target methods"
+	interpreter push: targetMethods.
+
+	interpreter argumentCount: 4.
+	interpreter primitiveMethodCacheSetting.
+
+	cogit cog: missTargetMethod selector: memory nilObject.
+
+	missReceiver := memory instantiateClass: missType.
+	self
+		prepareStackForSendReceiver: missReceiver
+		arguments: { }.
+
+	"First let's arrive to the pic miss trampoline"
+	self
+		runFrom: (interpreter cogMethodOf: sourceMethod) address + cogit noCheckEntryOffset
+		until: cogit ceCPICMissTrampoline.
+	
+	"Ideally now we should test that the trampoline links and compiles to the right method.
+	But that is difficult to do because the trampoline method never comes back, and requires a tricky refactoring to do it properly"
 ]
 
 { #category : 'primitive cache setting' }

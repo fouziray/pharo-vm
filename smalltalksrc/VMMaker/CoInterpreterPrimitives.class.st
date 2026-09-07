@@ -197,6 +197,7 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 	
 	- sourceMethod is a CompiledMethod or CompiledBlock. Linking happens in its machine code counterpart.
 	  If the method does not have machine code, try to compile it. If fails, fail the primitive.
+	- numCopied. Expected 0 for CompiledMethod or the number of copied values for CompiledBlock.
 	- bcpc is the pc at the CompiledMethod/Block corresponding to the bytecode instruction following the send. The bcpc is mapped to a mcpc.
 	  If not a send site, fail. If the pc is already linked, unlink it and relink.
 	- typeArray is an array of Classes/Behaviours representing the type of receivers to be cached. Fail if not.
@@ -207,17 +208,20 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 	"
 
 	<export: true>
-	| pic bcpc mcpc typesArray targetMethodArray sourceCogMethod sourceMethod callsiteSelector |
-	"Validate we were invoked with at least all 4 arguments stated above"
-	argumentCount < 4 ifTrue: [
+	| pic bcpc mcpc typesArray targetMethodArray sourceCogMethod sourceMethod callsiteSelector numCopied isSuper |
+	"Validate we were invoked with at least all 5 arguments stated above"
+	argumentCount < 7 ifTrue: [
 		^ self primitiveFailFor: PrimErrBadNumArgs ].
 
 	"Extract values from the stack"
 	targetMethodArray := self stackValue: 0.
 	typesArray := self stackValue: 1.
 	callsiteSelector := self stackValue: 2.
-	bcpc := self stackValue: 3.
-	sourceMethod := self stackValue: 4.
+	isSuper := self stackValue: 3.
+	bcpc := self stackValue: 4.
+	numCopied := self stackValue: 5.
+	sourceMethod := self stackValue: 6.
+	
 
 	"Validate as much as possible.
 	Do not do irreversible side effects here."
@@ -225,6 +229,8 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 		 objectMemory isCompiledMethod: sourceMethod ]) ifFalse: [
 		^ self primitiveFailFor: PrimErrBadMethod ].
 	(objectMemory isIntegerObject: bcpc) ifFalse: [
+		^ self primitiveFailFor: PrimErrBadArgument ].
+	(objectMemory isIntegerObject: numCopied) ifFalse: [
 		^ self primitiveFailFor: PrimErrBadArgument ].
 	(objectMemory isArray: typesArray) ifFalse: [
 		^ self primitiveFailFor: PrimErrBadArgument ].
@@ -258,19 +264,25 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
 
 	"Compile source method if needed, fail if did not work"
-	(self methodHasCogMethod: sourceMethod) ifFalse: [
-		cogit cog: sourceMethod selector: objectMemory nilObject.
+	(self methodHasCogMethod: sourceMethod) ifFalse: [ | isBlock |
+		isBlock := (objectMemory integerValueOf: numCopied) > -1  "some Block don't copy variables, so we consider -1 as the source method"
+			ifTrue: [
+				 cogit cogFullBlockMethod: sourceMethod numCopied: numCopied ]
+			ifFalse: [ 
+				cogit cog: sourceMethod selector: (self findSelectorOfMethod: sourceMethod) ].
 		(self methodHasCogMethod: sourceMethod) ifFalse: [
 			^ self primitiveFail ] ].
 
 	"we check the messageSelector is set, not nil"
-	messageSelector = objectMemory nilObject ifTrue:[
+	callsiteSelector = objectMemory nilObject ifTrue:[
 			^ self primitiveFailFor: PrimErrBadArgument 
 			].
 	"From now, we know that the method is compiled.
 	Get the cog method, and map the BCPC.
 	We should check that the MCPC is a send here, but currently there is no code for that."
 	sourceCogMethod := self cogMethodOf: sourceMethod.
+
+	self maybeSelectorOfMethod: sourceMethod.
 	mcpc := cogit
 		        mcPCFor: (objectMemory integerValueOf: bcpc)
 		        startBcpc: (self startPCOfMethod: sourceMethod)
@@ -288,12 +300,26 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 		targetType := objectMemory fetchPointer: 0 ofObject: typesArray.
 		targetMethod := objectMemory fetchPointer: 0 ofObject: targetMethodArray.
 		targetCogMethod := self ensureMethodIsCogged: targetMethod maybeClosure: objectMemory nilObject.
+		cogit setSelectorOf: targetCogMethod to: callsiteSelector.
+		isSuper ifTrue:[
+				cogit
+			linkSendAt: mcpc
+			in: sourceCogMethod
+			to: targetCogMethod
+			offset: cogit noCheckEntryOffset 
+			receiverCacheTag: (cogit inlineCacheTagForClass: targetType).
+			]
+		 ifFalse:[
 		cogit
 			linkSendAt: mcpc
 			in: sourceCogMethod
 			to: targetCogMethod
 			offset: cogit entryOffset
-			receiverCacheTag: (cogit inlineCacheTagForClass: targetType)
+			receiverCacheTag: (cogit inlineCacheTagForClass: targetType).	
+			].
+		
+			
+		self assert: (memoryManager getMemoryMap isInCodeZone: targetCogMethod).
 	] ifFalse: [ 
 		| firstCogMethod secondCogMethod sizeOfTargets|
 		"Requested polymorphic link"
@@ -306,8 +332,8 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 		secondCogMethod := self
              ensureMethodIsCogged: (objectMemory fetchPointer: 1 ofObject: targetMethodArray) 
              maybeClosure: objectMemory nilObject.
-
-
+		cogit setSelectorOf: firstCogMethod to: callsiteSelector.
+		cogit setSelectorOf: secondCogMethod to: callsiteSelector.
 		pic := cogit
 		       publicCogPICSelector: callsiteSelector
 		       numArgs: firstCogMethod cmNumArgs "Assume for now that all methods have same numArgs. We should validate it and test it!"
@@ -321,12 +347,18 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 			targetCogMethod := self
 				ensureMethodIsCogged: (objectMemory fetchPointer: i  ofObject: targetMethodArray) 
 				maybeClosure: objectMemory nilObject.
+			cogit setSelectorOf: targetCogMethod to: callsiteSelector.
+
+			self assert: (objectMemory getMemoryMap isInCodeZone: targetCogMethod).
+
 			cogit
 				cogExtendPIC: (pic) 
 				CaseNMethod: targetCogMethod methodObject
 				tag: (cogit inlineCacheTagForClass: (objectMemory fetchPointer: i  ofObject: typesArray))
 				isMNUCase: false.
 		].
+
+		self assert: (objectMemory getMemoryMap isInCodeZone: pic).
 	
 		cogit
 			linkSendAt: mcpc
