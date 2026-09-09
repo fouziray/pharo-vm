@@ -10120,55 +10120,8 @@ Cogit >> patchFixupTargetIfNeeded: fixup nextOpcodeIndex: nextOpcodeIndex [
 
 { #category : 'in-line cacheing' }
 Cogit >> patchToMegamorphicICFor: selector numArgs: numArgs receiver: receiver [
-	"Code entry PIC full or miss to an instance of a young class or to a young target method.
-	Attempt to patch the send site to an megamorphic PIC.
-	Answer if the attempt succeeded; in fact it will
-	
-	Only return if the attempt failed.
-	The stack looks like:
-			receiver
-			args
-	 sp=>	sender return address"
-
-	<api>
-	| oPIC callerReturnAddress extent |
-	<var: #oPIC type: #'CogMethod *'>
-	callerReturnAddress := coInterpreter stackTop.
-
-	oPIC := methodZone openPICWithSelector: selector.
-	
-	"See if an Open PIC is already available."
-	oPIC ifNil:
-		["otherwise attempt to create an Open PIC."
-			self 
-				enableCodeZoneWriteDuring: [oPIC := self cogOpenPICSelector: selector numArgs: numArgs]
-				flushingCacheWith: [ 
-					(oPIC asInteger between: MaxNegativeErrorCode and: -1) 
-						ifFalse: [ self flushICacheFrom: oPIC asUnsignedInteger to: oPIC asUnsignedInteger + openPICSize]]].
-
-	(oPIC asInteger between: MaxNegativeErrorCode and: -1) ifTrue:[
-		"For some reason the PIC couldn't be generated, most likely a lack of code memory."
-		oPIC asInteger = InsufficientCodeSpace ifTrue:
-			[coInterpreter callForCogCompiledCodeCompaction].
-		^false].
-
-	self 
-		enableCodeZoneWriteDuring: [
-		"Relink the send site to the pic.  Reset the cache tag to the selector, for the
-		 benefit of the cacheTag assert check in checkIfValidOopRef:pc:cogMethod: et al."
-		extent := backEnd
-					rewriteInlineCacheAt: callerReturnAddress
-					tag: (self inlineCacheValueForSelector: selector
-							  in: coInterpreter mframeHomeMethodExport
-							  at: callerReturnAddress)
-					target: oPIC asInteger + cmEntryOffset]
-		flushingCacheWith: [ 
-			self
-				flushICacheFrom: callerReturnAddress asUnsignedInteger - extent to: callerReturnAddress asUnsignedInteger ].
-
-	"Jump into the oPIC at its entry"
-	coInterpreter executeCogMethod: oPIC fromLinkedSendWithReceiver: receiver.
-	^self unreachable
+	"On the contrary to previous flow. We want to ignore all attempt to creating a MIC"
+	^  nil
 ]
 
 { #category : 'in-line cacheing' }
