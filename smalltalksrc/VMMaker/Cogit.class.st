@@ -10121,8 +10121,8 @@ Cogit >> patchFixupTargetIfNeeded: fixup nextOpcodeIndex: nextOpcodeIndex [
 { #category : 'in-line cacheing' }
 Cogit >> patchToMegamorphicICFor: selector numArgs: numArgs receiver: receiver [
 	"On the contrary to previous flow. We want to ignore all attempt to creating a MIC"
-	<inline: false>
-	^  nil
+	<api>
+
 ]
 
 { #category : 'in-line cacheing' }
