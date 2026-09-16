@@ -1,0 +1,12 @@
+# This is a generated file and its contents are an internal implementation detail.
+# The download step will be re-executed if anything in this file changes.
+# No other meaning or use of this file is supported.
+
+method=url
+command=/Applications/CMake.app/Contents/bin/cmake;-P;/Users/faouziray/Documents/XP/Pharo/images/pharoSprint26-06/pharo-local/iceberg/fouziray/pharo-vm/bs/libssh2-1.10.0-download/libssh2-1.10.0-download-prefix/src/libssh2-1.10.0-download-stamp/download-libssh2-1.10.0-download.cmake;COMMAND;/Applications/CMake.app/Contents/bin/cmake;-P;/Users/faouziray/Documents/XP/Pharo/images/pharoSprint26-06/pharo-local/iceberg/fouziray/pharo-vm/bs/libssh2-1.10.0-download/libssh2-1.10.0-download-prefix/src/libssh2-1.10.0-download-stamp/verify-libssh2-1.10.0-download.cmake;COMMAND;/Applications/CMake.app/Contents/bin/cmake;-P;/Users/faouziray/Documents/XP/Pharo/images/pharoSprint26-06/pharo-local/iceberg/fouziray/pharo-vm/bs/libssh2-1.10.0-download/libssh2-1.10.0-download-prefix/src/libssh2-1.10.0-download-stamp/extract-libssh2-1.10.0-download.cmake
+source_dir=/Users/faouziray/Documents/XP/Pharo/images/pharoSprint26-06/pharo-local/iceberg/fouziray/pharo-vm/bs/libssh2-1.10.0-src
+work_dir=/Users/faouziray/Documents/XP/Pharo/images/pharoSprint26-06/pharo-local/iceberg/fouziray/pharo-vm/bs
+url(s)=https://files.pharo.org/vm/pharo-spur64/Darwin-arm64/third-party/libssh2-1.10.0.zip
+hash=
+no_extract=
+

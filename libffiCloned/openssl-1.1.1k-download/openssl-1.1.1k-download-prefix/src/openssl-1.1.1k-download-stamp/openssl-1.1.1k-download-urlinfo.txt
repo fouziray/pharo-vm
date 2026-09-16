@@ -1,0 +1,12 @@
+# This is a generated file and its contents are an internal implementation detail.
+# The download step will be re-executed if anything in this file changes.
+# No other meaning or use of this file is supported.
+
+method=url
+command=/Applications/CMake.app/Contents/bin/cmake;-P;/Users/faouziray/Documents/XP/Pharo/images/122/pharo-local/iceberg/fouziray/pharo-vm/libffiCloned/openssl-1.1.1k-download/openssl-1.1.1k-download-prefix/src/openssl-1.1.1k-download-stamp/download-openssl-1.1.1k-download.cmake;COMMAND;/Applications/CMake.app/Contents/bin/cmake;-P;/Users/faouziray/Documents/XP/Pharo/images/122/pharo-local/iceberg/fouziray/pharo-vm/libffiCloned/openssl-1.1.1k-download/openssl-1.1.1k-download-prefix/src/openssl-1.1.1k-download-stamp/verify-openssl-1.1.1k-download.cmake;COMMAND;/Applications/CMake.app/Contents/bin/cmake;-P;/Users/faouziray/Documents/XP/Pharo/images/122/pharo-local/iceberg/fouziray/pharo-vm/libffiCloned/openssl-1.1.1k-download/openssl-1.1.1k-download-prefix/src/openssl-1.1.1k-download-stamp/extract-openssl-1.1.1k-download.cmake
+source_dir=/Users/faouziray/Documents/XP/Pharo/images/122/pharo-local/iceberg/fouziray/pharo-vm/libffiCloned/openssl-1.1.1k-src
+work_dir=/Users/faouziray/Documents/XP/Pharo/images/122/pharo-local/iceberg/fouziray/pharo-vm/libffiCloned
+url(s)=https://files.pharo.org/vm/pharo-spur64/Darwin-arm64/third-party/openssl-1.1.1k.zip
+hash=
+no_extract=
+

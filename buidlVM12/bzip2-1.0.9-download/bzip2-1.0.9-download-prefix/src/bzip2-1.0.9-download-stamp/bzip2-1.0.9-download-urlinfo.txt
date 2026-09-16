@@ -1,0 +1,12 @@
+# This is a generated file and its contents are an internal implementation detail.
+# The download step will be re-executed if anything in this file changes.
+# No other meaning or use of this file is supported.
+
+method=url
+command=/Applications/CMake.app/Contents/bin/cmake;-P;/Users/faouziray/Documents/XP/Pharo/images/122/pharo-local/iceberg/fouziray/pharo-vm/buidlVM12/bzip2-1.0.9-download/bzip2-1.0.9-download-prefix/src/bzip2-1.0.9-download-stamp/download-bzip2-1.0.9-download.cmake;COMMAND;/Applications/CMake.app/Contents/bin/cmake;-P;/Users/faouziray/Documents/XP/Pharo/images/122/pharo-local/iceberg/fouziray/pharo-vm/buidlVM12/bzip2-1.0.9-download/bzip2-1.0.9-download-prefix/src/bzip2-1.0.9-download-stamp/verify-bzip2-1.0.9-download.cmake;COMMAND;/Applications/CMake.app/Contents/bin/cmake;-P;/Users/faouziray/Documents/XP/Pharo/images/122/pharo-local/iceberg/fouziray/pharo-vm/buidlVM12/bzip2-1.0.9-download/bzip2-1.0.9-download-prefix/src/bzip2-1.0.9-download-stamp/extract-bzip2-1.0.9-download.cmake
+source_dir=/Users/faouziray/Documents/XP/Pharo/images/122/pharo-local/iceberg/fouziray/pharo-vm/buidlVM12/bzip2-1.0.9-src
+work_dir=/Users/faouziray/Documents/XP/Pharo/images/122/pharo-local/iceberg/fouziray/pharo-vm/buidlVM12
+url(s)=https://files.pharo.org/vm/pharo-spur64/Darwin-arm64/third-party/bzip2-1.0.9.zip
+hash=
+no_extract=
+

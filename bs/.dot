@@ -1,0 +1,136 @@
+digraph "Pharo_VM_Dependencies" {
+node [
+  fontsize = "12"
+];
+subgraph clusterLegend {
+  label = "Legend";
+  color = black;
+  edge [ style = invis ];
+  legendNode0 [ label = "Executable", shape = egg ];
+  legendNode1 [ label = "Static Library", shape = octagon ];
+  legendNode2 [ label = "Shared Library", shape = doubleoctagon ];
+  legendNode3 [ label = "Module Library", shape = tripleoctagon ];
+  legendNode4 [ label = "Interface Library", shape = pentagon ];
+  legendNode5 [ label = "Object Library", shape = hexagon ];
+  legendNode6 [ label = "Unknown Library", shape = septagon ];
+  legendNode7 [ label = "Custom Target", shape = box ];
+  legendNode0 -> legendNode1 [ style = solid ];
+  legendNode0 -> legendNode2 [ style = solid ];
+  legendNode0 -> legendNode3;
+  legendNode1 -> legendNode4 [ label = "Interface", style = dashed ];
+  legendNode2 -> legendNode5 [ label = "Private", style = dotted ];
+  legendNode3 -> legendNode6 [ style = solid ];
+  legendNode0 -> legendNode7;
+}
+    "node0" [ label = "B2DPlugin", shape = doubleoctagon ];
+    "node1" [ label = "PharoVMCore", shape = doubleoctagon ];
+    "node2" [ label = "-framework AppKit", shape = septagon ];
+    "node1" -> "node2"  // PharoVMCore -> -framework AppKit
+    "node3" [ label = "-framework CoreGraphics", shape = septagon ];
+    "node1" -> "node3"  // PharoVMCore -> -framework CoreGraphics
+    "node4" [ label = "FFI::lib", shape = doubleoctagon ];
+    "node1" -> "node4"  // PharoVMCore -> FFI::lib
+    "node5" [ label = "vmmaker", shape = box ];
+    "node6" [ label = "vmmaker_vm", shape = box ];
+    "node5" -> "node6"  // vmmaker -> vmmaker_vm
+    "node1" -> "node5"  // PharoVMCore -> vmmaker
+    "node0" -> "node1" [ style = dotted ] // B2DPlugin -> PharoVMCore
+    "node7" [ label = "BitBltPlugin", shape = doubleoctagon ];
+    "node7" -> "node1" [ style = dotted ] // BitBltPlugin -> PharoVMCore
+    "node8" [ label = "DSAPrims", shape = doubleoctagon ];
+    "node8" -> "node1" [ style = dotted ] // DSAPrims -> PharoVMCore
+    "node9" [ label = "FileAttributesPlugin", shape = doubleoctagon ];
+    "node10" [ label = "FilePlugin", shape = doubleoctagon ];
+    "node11" [ label = "-framework CoreFoundation", shape = septagon ];
+    "node10" -> "node11" [ style = dotted ] // FilePlugin -> -framework CoreFoundation
+    "node10" -> "node1" [ style = dotted ] // FilePlugin -> PharoVMCore
+    "node10" -> "node5"  // FilePlugin -> vmmaker
+    "node9" -> "node10" [ style = dotted ] // FileAttributesPlugin -> FilePlugin
+    "node9" -> "node1" [ style = dotted ] // FileAttributesPlugin -> PharoVMCore
+    "node12" [ label = "FloatArrayPlugin", shape = doubleoctagon ];
+    "node12" -> "node1" [ style = dotted ] // FloatArrayPlugin -> PharoVMCore
+    "node12" -> "node5"  // FloatArrayPlugin -> vmmaker
+    "node13" [ label = "JPEGReadWriter2Plugin", shape = doubleoctagon ];
+    "node13" -> "node1" [ style = dotted ] // JPEGReadWriter2Plugin -> PharoVMCore
+    "node14" [ label = "JPEGReaderPlugin", shape = doubleoctagon ];
+    "node14" -> "node1" [ style = dotted ] // JPEGReaderPlugin -> PharoVMCore
+    "node15" [ label = "LargeIntegers", shape = doubleoctagon ];
+    "node15" -> "node1" [ style = dotted ] // LargeIntegers -> PharoVMCore
+    "node16" [ label = "LocalePlugin", shape = doubleoctagon ];
+    "node16" -> "node11" [ style = dotted ] // LocalePlugin -> -framework CoreFoundation
+    "node16" -> "node1" [ style = dotted ] // LocalePlugin -> PharoVMCore
+    "node17" [ label = "MiscPrimitivePlugin", shape = doubleoctagon ];
+    "node17" -> "node1" [ style = dotted ] // MiscPrimitivePlugin -> PharoVMCore
+    "node18" [ label = "Pharo", shape = egg ];
+    "node18" -> "node0"  // Pharo -> B2DPlugin
+    "node18" -> "node7"  // Pharo -> BitBltPlugin
+    "node18" -> "node8"  // Pharo -> DSAPrims
+    "node18" -> "node9"  // Pharo -> FileAttributesPlugin
+    "node18" -> "node10"  // Pharo -> FilePlugin
+    "node18" -> "node12"  // Pharo -> FloatArrayPlugin
+    "node18" -> "node13"  // Pharo -> JPEGReadWriter2Plugin
+    "node18" -> "node14"  // Pharo -> JPEGReaderPlugin
+    "node18" -> "node15"  // Pharo -> LargeIntegers
+    "node18" -> "node16"  // Pharo -> LocalePlugin
+    "node18" -> "node17"  // Pharo -> MiscPrimitivePlugin
+    "node18" -> "node1" [ style = dotted ] // Pharo -> PharoVMCore
+    "node19" [ label = "SDL2-2.30.6", shape = box ];
+    "node18" -> "node19"  // Pharo -> SDL2-2.30.6
+    "node20" [ label = "SocketPlugin", shape = doubleoctagon ];
+    "node20" -> "node1" [ style = dotted ] // SocketPlugin -> PharoVMCore
+    "node18" -> "node20"  // Pharo -> SocketPlugin
+    "node21" [ label = "SqueakSSL", shape = doubleoctagon ];
+    "node21" -> "node11" [ style = dotted ] // SqueakSSL -> -framework CoreFoundation
+    "node22" [ label = "-framework Security", shape = septagon ];
+    "node21" -> "node22" [ style = dotted ] // SqueakSSL -> -framework Security
+    "node21" -> "node1" [ style = dotted ] // SqueakSSL -> PharoVMCore
+    "node18" -> "node21"  // Pharo -> SqueakSSL
+    "node23" [ label = "SurfacePlugin", shape = doubleoctagon ];
+    "node23" -> "node1" [ style = dotted ] // SurfacePlugin -> PharoVMCore
+    "node23" -> "node5"  // SurfacePlugin -> vmmaker
+    "node18" -> "node23"  // Pharo -> SurfacePlugin
+    "node24" [ label = "UUIDPlugin", shape = doubleoctagon ];
+    "node24" -> "node1" [ style = dotted ] // UUIDPlugin -> PharoVMCore
+    "node18" -> "node24"  // Pharo -> UUIDPlugin
+    "node25" [ label = "UnixOSProcessPlugin", shape = doubleoctagon ];
+    "node25" -> "node10" [ style = dotted ] // UnixOSProcessPlugin -> FilePlugin
+    "node25" -> "node1" [ style = dotted ] // UnixOSProcessPlugin -> PharoVMCore
+    "node18" -> "node25"  // Pharo -> UnixOSProcessPlugin
+    "node26" [ label = "cairo-1.17.4", shape = box ];
+    "node18" -> "node26"  // Pharo -> cairo-1.17.4
+    "node27" [ label = "fontconfig-2.13.1", shape = box ];
+    "node18" -> "node27"  // Pharo -> fontconfig-2.13.1
+    "node28" [ label = "freetype-2.12.1", shape = box ];
+    "node18" -> "node28"  // Pharo -> freetype-2.12.1
+    "node29" [ label = "harfbuzz-5.3.1", shape = box ];
+    "node18" -> "node29"  // Pharo -> harfbuzz-5.3.1
+    "node30" [ label = "libgit2-1.4.4", shape = box ];
+    "node18" -> "node30"  // Pharo -> libgit2-1.4.4
+    "node31" [ label = "libgit2-1.5.2", shape = box ];
+    "node18" -> "node31"  // Pharo -> libgit2-1.5.2
+    "node32" [ label = "libgit2-1.6.4", shape = box ];
+    "node18" -> "node32"  // Pharo -> libgit2-1.6.4
+    "node33" [ label = "libgit2-default-2023-04-14", shape = box ];
+    "node18" -> "node33"  // Pharo -> libgit2-default-2023-04-14
+    "node34" [ label = "libpng-1.6.37", shape = box ];
+    "node18" -> "node34"  // Pharo -> libpng-1.6.37
+    "node35" [ label = "libssh2-1.10.0", shape = box ];
+    "node18" -> "node35"  // Pharo -> libssh2-1.10.0
+    "node36" [ label = "openssl-1.1.1k", shape = box ];
+    "node18" -> "node36"  // Pharo -> openssl-1.1.1k
+    "node37" [ label = "pixman-0.40.0", shape = box ];
+    "node18" -> "node37"  // Pharo -> pixman-0.40.0
+    "node38" [ label = "TestLibrary", shape = doubleoctagon ];
+    "node39" [ label = "generate-sources", shape = box ];
+    "node39" -> "node5"  // generate-sources -> vmmaker
+    "node40" [ label = "graphviz", shape = box ];
+    "node41" [ label = "sign", shape = box ];
+    "node42" [ label = "sign_executables", shape = box ];
+    "node42" -> "node18"  // sign_executables -> Pharo
+    "node41" -> "node42"  // sign -> sign_executables
+    "node43" [ label = "sign_libraries", shape = box ];
+    "node43" -> "node18"  // sign_libraries -> Pharo
+    "node43" -> "node38"  // sign_libraries -> TestLibrary
+    "node41" -> "node43"  // sign -> sign_libraries
+    "node44" [ label = "tty", shape = doubleoctagon ];
+}
