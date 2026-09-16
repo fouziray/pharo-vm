@@ -1,5 +1,5 @@
 "
-I am a native Cog method or polymorphic inline cache.  If the former I have been produced by compiling a bytecoded CompiledMethod into machine code by the JIT, and I have a circular reference to that CompiledMethod.  The CompiledMethod's header field is a pointer to me, the CogMethod, and my methodHeader field holds the compiled method's actual header.  My objectHeader field looks like a single word object with a compact header with the mark bit set so as to placate the GC, i.e. make a CogMethod look like an object so that the reference to a CogMethod from a compiled method doesn't break the GC.  The cmType, stackCheckOffset, cmNumArgs & cmNumTemps fields are early in the structure because we place dummy two-word CogMethod headers within a method for each block within it to record this information for each block method (see my superclass CogBlockMethod).  In this case the objectHeader field is overlaid by the homeOffset and startpc fields.  The objectHeader field is also used to hold the relocation distance when compacting methods since when functioning as an obhject header it is a constant value and so can easily be reinitialized.  See Cogit class>>structureOfACogMethod for more information.
+I am a native Cog method or polymorphic inline cache.  If the former I have been produced by compiling a bytecoded CompiledMethod into machine code by the JIT, and I have a circular reference to that CompiledMethod.  The CompiledMethod's header field is a pointer to me, the CogMethod, and my methodHeader field holds the compiled method's actual header.  My objectHeader field looks like a single word object with a compact header with the mark bit set so as to placate the GC, i.e. make a CogMethod look like an object so that the reference to a CogMethod from a compiled method doesn't break the GC.  The cmType, stackCheckOffset, cmNumArgs & cmNumTemps fields are early in the structure because we place dummy two-word CogMethod headers within a method for each block within it to record this information for each block method (see my superclass CogBlockMethod).  In this case the objectHeader field is overlaid by the homeOffset and startpc fields.  The objectHeader field is also used to hold the relocation distance when compacting methods since when functioning as an object header it is a constant value and so can easily be reinitialized.  See Cogit class>>structureOfACogMethod for more information.
 
 In C I look like
 
@@ -36,7 +36,6 @@ Class {
 		'cmNumArgs',
 		'cmType',
 		'cmRefersToYoung',
-		'cpicHasMNUCaseOrCMIsFullBlock',
 		'cmUsageCount',
 		'cmUsesPenultimateLit',
 		'cbUsesInstVars',
@@ -46,7 +45,8 @@ Class {
 		'picUsage',
 		'methodObject',
 		'methodHeader',
-		'selector'
+		'selector',
+		'picHasMNUCaseOrCMIsFullBlock'
 	],
 	#pools : [
 		'CogMethodConstants',
@@ -103,17 +103,17 @@ CogMethod class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 						  VMClass objectMemoryClass baseHeaderSize = 8
 							  ifTrue: [ #sqLong ]
 							  ifFalse: [ #sqInt ] ]).
-						 ([ 'cmNumArgs' ] -> [ #( unsigned ' : 8' ) ]). "SqueakV3 needs only 5 bits"
+						 (['cmNumArgs'] -> [#(unsigned ' : 8')] ).
 						 ([ 'cmType' ] -> [ #( unsigned ' : 3' ) ]).
 						 ([ 'cmRefersToYoung' ] -> [ #( unsigned #Boolean ' : 1' ) ]).
-						 ([ 'cpicHasMNUCaseOrCMIsFullBlock' ]
+						 ([ 'picHasMNUCaseOrCMIsFullBlock' ]
 						  -> [ #( unsigned #Boolean ' : 1' ) ]).
 						 ([ 'cmUsageCount' ] -> [ #( unsigned ' : 3' ) ]). "See CMMaxUsageCount in initialize"
 						 ([ 'cmUsesPenultimateLit' ]
 						  -> [ #( unsigned #Boolean ' : 1' ) ]).
 						 ([ 'cbUsesInstVars' ] -> [ #( unsigned #Boolean ' : 1' ) ]).
 						 ([ 'cmUnusedFlags' ] -> [ #( unsigned ' : 2' ) ]).
-						 ([ 'stackCheckOffset' ] -> [ #( unsigned ' : 12' ) ]). "See MaxStackCheckOffset in initialize. a.k.a. cPICNumCases"
+						 ([ 'stackCheckOffset' ] -> [ #( unsigned ' : 12' ) ]). "See MaxStackCheckOffset in initialize. a.k.a. picNumCases"
 						 ([ 'blockSize' ] -> [ #'unsigned short' ]). "See MaxMethodSize in initialize"
 						 ([ 'picUsage' ] -> [ #'unsigned short' ]).
 						 ([ 'homeOffset' ] -> [ #'unsigned short' ]).
@@ -126,7 +126,7 @@ CogMethod class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 { #category : 'translation' }
 CogMethod class >> isAccessor: aSelector [
 	"Answer if aSelector is simply an accessor method for one of our fields."
-	^(#(cPICNumCases cPICNumCases: nextOpenPIC nextOpenPIC:) includes: aSelector)
+	^(#(#picNumCases #picNumCases: #nextMegamorphicIC #nextMegamorphicIC:) includes: aSelector)
 	  or: [super isAccessor: aSelector]
 ]
 
@@ -158,20 +158,6 @@ CogMethod >> blockSize: anObject [
 ]
 
 { #category : 'accessing' }
-CogMethod >> cPICNumCases [
-	"Answer the value of cPICNumCases (a.k.a. stackCheckOffset)"
-	<cmacro: ' stackCheckOffset'>
-	^stackCheckOffset
-]
-
-{ #category : 'accessing' }
-CogMethod >> cPICNumCases: anObject [
-	"Set the value of cPICNumCases (a.k.a. stackCheckOffset)"
-	<cmacro: 'Hack hack hack hack i.e. the getter macro does all the work'>
-	^stackCheckOffset := anObject
-]
-
-{ #category : 'accessing' }
 CogMethod >> cbUsesInstVars [
 
 	^cbUsesInstVars
@@ -185,11 +171,9 @@ CogMethod >> cbUsesInstVars: anObject [
 
 { #category : 'accessing' }
 CogMethod >> cmIsFullBlock [
-	"Answer the value of cpicHasMNUCaseOrCMIsFullBlock"
+	"Answer the value of picHasMNUCaseOrCMIsFullBlock"
 	<inline: true>
-	^SistaV1BytecodeSet
-		ifTrue: [self cpicHasMNUCaseOrCMIsFullBlock]
-		ifFalse: [false]
+	^ self picHasMNUCaseOrCMIsFullBlock
 ]
 
 { #category : 'accessing' }
@@ -276,37 +260,6 @@ CogMethod >> counters [
 ]
 
 { #category : 'accessing' }
-CogMethod >> cpicHasMNUCase [
-	"Answer if the receiver has an MNU case."
-	<inline: true>
-
-	^SistaV1BytecodeSet
-		ifTrue: [self cpicHasMNUCaseOrCMIsFullBlock and: [self cmType = CMPolymorphicIC]]
-		ifFalse: [cpicHasMNUCaseOrCMIsFullBlock]
-]
-
-{ #category : 'accessing' }
-CogMethod >> cpicHasMNUCase: anObject [
-	"Set if the receiver has an MNU case."
-	<inline: true>
-	^cpicHasMNUCaseOrCMIsFullBlock := anObject
-]
-
-{ #category : 'accessing' }
-CogMethod >> cpicHasMNUCaseOrCMIsFullBlock [
-	"Answer the value of cpicHasMNUCaseOrCMIsFullBlock"
-
-	^cpicHasMNUCaseOrCMIsFullBlock
-]
-
-{ #category : 'accessing' }
-CogMethod >> cpicHasMNUCaseOrCMIsFullBlock: anObject [
-	"Set the value of cpicHasMNUCaseOrCMIsFullBlock"
-
-	^cpicHasMNUCaseOrCMIsFullBlock := anObject
-]
-
-{ #category : 'accessing' }
 CogMethod >> methodHeader [
 	"Answer the value of methodHeader"
 
@@ -335,15 +288,15 @@ CogMethod >> methodObject: anObject [
 ]
 
 { #category : 'accessing' }
-CogMethod >> nextOpenPIC [
-	"Answer the value of nextOpenPIC (a.k.a. methodObject)"
+CogMethod >> nextMegamorphicIC [
+	"Answer the value of nextMegamorphicIC (a.k.a. methodObject)"
 	<cmacro: ' methodObject'>
 	^methodObject
 ]
 
 { #category : 'accessing' }
-CogMethod >> nextOpenPIC: anObject [
-	"Set the value of nextOpenPIC (a.k.a. methodObject)"
+CogMethod >> nextMegamorphicIC: anObject [
+	"Set the value of nextMegamorphicIC (a.k.a. methodObject)"
 	<cmacro: 'Hack hack hack hack i.e. the getter macro does all the work'>
 	^methodObject := anObject
 ]
@@ -360,6 +313,49 @@ CogMethod >> objectHeader: anObject [
 	"Set the value of objectHeader"
 
 	^objectHeader := anObject
+]
+
+{ #category : 'accessing' }
+CogMethod >> picHasMNUCase [
+	"Answer if the receiver has an MNU case."
+	<inline: true>
+
+	^ self picHasMNUCaseOrCMIsFullBlock and: [self cmType = CMPolymorphicIC]
+]
+
+{ #category : 'accessing' }
+CogMethod >> picHasMNUCase: anObject [
+	"Set if the receiver has an MNU case."
+	<inline: true>
+	^picHasMNUCaseOrCMIsFullBlock := anObject
+]
+
+{ #category : 'accessing' }
+CogMethod >> picHasMNUCaseOrCMIsFullBlock [
+	"Answer the value of picHasMNUCaseOrCMIsFullBlock"
+
+	^picHasMNUCaseOrCMIsFullBlock
+]
+
+{ #category : 'accessing' }
+CogMethod >> picHasMNUCaseOrCMIsFullBlock: anObject [
+	"Set the value of picHasMNUCaseOrCMIsFullBlock"
+
+	^picHasMNUCaseOrCMIsFullBlock := anObject
+]
+
+{ #category : 'accessing' }
+CogMethod >> picNumCases [
+	"Answer the value of picNumCases (a.k.a. stackCheckOffset)"
+	<cmacro: ' stackCheckOffset'>
+	^stackCheckOffset
+]
+
+{ #category : 'accessing' }
+CogMethod >> picNumCases: anObject [
+	"Set the value of picNumCases (a.k.a. stackCheckOffset)"
+	<cmacro: 'Hack hack hack hack i.e. the getter macro does all the work'>
+	^stackCheckOffset := anObject
 ]
 
 { #category : 'accessing' }

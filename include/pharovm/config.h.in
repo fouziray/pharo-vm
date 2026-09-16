@@ -22,6 +22,8 @@
 #cmakedefine AVE_DLFCN_H
 #cmakedefine HAVE_LIBDL
 #cmakedefine HAVE_DYLD
+#cmakedefine HAVE_BZERO
+#cmakedefine HAVE_GETCONTEXT
 #cmakedefine HAVE_TM_GMTOFF
 
 /* architecture */
@@ -42,8 +44,6 @@
 #define SIZEOF_LONG_LONG @SIZEOF_LONG_LONG@
 #define SIZEOF_VOID_P @SIZEOF_VOID_P@
 
-#define squeakInt64 @SQUEAK_INT64_TYPEDEF@
-
 #cmakedefine HAVE_SYS_UUID_H
 #cmakedefine HAVE_UUID_UUID_H
 #cmakedefine HAVE_UUID_H
@@ -53,13 +53,15 @@
 
 #cmakedefine PHARO_VM_IN_WORKER_THREAD
 
-#cmakedefine BUILD_IS_RELEASE
+#cmakedefine PharoVM_VERSION_MAJOR @PharoVM_VERSION_MAJOR@
+#cmakedefine PharoVM_VERSION_MINOR @PharoVM_VERSION_MINOR@
+#cmakedefine PharoVM_VERSION_PATCH @PharoVM_VERSION_PATCH@
 
 #if defined(_MSC_VER)
-#define VM_BUILD_STRING VM_NAME " @VERSION_MAJOR@.@VERSION_MINOR@.@VERSION_PATCH@ built on " __DATE__ " " __TIME__ " Compiler: Visual C"
+#define VM_BUILD_STRING VM_NAME " @PharoVM_VERSION_STRING@ Compiler: Visual C"
 #define COMPILER_VERSION "Visual C"
 #else
-#define VM_BUILD_STRING VM_NAME " @VERSION_MAJOR@.@VERSION_MINOR@.@VERSION_PATCH@ built on " __DATE__ " " __TIME__" Compiler: " __VERSION__
+#define VM_BUILD_STRING VM_NAME " @PharoVM_VERSION_STRING@ Compiler: " __VERSION__
 #define COMPILER_VERSION __VERSION__
 #endif
 

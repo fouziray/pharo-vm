@@ -399,10 +399,10 @@ CoInterpreterPrimitives >> primitiveObjectAtPut [
 	index = 1
 		ifTrue:
 			[((objectMemory isNonIntegerObject: newValue)
-			 or: [(objectMemory literalCountOfMethodHeader: newValue) ~= (objectMemory literalCountOfMethodHeader: realHeader)]) ifTrue:
-				[^self primitiveFailFor: PrimErrBadArgument].
+			 or: [(objectMemory literalCountOfMethodHeader: newValue) ~= (objectMemory literalCountOfMethodHeader: realHeader)])
+				ifTrue: [^self primitiveFailFor: PrimErrBadArgument].
 			 (self isCogMethodReference: rawHeader)
-				ifTrue: [(self cCoerceSimple: rawHeader to: #'CogMethod *') methodHeader: newValue]
+				ifTrue: [ cogit setHeaderOopOf: (self cCoerceSimple: rawHeader to: #'CogMethod *') to: newValue ]
 				ifFalse: [objectMemory storePointerUnchecked: 0 ofObject: thisReceiver withValue: newValue]]
 		ifFalse:
 			[objectMemory storePointer: index - 1 ofObject: thisReceiver withValue: newValue].
@@ -731,7 +731,7 @@ CoInterpreterPrimitives >> primitiveVoidVMStateForMethod [
 	self assert: thePage headFP = theFrame.
 	self setStackPageAndLimit: thePage.
 	self setStackPointersFromPage: thePage.
-	instructionPointer := self popStack.
+	instructionPointer := self pointerForOop: self popStack.
 	self assert: (methodObj = self stackTop or: [argumentCount > 0 and: [methodObj = (self stackValue: 1)]]).
 	self pop: argumentCount
 ]

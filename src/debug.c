@@ -137,62 +137,6 @@ void getCrashDumpFilenameInto(char *buf)
 #endif
 }
 
-char *getVersionInfo(int verbose)
-{
-#if STACKVM
-  extern char *__interpBuildInfo;
-# define INTERP_BUILD __interpBuildInfo
-# if COGVM
-  extern char *__cogitBuildInfo;
-# endif
-#else
-# define INTERP_BUILD interpreterVersion
-#endif
-  extern char *revisionAsString();
-
-#define BUFFER_SIZE 4096
-
-  char *info= (char *)malloc(BUFFER_SIZE);
-  info[0]= '\0';
-
-#if SPURVM
-# if BytesPerOop == 8
-#	define ObjectMemory " Spur 64-bit"
-# else
-#	define ObjectMemory " Spur"
-# endif
-#else
-# define ObjectMemory
-#endif
-#if defined(NDEBUG)
-# define BuildVariant "Production" ObjectMemory
-#elif DEBUGVM
-# define BuildVariant "Debug" ObjectMemory
-# else
-# define BuildVariant "Assert" ObjectMemory
-#endif
-
-#if USE_XSHM
-#define USE_XSHM_STRING " XShm"
-#else
-#define USE_XSHM_STRING ""
-#endif
-
-#if ITIMER_HEARTBEAT
-# define HBID " ITHB"
-#else
-# define HBID
-#endif
-
-  if(verbose){
-	  snprintf(info, BUFFER_SIZE, IMAGE_DIALECT_NAME "VM version:" VM_VERSION "-" VM_BUILD_STRING USE_XSHM_STRING " " COMPILER_VERSION " [" BuildVariant HBID " VM]\nBuilt from: %s\n With:%s\n Revision: " VM_BUILD_SOURCE_STRING, INTERP_BUILD, GetAttributeString(1008));
-  }else{
-	  snprintf(info, BUFFER_SIZE, VM_VERSION "-" VM_BUILD_STRING USE_XSHM_STRING " " COMPILER_VERSION " [" BuildVariant HBID " VM]\n%s\n%s\n" VM_BUILD_SOURCE_STRING, INTERP_BUILD, GetAttributeString(1008));
-  }
-
-  return info;
-}
-
 /***
  *  This SHOULD be rewritten passing the FILE* as a parameter.
  */

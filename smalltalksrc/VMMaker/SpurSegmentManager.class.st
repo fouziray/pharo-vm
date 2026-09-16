@@ -86,7 +86,7 @@ SpurSegmentManager >> addSegmentOfSize: ammount [
 	<inline: false>
 	| allocatedSize segAddress |
 	<var: #newSeg type: #'SpurSegmentInfo *'>
-	<var: #segAddress type: #'void *'>
+	<var: #segAddress type: #usqInt>
 	<var: #allocatedSize type: #'usqInt'>
 	self cCode: [] inSmalltalk: [segments ifNil: [^nil]]. "bootstrap"
 
@@ -146,25 +146,38 @@ SpurSegmentManager >> allBridgesMarked [
 { #category : 'private' }
 SpurSegmentManager >> allocateOrExtendSegmentInfos [
 	"Increase the number of allocated segInfos by 16."
+
 	| newNumSegs |
-	numSegInfos = 0 ifTrue:
-		[numSegInfos := 16.
-		 segments := self
-						cCode: [self c: numSegInfos alloc: (self sizeof: SpurSegmentInfo)]
-						inSmalltalk: [CArrayAccessor on: ((1 to: numSegInfos) collect: [:i| SpurSegmentInfo new])].
-		 ^self].
+	numSegInfos = 0 ifTrue: [
+		numSegInfos := 16.
+		segments := self
+			            cCode: [
+				            self cCall: 'calloc' withArguments: {
+						            numSegInfos.
+						            (self sizeof: SpurSegmentInfo) } ]
+			            inSmalltalk: [
+				            CArrayAccessor on:
+					            ((1 to: numSegInfos) collect: [ :i |
+						             SpurSegmentInfo new ]) ].
+		^ self ].
 	newNumSegs := numSegInfos + 16.
 	segments := self
-						cCode: [self re: segments alloc: newNumSegs * (self sizeof: SpurSegmentInfo)]
-						inSmalltalk: [CArrayAccessor on: segments object,
-									((numSegInfos to: newNumSegs) collect: [:i| SpurSegmentInfo new])].
-	self cCode:
-		[segments = 0 ifTrue:
-			[self error: 'out of memory; cannot allocate more segments'].
-		 self
-			me: segments + numSegInfos
-			ms: 0
-			et: newNumSegs - numSegInfos * (self sizeof: SpurSegmentInfo)].
+		            cCode: [
+			            self cCall: 'realloc' withArguments: {
+					            segments.
+					            (newNumSegs * (self sizeof: SpurSegmentInfo)) } ]
+		            inSmalltalk: [
+			            CArrayAccessor on: segments object
+				            ,
+				            ((numSegInfos to: newNumSegs) collect: [ :i |
+					             SpurSegmentInfo new ]) ].
+	self cCode: [
+		segments = 0 ifTrue: [
+			self error: 'out of memory; cannot allocate more segments' ].
+		self cCall: 'memset' withArguments: {
+				(segments + numSegInfos).
+				0.
+				(newNumSegs - numSegInfos * (self sizeof: SpurSegmentInfo)) } ].
 	numSegInfos := newNumSegs
 ]
 
@@ -661,6 +674,11 @@ SpurSegmentManager >> someSegmentContainsPinned [
 SpurSegmentManager >> swizzleObj: objOop [
 	<inline: false>
 	self assert: canSwizzle.
+
+	"The permanent space is always loaded in the same place"	
+	(manager getMemoryMap isPermanentObject: objOop)
+		ifTrue: [ ^ objOop ].
+	
 	numSegments - 1 to: 1 by: -1 do:
 		[:i|
 		objOop >= (segments at: i) segStart ifTrue:

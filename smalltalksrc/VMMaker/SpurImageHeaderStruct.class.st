@@ -3,6 +3,7 @@ Class {
 	#superclass : 'VMStructType',
 	#instVars : [
 		'dataSize',
+		'hdrOldSpaceSize',
 		'oldBaseAddr',
 		'initialSpecialObjectsOop',
 		'headerFlags',
@@ -38,7 +39,7 @@ SpurImageHeaderStruct class >> instVarNamesAndTypesForTranslationDo: aBinaryBloc
 
 	<var: #dataSize type: #size_t>
 	<var: #desiredHeapSize type: #size_t>
-	<var: #headerStart type: #squeakFileOffsetType>
+	<var: #headerStart type: #fileOffset_t>
 
 	self filteredInstVarNames do:
 		[:ivn|
@@ -47,7 +48,7 @@ SpurImageHeaderStruct class >> instVarNamesAndTypesForTranslationDo: aBinaryBloc
 			value: (ivn caseOf: {
 						['dataSize']				-> [#'size_t'].
 						['desiredHeapSize']	-> [#'size_t'].
-						['headerStart']			-> [#'squeakFileOffsetType'].
+						['headerStart']			-> [#'fileOffset_t'].
 				} otherwise: [ #'sqInt' ])]
 ]
 
@@ -157,6 +158,18 @@ SpurImageHeaderStruct >> hdrNumStackPages [
 SpurImageHeaderStruct >> hdrNumStackPages: anObject [
 
 	hdrNumStackPages := anObject
+]
+
+{ #category : 'accessing' }
+SpurImageHeaderStruct >> hdrOldSpaceSize [
+
+	^ hdrOldSpaceSize
+]
+
+{ #category : 'accessing' }
+SpurImageHeaderStruct >> hdrOldSpaceSize: anObject [
+
+	hdrOldSpaceSize := anObject
 ]
 
 { #category : 'accessing' }

@@ -35,6 +35,14 @@ SurfacePlugin class >> requiresCrossPlatformFiles [
 	^true
 ]
 
+{ #category : 'primitives' }
+SurfacePlugin >> destroyManualSurface [
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
 { #category : 'private - utils' }
 SurfacePlugin >> dispatchOf: aSurface [
 	<cmacro: '(aSurface) aSurface->dispatch'>
@@ -355,7 +363,7 @@ SurfacePlugin >> primitiveDestroyManualSurface [
 	interpreterProxy methodArgumentCount == 1 ifFalse: [^interpreterProxy primitiveFail].
 	surfaceID := interpreterProxy stackIntegerValue: 0.
 	interpreterProxy failed ifTrue: [^nil].
-	result := self destroyManualSurface: surfaceID.
+	result := self cCall: 'destroyManualSurface' withArguments: {surfaceID}.
 	result = 0 ifTrue: [^interpreterProxy primitiveFail].
 	^interpreterProxy pop: 1
 	
@@ -399,8 +407,9 @@ SurfacePlugin >> primitiveRegisterSurface [
 
 	<export: true>
 	<var: #result type:'int'>
-	<var: #surfaceHandlePtr type: 'void*'>
+	<var: #surfaceHandlePtr type: #'sqIntptr_t'>
 	<var: #surfaceIDPtr type: 'void*'>
+	<var: #sqSurfaceDispatchPtr type: #'sqSurfaceDispatch *'>
 	
 	interpreterProxy methodArgumentCount == 3 
 		ifFalse: [^interpreterProxy primitiveFail].
@@ -424,7 +433,7 @@ SurfacePlugin >> primitiveRegisterSurface [
 
 	
 	surfaceIDPtr := interpreterProxy firstIndexableField: surfaceIDHolder.
-	sqSurfaceDispatchPtr := interpreterProxy fetchPointer: 0 ofObject: dispatchAddress.
+	sqSurfaceDispatchPtr := self cCoerce: (interpreterProxy fetchPointer: 0 ofObject: dispatchAddress) to: #'sqSurfaceDispatch *'.
 	surfaceHandlePtr := interpreterProxy fetchPointer: 0 ofObject: surfaceHandle.
 	
 	result := self ioRegisterSurface: surfaceHandlePtr _: sqSurfaceDispatchPtr _: surfaceIDPtr.

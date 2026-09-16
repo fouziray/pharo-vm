@@ -15,14 +15,15 @@ ComposedImageReader class >> declareCVarsIn: aCCodeGenerator [
 
 { #category : 'reading' }
 ComposedImageReader >> endOfSTON: file [
-	
-	"This method consume 2 chars from file and return they are equivalent to '\n}'"
-		
-	| charLeft charRight |
-	charLeft := self fgetc: file.
-	charRight := self fgetc: file.
 
-	^ (self isEndOfLine: charLeft) and: [ charRight = $} ]
+	^ self 
+		cCode: [ | aCharacter |
+			aCharacter := self fgetc: file.
+			self cCall: 'ungetc' withArguments: {aCharacter. file}.
+			aCharacter = -1 or: [ aCharacter = $} ]] 
+		inSmalltalk: [ file peek = $} ].
+	
+	
 ]
 
 { #category : 'reading' }
@@ -30,6 +31,8 @@ ComposedImageReader >> readDataFromFileName: fullFileName startingAt: startingAd
 
 	<inline: true>
 	<var: #file type: #sqImageFile>
+	<var: #fullFileName type: #'char *'>
+	<var: #startingAddress type: #'void *'>
 	| file bytes |
 
 	file := self
@@ -55,10 +58,13 @@ ComposedImageReader >> readFieldsSTONFrom: file into: aStruct [
 	<inline: true>
 	<var: #fieldName declareC: 'char fieldName[255]'>
 	<var: #fieldValue type: #'long long'>
-	| fieldName fieldValue |
+	<var: #lineBuffer declareC: 'char lineBuffer[1024]'>
+	
+	| fieldName fieldValue lineBuffer |
 	self simulationOnly: [ 
 		fieldName := ValueHolder new.
-		fieldValue := ValueHolder new ].
+		fieldValue := ValueHolder new.
+		lineBuffer := ValueHolder new ].
 
 	"Initialize the Struct with zeros"
 	
@@ -67,9 +73,14 @@ ComposedImageReader >> readFieldsSTONFrom: file into: aStruct [
 		separatedBy: [ ].
 
 	"This solution does NOT WORK with STON file without fields (empty STON)"
-	[ 
+	[ 	
+		self 
+			readLineFrom: file 
+			into: lineBuffer 
+			ofSize: 1024.
+			
 		self
-			fscanf: file
+			sscanf: (self contentsOf: lineBuffer)
 			_: self fieldFormat
 			_: fieldName
 			_: (self cCoerce: (self addressOf: fieldValue) to: #'sqInt*').
@@ -85,10 +96,20 @@ ComposedImageReader >> readHeadSTONFrom: file into: aStruct [
 
 	<inline: true>
 	<var: #structName declareC: 'char structName[255]'>
-	| structName |
-	self simulationOnly: [ structName := ValueHolder new ].
+	<var: #lineBuffer declareC: 'char lineBuffer[1024]'>
 
-	self fscanf: file _: self headFormat _: structName.
+	| structName lineBuffer |
+
+	self simulationOnly: [ 
+		lineBuffer := ValueHolder new.
+		structName := ValueHolder new ].
+
+	self 
+		readLineFrom: file 
+		into: lineBuffer 
+		ofSize: 1024.
+
+	self sscanf: (self contentsOf: lineBuffer) _: self headFormat _: structName.
 
 	self simulationOnly: [ 
 		aStruct withStructNameDo: [ :name | 
@@ -123,6 +144,10 @@ ComposedImageReader >> readHeaderFromImage: imageFileName [
 	
 	headerPtr := self addressOf: header.
 	self readSTONFrom: file into: headerPtr.
+	
+	"If the field is missing, as it was added later"
+	header hdrOldSpaceSize = 0 
+		ifTrue: [ header hdrOldSpaceSize: header dataSize ].
 
 	self extractImageVersionFrom: (header imageFormat) into: headerPtr.
 	
@@ -154,6 +179,7 @@ ComposedImageReader >> readMetadataFromFileName: fullFileName [
 
 	<inline: true>
 	<var: #file type: #sqImageFile>
+	<var: #fullFileName type: #'char *'>
 	<var: #metadata type: #ComposedMetadataStruct>
 	<var: #metadataPointer type: #'ComposedMetadataStruct *'>
 	
@@ -187,12 +213,13 @@ ComposedImageReader >> readPermanentSpaceDataFromImage: imageFileName startingAt
 ComposedImageReader >> readPermanentSpaceFromImageFile: imageFileName header: aHeader [
 
 	<inline: false>
+	<var: #imageFileName type: #'char *'>
 	<var: #aHeader type: #SpurImageHeaderStruct>
 	<var: #permSpaceMetadata type: #ComposedMetadataStruct>
 	<var: #bytesRead type: #'size_t'>
 	<var: #dataSize type: #'size_t'>
-	<var: #oldBase type: #'void*'>
-	<var: #newBase type: #'void*'>
+	<var: #oldBase type: #'usqInt'>
+	<var: #newBase type: #'usqInt'>
 	<returnTypeC: #size_t>
 
 	| newBase permSpaceMetadata oldBase dataSize bytesRead |
@@ -260,6 +287,7 @@ ComposedImageReader >> readSegmentMetadata: segmentIndex fromImage: imageFileNam
 ComposedImageReader >> readSegmentsFromImageFile: imageFileName header: aHeader [
 
 	<inline: false>
+	<var: #imageFileName type: #'char *'>
 	<var: 'segInfo' type: #'SpurSegmentInfo *'>
 	<var: 'aHeader' type: #SpurImageHeaderStruct>
 	<var: #segmentMetadata type: #ComposedMetadataStruct>

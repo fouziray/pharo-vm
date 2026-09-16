@@ -426,13 +426,22 @@ StackToRegisterMappingCogit class >> isAcceptableAncilliaryClass: aClass [
 ]
 
 { #category : 'translation' }
-StackToRegisterMappingCogit class >> mustBeGlobal: var [
+StackToRegisterMappingCogit class >> mustBeGlobalAndExport: var [
 	"Answer if a variable must be global and exported.  Used for inst vars that are accessed from VM support code."
 
-	^(super mustBeGlobal: var)
-	   or: [#('ceCallCogCodePopReceiverArg0Regs' 'ceCallCogCodePopReceiverArg1Arg0Regs'
-			'realCECallCogCodePopReceiverArg0Regs' 'realCECallCogCodePopReceiverArg1Arg0Regs'
-			'ceCall0ArgsPIC' 'ceCall1ArgsPIC' 'ceCall2ArgsPIC') includes: var]
+	^ (super mustBeGlobalAndExport: var) or: [
+		  #( 'ceCallCogCodePopReceiverArg0Regs'
+		     'ceCallCogCodePopReceiverArg1Arg0Regs'
+		     'realCECallCogCodePopReceiverArg0Regs'
+		     'realCECallCogCodePopReceiverArg1Arg0Regs'
+		     'ceCall0ArgsPIC' 'ceCall1ArgsPIC' 'ceCall2ArgsPIC' ) includes:
+			  var ]
+]
+
+{ #category : 'translation' }
+StackToRegisterMappingCogit class >> mustBeGlobalInFile: var [
+
+	^ #( #aMethodLabel #generatorTable ) includes: var
 ]
 
 { #category : 'accessing' }
@@ -761,6 +770,7 @@ StackToRegisterMappingCogit >> allocateRegNotConflictingWith: regMask [
 StackToRegisterMappingCogit >> allocateVectorRegForStackEntryAt: index notConflictingWith: regMask [
 	"If the stack entry is already in a register not conflicting with regMask, answers it,
 	else allocate a new register not conflicting with reg mask"
+	<option: #FEATURE_JIT_SIMD>
 	<var: #stackEntry type: #'CogSimStackEntry *'>
 	<returnTypeC: #'signed char'>
 	| stackEntry mask |
@@ -788,6 +798,8 @@ StackToRegisterMappingCogit >> allocateVectorRegForStackEntryAt: index notConfli
 
 { #category : 'simulation stack' }
 StackToRegisterMappingCogit >> allocateVectorRegNotConflictingWith: regMask [
+
+	<option: #FEATURE_JIT_SIMD>
 	| reg |
 	"if there's a free register, use it"
 	reg := backEnd availableVectorRegisterOrNoneFor: (self liveVectorRegisters bitOr: regMask).
@@ -857,11 +869,6 @@ StackToRegisterMappingCogit >> bytecodeFixupClass [
 	^CogSSBytecodeFixup
 ]
 
-{ #category : 'trampolines' }
-StackToRegisterMappingCogit >> cPICMissTrampolineFor: numArgs [
-	^picMissTrampolines at: (numArgs min: self numRegArgs + 1)
-]
-
 { #category : 'debugging' }
 StackToRegisterMappingCogit >> callCogCodePopReceiverArg0Regs [
 	"This is a static version of ceCallCogCodePopReceiverArg0Regs
@@ -869,7 +876,7 @@ StackToRegisterMappingCogit >> callCogCodePopReceiverArg0Regs [
 	<api>
 	<inline: false>
 	"This exists only for break-pointing."
-	self cCode: [self realCECallCogCodePopReceiverArg0Regs]
+	self cCode: [self cCall: 'realCECallCogCodePopReceiverArg0Regs']
 		inSmalltalk: [self ceCallCogCodePopReceiverArg0Regs]
 ]
 
@@ -880,7 +887,7 @@ StackToRegisterMappingCogit >> callCogCodePopReceiverArg1Arg0Regs [
 	<api>
 	<inline: false>
 	"This exists only for break-pointing."
-	self cCode: [self realCECallCogCodePopReceiverArg1Arg0Regs]
+	self cCode: [self cCall: 'realCECallCogCodePopReceiverArg1Arg0Regs']
 		inSmalltalk: [self ceCallCogCodePopReceiverArg1Arg0Regs]
 ]
 
@@ -919,15 +926,6 @@ StackToRegisterMappingCogit >> ceCallCogCodePopReceiverArg1Arg0Regs [
 	self simulateEnilopmart: ceCallCogCodePopReceiverArg1Arg0Regs numArgs: 3
 ]
 
-{ #category : 'simulation only' }
-StackToRegisterMappingCogit >> ceShortCutTraceStore: aProcessorSimulationTrap [
-	<doNotGenerate>
-	self shortcutTrampoline: aProcessorSimulationTrap
-		to: [coInterpreter
-				ceTraceStoreOf: (processor registerAt: TempReg)
-				into: (processor registerAt: ReceiverResultReg)]
-]
-
 { #category : 'accessing' }
 StackToRegisterMappingCogit >> ceStoreCheckTrampoline [
 	<doNotGenerate>
@@ -940,20 +938,17 @@ StackToRegisterMappingCogit >> compileAbstractInstructionsFrom: start through: e
 	| nextOpcodeIndex descriptor nExts fixup result |
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	<var: #fixup type: #'BytecodeFixup *'>
-	self traceSimStack.
 	bytecodePC := start.
 	nExts := result := 0.
 	descriptor := nil.
 	deadCode := false.
-	[self maybeHaltIfDebugPC.
-	 self mergeWithFixupIfRequired: (fixup := self fixupAt: bytecodePC).
+	[self mergeWithFixupIfRequired: (fixup := self fixupAt: bytecodePC).
 	 descriptor := self loadBytesAndGetDescriptor.
 	 nextOpcodeIndex := opcodeIndex.
 	 result := deadCode
 				ifTrue: [self mapDeadDescriptorIfNeeded: descriptor]
 				ifFalse: [self perform: descriptor generator].
 	 result = 0 ifTrue: [self assertExtsAreConsumed: descriptor].
-	 self traceDescriptor: descriptor; traceSimStack.
 	 self patchFixupTargetIfNeeded: fixup nextOpcodeIndex: nextOpcodeIndex.
 	 self maybeDumpLiterals: descriptor.
 	 bytecodePC := self nextBytecodePCFor: descriptor exts: nExts.
@@ -965,7 +960,6 @@ StackToRegisterMappingCogit >> compileAbstractInstructionsFrom: start through: e
 
 { #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> compileCogFullBlockMethod: numCopied [
-	<option: #SistaV1BytecodeSet>
 	methodOrBlockNumTemps := coInterpreter tempCountOf: methodObj.
 	self cCode: '' inSmalltalk:
 		[debugStackPointers := coInterpreter debugStackPointersFor: methodObj].
@@ -1016,7 +1010,6 @@ StackToRegisterMappingCogit >> compileFullBlockFramelessEntry: numCopied [
 
 { #category : 'compile abstract instructions' }
 StackToRegisterMappingCogit >> compileFullBlockMethodFrameBuild: numCopied [
-	<option: #SistaV1BytecodeSet>
 	useTwoPaths ifTrue: 
 		[ "method with only inst var store, we compile only slow path for now" 
 		 useTwoPaths := false.
@@ -1142,7 +1135,6 @@ StackToRegisterMappingCogit >> ensureFixupAt: targetPC withStackPointer: aStackP
 	| fixup |
 	<var: #fixup type: #'BytecodeFixup *'>
 	fixup := self fixupAt:  targetPC.
-	self traceFixup: fixup merge: true.
 	self cCode: '' inSmalltalk:
 		[self assert: aStackPointer = (self debugStackPointerFor: targetPC).
 		 (fixup isMergeFixupOrIsFixedUp
@@ -1173,7 +1165,6 @@ StackToRegisterMappingCogit >> ensureNonMergeFixupAt: targetPC [
 	| fixup |
 	<var: #fixup type: #'BytecodeFixup *'>
 	fixup := self fixupAt:  targetPC.
-	self traceFixup: fixup merge: true.
 	fixup notAFixup ifTrue:
 		[fixup becomeNonMergeFixup].
 	self cCode: '' inSmalltalk:
@@ -1337,9 +1328,7 @@ StackToRegisterMappingCogit >> fixupAtIndex: index [
 	 fixupAt: does the conversion.  Override to add breakpointing for fixups of bytecode PCs."
 	<cmacro: '(index) (&fixups[index])'>
 	<returnTypeC: #'BytecodeFixup *'>
-	((debugFixupBreaks includes: index + initialPC)
-	 and: [breakMethod isNil or: [methodObj = breakMethod]]) ifTrue:
-		[self halt].
+
 	^self addressOf: (fixups at: index)
 ]
 
@@ -1382,6 +1371,7 @@ StackToRegisterMappingCogit >> freeAnyRegNotConflictingWith: regMask [
 StackToRegisterMappingCogit >> genAddFloat32Vector [ 
 	| array1Reg array2Reg sumReg |
 
+	<option: #FEATURE_JIT_SIMD>
 	objectMemory wordSize = 4 ifTrue: [ ^ EncounteredUnknownBytecode ].
 	
 	array2Reg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
@@ -1401,6 +1391,7 @@ StackToRegisterMappingCogit >> genAddFloat32Vector [
 StackToRegisterMappingCogit >> genAddFloat64Vector [ 
 	| array1Reg array2Reg sumReg |
 	
+	<option: #FEATURE_JIT_SIMD>
 	objectMemory wordSize = 4 ifTrue: [ ^ EncounteredUnknownBytecode ].	
 	
 	array2Reg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
@@ -1676,7 +1667,7 @@ StackToRegisterMappingCogit >> genForwardersInlinedIdenticalOrNotIf: orNot [
 				 ifFalse: [ argReg ])
 		scratchReg: TempReg
 		ifForwarder: label
-		ifNotForwarder: fixup.
+		ifNotForwarder: (self cCoerceSimple: fixup to: #'AbstractInstruction *').
 
 	"Not reached, execution flow has jumped to fixup"
 	deadCode ifFalse: [ self ssPushConstant: objectMemory trueObject ]. "dummy value"
@@ -1783,19 +1774,19 @@ StackToRegisterMappingCogit >> genIdenticalNoBranchArgIsConstant: argIsConstant 
 	<var: #label type: #'AbstractInstruction *'>
 	<var: #jumpEqual type: #'AbstractInstruction *'>
 	<var: #jumpNotEqual type: #'AbstractInstruction *'>
-	| label jumpEqual jumpNotEqual resultReg receiverConstant argumentConstant |
+	| label jumpEqual jumpNotEqual resultReg receiverStackSlot argumentStackSlot |
 	
-	receiverConstant := (self ssValue: 1) constant.
-	argumentConstant := self ssTop constant.
+	receiverStackSlot := (self ssValue: 1).
+	argumentStackSlot := self ssTop.
 	self ssPop: 2.
 
 	label := self Label.
 	self assert: (argReg ~= NoReg or: [ rcvrRegOrNone ~= NoReg ]).
 	argIsConstant
-		ifTrue: [ self genCmpConstant: argumentConstant R: rcvrRegOrNone ]
+		ifTrue: [ self genCmpConstant: argumentStackSlot constant R: rcvrRegOrNone ]
 		ifFalse: [
 			rcvrIsConstant
-				ifTrue: [ self genCmpConstant: receiverConstant R: argReg ]
+				ifTrue: [ self genCmpConstant: receiverStackSlot constant R: argReg ]
 				ifFalse: [ self CmpR: argReg R: rcvrRegOrNone ] ].
 
 	resultReg := rcvrRegOrNone = NoReg
@@ -1952,52 +1943,25 @@ StackToRegisterMappingCogit >> genLoadTemp: objectIndex in: destReg [
 { #category : 'mapped inline primitive generators' }
 StackToRegisterMappingCogit >> genMappedInlinePrimitive: primIndex [
 
-	"SistaV1:	236		11101100	iiiiiiii		callMappedInlinedPrimitive"
-
-	"Number of arguments:
-	 0-49 nullary
-	 50-99 unary
-	 100-149  binary
-	 150-199 trinary
-	 200-255 variable"
-
-	"Specification:
-	50	EnsureEnoughWords
-	literal which is a Smi => ret value is receiver
-	150	immCheckPointerAt:put:
-	pointer object (Fixed sized or not) and not a context, Smi, Anything => arg2 (1-based, optimised if arg1 is a constant)
-	151	immCheckStoreCheckPointerAt:put:
-	pointer object (Fixed sized or not) and not a context, Smi, Anything => arg2 (1-based, optimised if arg1 is a constant)
-	152	immCheckMaybeContextPointerAt:put:
-	pointer object (Fixed sized or not), Smi, Anything => arg2 (1-based, optimised if arg1 is a constant)
-	153	immCheckMaybeContextStoreCheckPointerAt:put:
-	pointer object (Fixed sized or not), Smi, Anything => arg2 (1-based, optimised if arg1 is a constant)
-	154	immCheckByteAt:put:
-	byte object, Smi, 8 bits unsigned Smi => arg2 (1-based, optimised if arg1 is a constant)
-	155	immCheckShortAt:put:
-	short object, Smi, 16 bits unsigned Smi => arg2 (1-based, optimised if arg1 is a constant)
-	156	immCheckWordAt:put:
-	word object, Smi, 32 bits unsigned Smi => arg2 (1-based, optimised if arg1 is a constant)
-	157	immCheckDoubleWordAt:put:
-	double word object, Smi, 64 bits unsigned Smi or LargePositiveInteger => arg2 (1-based, optimised if arg1 is a constant)
-	250	directCall
-	method to call on top of stack =>  (variable number of parameters)"
-
-	| result |
-	result := primIndex
-		          caseOf: { 
-				          ([ 0 ] -> [ self genAddFloat64Vector ]).
-				          ([ 1 ] -> [ self genPushFloat64ArrayToRegister ]).
-				          ([ 2 ] -> [ self genStoreFloat64RegisterIntoArray ]).
-				          ([ 3 ] -> [ self genAddFloat32Vector ]).
-				          ([ 4 ] -> [ self genPushFloat32ArrayToRegister ]).
-				          ([ 5 ] -> [ self genStoreFloat32RegisterIntoArray ]).
-				          ([ 6 ] -> [ self genSubFloat64Vector ]) }
-		          otherwise: [ EncounteredUnknownBytecode ].
-	"These primitives may end up calling a message send if preconditions are not met. Thus, the
+	self
+		cppIf: FEATURE_JIT_SIMD
+		ifTrue: [
+			| result |
+			result := primIndex
+				          caseOf: {
+						          ([ 0 ] -> [ self genAddFloat64Vector ]).
+						          ([ 1 ] -> [ self genPushFloat64ArrayToRegister ]).
+						          ([ 2 ] -> [ self genStoreFloat64RegisterIntoArray ]).
+						          ([ 3 ] -> [ self genAddFloat32Vector ]).
+						          ([ 4 ] -> [ self genPushFloat32ArrayToRegister ]).
+						          ([ 5 ] -> [ self genStoreFloat32RegisterIntoArray ]).
+						          ([ 6 ] -> [ self genSubFloat64Vector ]) }
+				          otherwise: [ EncounteredUnknownBytecode ].
+			"These primitives may end up calling a message send if preconditions are not met. Thus, the
 	bytecode needs to be annotated with `isMapped`, and each primitive must be annotated"
-	self annotateBytecode: self Label.
-	^ result
+			self annotateBytecode: self Label.
+			^ result ]
+		ifFalse: [ self error: 'VM built without SIMD support' ]
 ]
 
 { #category : 'bytecode generator support' }
@@ -2093,7 +2057,7 @@ StackToRegisterMappingCogit >> genPICMissTrampolineFor: numArgs [
 	self zeroOpcodeIndex.
 	"N.B. a closed PIC jumps to the miss routine, not calls it, so there is only one retpc on the stack."
 	backEnd genPushRegisterArgsForNumArgs: numArgs scratchReg: SendNumArgsReg.
-	self genTrampolineFor: #ceCPICMiss:receiver:
+	self genTrampolineFor: #cePICMiss:receiver:
 		called: (self trampolineName: 'cePICMiss' numRegArgs: numArgs)
 		numArgs: 2
 		arg: ClassReg
@@ -2129,7 +2093,6 @@ StackToRegisterMappingCogit >> genPrimReturn [
 { #category : 'primitive generators' }
 StackToRegisterMappingCogit >> genPrimitiveFullClosureValue [
 	"Override to push the register args first."
-	<option: #SistaV1BytecodeSet>
 	self genPushRegisterArgs.
 	^super genPrimitiveFullClosureValue
 ]
@@ -2164,14 +2127,36 @@ StackToRegisterMappingCogit >> genPushActiveContextBytecode [
 	^self ssPushRegister: ReceiverResultReg
 ]
 
-{ #category : 'bytecode generator support' }
-StackToRegisterMappingCogit >> genPushEnclosingObjectAt: level [
-	"Uncached push enclosing object"
-	self voidReceiverResultRegContainsSelf.
-	self ssAllocateCallReg: SendNumArgsReg and: ReceiverResultReg.
-	self MoveCq: level R: SendNumArgsReg.
-	self CallRT: ceEnclosingObjectTrampoline.
-	^self ssPushRegister: ReceiverResultReg
+{ #category : 'bytecode generators' }
+StackToRegisterMappingCogit >> genPushActiveProcessBytecode [
+	"Get a free register to push thisProcess to the stack.
+	If we cannot get a register, abort compilation"
+
+	| freeReg |
+	freeReg := self allocateRegNotConflictingWith: 0.
+	freeReg = NoReg ifTrue: [ ^ self unknownBytecode ].
+
+	"The following generates code equivalent to:
+	
+		schedulerAssociation := smalltalkObjectArray[schedulerIndex].
+		scheduler := schedulerAssociation[valueIndex].
+		activeProcess := scheduler[activeProcessIndex].
+		push(activeProcess)
+	"
+	self MoveAw: objectMemory specialObjectsArrayAddress R: freeReg.
+	objectRepresentation
+		genLoadSlot: SchedulerAssociation
+		sourceReg: freeReg
+		destReg: freeReg.
+	objectRepresentation
+		genLoadSlot: ValueIndex
+		sourceReg: freeReg
+		destReg: freeReg.
+	self
+		ssPushBase: freeReg
+		offset:
+		(objectRepresentation slotOffsetOfInstVarIndex: ActiveProcessIndex).
+	^ 0
 ]
 
 { #category : 'mapped inline primitive generators - vectorial' }
@@ -2179,6 +2164,7 @@ StackToRegisterMappingCogit >> genPushFloat32ArrayToRegister [
 
 	| arrayReg indexReg vectorReg |
 	
+	<option: #FEATURE_JIT_SIMD>
 	objectMemory wordSize = 4 ifTrue: [ ^ EncounteredUnknownBytecode ].
 
 	arrayReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
@@ -2209,6 +2195,7 @@ StackToRegisterMappingCogit >> genPushFloat64ArrayToRegister [
 
 	| arrayReg indexReg vectorReg |
 	
+	<option: #FEATURE_JIT_SIMD>
 	objectMemory wordSize = 4 ifTrue: [ ^ EncounteredUnknownBytecode ].
 
 	arrayReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
@@ -2909,6 +2896,7 @@ StackToRegisterMappingCogit >> genStaticallyResolvedSpecialSelectorComparison [
 StackToRegisterMappingCogit >> genStoreFloat32RegisterIntoArray [
 	| arrayReg indexReg vectorReg |
 	
+	<option: #FEATURE_JIT_SIMD>
 	objectMemory wordSize = 4 ifTrue: [ ^ EncounteredUnknownBytecode ].
 	
 	arrayReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
@@ -2938,6 +2926,7 @@ StackToRegisterMappingCogit >> genStoreFloat32RegisterIntoArray [
 StackToRegisterMappingCogit >> genStoreFloat64RegisterIntoArray [
 	| arrayReg indexReg vectorReg |
 	
+	<option: #FEATURE_JIT_SIMD>
 	objectMemory wordSize = 4 ifTrue: [ ^ EncounteredUnknownBytecode ].
 	
 	arrayReg := self allocateRegForStackEntryAt: 0 notConflictingWith: 0.
@@ -3127,6 +3116,7 @@ StackToRegisterMappingCogit >> genStorePop: popBoolean TemporaryVariable: tempIn
 StackToRegisterMappingCogit >> genSubFloat64Vector [
 	| array1Reg array2Reg subReg |
 	
+	<option: #FEATURE_JIT_SIMD>
 	objectMemory wordSize = 4 ifTrue: [ ^ EncounteredUnknownBytecode ].
 	
 	array1Reg := self allocateVectorRegForStackEntryAt: 0 notConflictingWith: 0.
@@ -3251,9 +3241,8 @@ StackToRegisterMappingCogit >> generateInstructionsAt: eventualAbsoluteAddress [
 	<var: #fixup type: #'BytecodeFixup *'>
 	absoluteAddress := eventualAbsoluteAddress.
 	pcDependentIndex := 0.
-	0 to: opcodeIndex - 1 do:
-		[:i|
-		self maybeBreakGeneratingAt: absoluteAddress.
+
+	0 to: opcodeIndex - 1 do: [:i|
 		abstractInstruction := self abstractInstructionAt: i.
 		abstractInstruction isPCDependent
 			ifTrue:
@@ -3275,11 +3264,9 @@ StackToRegisterMappingCogit >> generateInstructionsAt: eventualAbsoluteAddress [
 				 absoluteAddress := absoluteAddress + abstractInstruction machineCodeSize]
 			ifFalse:
 				[absoluteAddress := abstractInstruction concretizeAt: absoluteAddress]].
-	0 to: pcDependentIndex - 1 do:
-		[:j|
+	0 to: pcDependentIndex - 1 do: [:j|
 		fixup := self fixupAtIndex: j.
 		abstractInstruction := self abstractInstructionAt: fixup instructionIndex.
-		self maybeBreakGeneratingAt: abstractInstruction address.
 		abstractInstruction concretizeAt: abstractInstruction address].
 	^absoluteAddress - eventualAbsoluteAddress
 ]
@@ -3389,7 +3376,9 @@ StackToRegisterMappingCogit >> generateStaticSendTrampoline [
 
 { #category : 'initialization' }
 StackToRegisterMappingCogit >> generateSuperSendTrampolineTo: function named: name numArgs: numArgs in: table [
-	
+
+	<var: #function type: #'void *'>
+	<var: #name type: #'char *'>
 	<var: #table type: #'sqInt *'>
 	| trampoline |
 	trampoline := self genSendTrampolineFor: function
@@ -3798,7 +3787,6 @@ StackToRegisterMappingCogit >> mergeWithFixupIfRequired: fixup [
 
 	"cases 3 and 4"
 	self assert: fixup isMergeFixup.
-	self traceMerge: fixup.
 	deadCode
 		ifTrue: "case 3"
 			["Would like to assert fixup simStackPtr >= methodOrBlockNumTemps
@@ -3913,6 +3901,11 @@ StackToRegisterMappingCogit >> picAbortTrampolines [
 	^ picAbortTrampolines
 ]
 
+{ #category : 'trampolines' }
+StackToRegisterMappingCogit >> picMissTrampolineFor: numArgs [
+	^picMissTrampolines at: (numArgs min: self numRegArgs + 1)
+]
+
 { #category : 'accessing' }
 StackToRegisterMappingCogit >> picMissTrampolines [
 	
@@ -3922,18 +3915,19 @@ StackToRegisterMappingCogit >> picMissTrampolines [
 ]
 
 { #category : 'method introspection' }
-StackToRegisterMappingCogit >> populate: tuple withPICInfoFor: cPIC firstCacheTag: firstCacheTag [
-	"Populate tuple (which must be large enough) with the ClosedPIC's target method class pairs.
-	 The first entry in tuple contains the bytecode pc for the send, so skip the tuple's first field."
-	<var: #cPIC type: #'CogMethod *'>
+StackToRegisterMappingCogit >> populate: tuple withPICInfoFor: aPIC firstCacheTag: firstCacheTag [
+	"Populate tuple (which must be large enough) with the PIC's target method class pairs.
+	 The first entry in tuple contains the bytecode pc for the send, so skip the tuple's first field.
+	"
+	<var: #aPIC type: #'CogMethod *'>
 	| picCaseMachineCodePC cacheTag classOop entryPoint targetMethod value |
 	<var: #targetMethod type: #'CogMethod *'>
 
-	1 to: cPIC cPICNumCases do: [:i|
-		picCaseMachineCodePC := self addressOfEndOfCase: i inCPIC: cPIC.
+	1 to: aPIC picNumCases do: [:i|
+		picCaseMachineCodePC := self addressOfEndOfCase: i inPIC: aPIC.
 		cacheTag := i = 1
 						ifTrue: [firstCacheTag]
-						ifFalse: [backEnd literalBeforeFollowingAddress: picCaseMachineCodePC - backEnd jumpLongConditionalByteSize].
+						ifFalse: [backEnd literal32BeforeFollowingAddress: picCaseMachineCodePC - backEnd jumpLongConditionalByteSize].
 		
 		classOop := objectRepresentation classForInlineCacheTag: cacheTag.
 		objectMemory storePointer: i * 2 - 1 ofObject: tuple withValue: classOop.
@@ -3941,7 +3935,7 @@ StackToRegisterMappingCogit >> populate: tuple withPICInfoFor: cPIC firstCacheTa
 						ifTrue: [backEnd jumpLongTargetBeforeFollowingAddress: picCaseMachineCodePC]
 						ifFalse: [backEnd jumpLongConditionalTargetBeforeFollowingAddress: picCaseMachineCodePC].
 		"Find target from jump.  A jump to the MNU entry-point should collect #doesNotUnderstand:"
-		(cPIC containsAddress: entryPoint)
+		(aPIC containsAddress: entryPoint)
 			ifTrue: [ value := objectMemory splObj: SelectorDoesNotUnderstand ]
 			ifFalse: [
 				targetMethod := self cCoerceSimple: entryPoint - cmNoCheckEntryOffset to: #'CogMethod *'.
@@ -4021,35 +4015,36 @@ StackToRegisterMappingCogit >> printSimStack: aSimStackOrFixup [
 
 { #category : 'simulation only' }
 StackToRegisterMappingCogit >> printSimStack: aSimStack toDepth: limit spillBase: spillBase on: aStream [
+
 	<doNotGenerate>
-	| tempNames width tabWidth |
 	aStream newLine.
-	limit < 0 ifTrue:
-		[^aStream nextPutAll: 'simStackEmpty'; cr; flush].
-	aSimStack ifNil:
-		[^aStream nextPutAll: 'nil simStack'; cr; flush].
-	(self class initializationOptions at: #tempNames ifAbsent: nil) ifNotNil:
-		[:tempNamesDictOrNil |	 | tab longest |
-		 tempNames := tempNamesDictOrNil at: (self class initializationOptions at: #startpc ifAbsent: [initialPC]) + 1.
-		 longest := tempNames inject: '' into: [:m :t| m size >= t size ifTrue: [m] ifFalse: [t]].
-		 tabWidth := self widthInDefaultFontOf: (tab := String with: Character tab).
-		 width := self widthInDefaultFontOf: longest, tab.
-		 width <= ((self widthInDefaultFontOf: longest, (String with: Character space)) + 4) ifTrue:
-			[width := width + tabWidth]].
-	0 to: limit do:
-		[:i|
-		width ifNotNil:
-			[self put: (tempNames at: i ifAbsent: [i = 0 ifTrue: ['self'] ifFalse: ['']]) paddedTo: width tabWidth: tabWidth on: aStream].
+	limit < 0 ifTrue: [
+		^ aStream
+			  nextPutAll: 'simStackEmpty';
+			  cr;
+			  flush ].
+	aSimStack ifNil: [
+		^ aStream
+			  nextPutAll: 'nil simStack';
+			  cr;
+			  flush ].
+	0 to: limit do: [ :i |
 		aStream print: i.
-		i = simStackPtr ifTrue:
-			[aStream nextPutAll: '<-' ].
-		i = spillBase ifTrue:
-			[aStream nextPutAll: '(sb)'].
-		aStream tab: (i = spillBase ifTrue: [1] ifFalse: [2]).
-		(aSimStack at: i) printStateOn: aStream.
-		aStream cr; flush].
-	simSpillBase > limit ifTrue:
-		[aStream nextPutAll: '(sb: '; print: simSpillBase; nextPut: $); cr; flush]
+		i = simStackPtr ifTrue: [ aStream nextPutAll: '<-' ].
+		i = spillBase ifTrue: [ aStream nextPutAll: '(sb)' ].
+		aStream tab: (i = spillBase
+				 ifTrue: [ 1 ]
+				 ifFalse: [ 2 ]).
+		aStream
+			cr;
+			flush ].
+	simSpillBase > limit ifTrue: [
+		aStream
+			nextPutAll: '(sb: ';
+			print: simSpillBase;
+			nextPut: $);
+			cr;
+			flush ]
 ]
 
 { #category : 'method introspection' }
@@ -4164,7 +4159,7 @@ StackToRegisterMappingCogit >> profilingDataForSendTo: cogCodeSendTarget methodC
 					eeInstantiateClassIndex: ClassArrayCompactIndex
 					format: objectMemory arrayFormat
 					numSlots: (cogCodeSendTarget cmType = CMPolymorphicIC
-								ifTrue: [2 * cogCodeSendTarget cPICNumCases + 1]
+								ifTrue: [2 * cogCodeSendTarget picNumCases + 1]
 								ifFalse: [3]).
 	tuple = 0 ifTrue:
 		[^0].
@@ -4202,20 +4197,6 @@ StackToRegisterMappingCogit >> profilingDataForSendTo: cogCodeSendTarget methodC
 StackToRegisterMappingCogit >> pushNilSize: aMethodObj numInitialNils: numInitialNils [
 	<inline: true>
 	^self perform: pushNilSizeFunction with: aMethodObj with: numInitialNils
-]
-
-{ #category : 'simulation only' }
-StackToRegisterMappingCogit >> put: aString paddedTo: compositionWidth tabWidth: tabWidth on: aStream [
-	<doNotGenerate>
-	| fittedString size width |
-	fittedString := aString.
-	size := fittedString size.
-	[(width := self widthInDefaultFontOf: fittedString) > compositionWidth] whileTrue:
-		[size := size - 2.
-		 fittedString := aString contractTo: size].
-	aStream
-		nextPutAll: fittedString;
-		tab: compositionWidth - width + (width \\ tabWidth) // tabWidth + 1
 ]
 
 { #category : 'bytecode generator support' }
@@ -4891,43 +4872,6 @@ StackToRegisterMappingCogit >> traceDescriptor: descriptor [
 		[coInterpreter transcript cr; print: bytecodePC; space; nextPutAll: descriptor generator.
 		 deadCode ifTrue: [coInterpreter transcript nextPutAll: ' => deadCode'].
 		 coInterpreter flush]
-]
-
-{ #category : 'simulation only' }
-StackToRegisterMappingCogit >> traceFixup: fixup merge: isMerge [
-	<cmacro: '(igu,ana) 0'>
-	| index |
-	(compilationTrace anyMask: 32) ifTrue:
-		[index := (fixups object identityIndexOf: fixup) - 1.
-		 coInterpreter transcript
-			newLine;
-			print: bytecodePC; nextPutAll: ' -> '; print: index; nextPut: $/; print: index + initialPC;
-			nextPut: $:; space.
-		 isMerge
-			ifTrue: [fixup printStateOn: coInterpreter transcript]
-			ifFalse: [coInterpreter transcript nextPutAll: 'non-merge'].
-		 coInterpreter transcript cr; flush]
-]
-
-{ #category : 'simulation only' }
-StackToRegisterMappingCogit >> traceMerge: fixup [
-	<cmacro: '(ign) 0'>
-	| index |
-	(compilationTrace anyMask: 16) ifTrue:
-		[index := (fixups object identityIndexOf: fixup) - 1.
-		 coInterpreter transcript
-			newLine;
-			print: index; nextPut: $/; print: index + initialPC;
-			nextPut: $:; space.
-			fixup printStateOn: coInterpreter transcript.
-			coInterpreter transcript cr; flush]
-]
-
-{ #category : 'simulation only' }
-StackToRegisterMappingCogit >> traceSimStack [
-	<cmacro: '() 0'>
-	(compilationTrace anyMask: 4) ifTrue:
-		[self printSimStack]
 ]
 
 { #category : 'simulation only' }

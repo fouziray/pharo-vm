@@ -21,8 +21,8 @@ AbstractComposedImageAccess >> createImageDirectory: imageFileName [
 		cCode: [ 
 			self
 				cppIf: ((self defined: #_WIN32) or: [(self defined: #_WIN64)])
-				ifTrue: [ self mkdir: imageFileName ]
-				ifFalse: [ self mkdir: imageFileName _: 8r777 ] ]
+				ifTrue: [ self cCall: 'mkdir' withArguments: {imageFileName} ]
+				ifFalse: [ self cCall: 'mkdir' withArguments: {imageFileName . 8r777} ] ]
 		inSmalltalk: [ 
 			imageFileName asFileReference ensureDeleteAll.
 			imageFileName asFileReference ensureCreateDirectory ]
@@ -32,6 +32,8 @@ AbstractComposedImageAccess >> createImageDirectory: imageFileName [
 AbstractComposedImageAccess >> existSegment: segmentIndex inImage: imageFileName [
 
 	<var: #buffer declareC: 'char buffer[255]'>
+	<var: #imageFileName type: #'char *'>
+	<var: #fileName type: #'char *'>
 	| buffer fileName |
 
 	fileName := self
@@ -56,14 +58,15 @@ AbstractComposedImageAccess >> fieldFormat [
 { #category : 'file operations' }
 AbstractComposedImageAccess >> fileExists: fileName [
 
-	| sb |
-
 	<inline: false>
 	<var: #fileName type: 'char *'>
 	<var: #sb type: 'struct stat'>
-
+	| sb |
 	^ self
-		  cCode: [ (self stat: fileName _: (self addressOf: sb)) = 0]
+		  cCode: [
+			  (self cCall: 'stat' withArguments: {
+					   fileName.
+					   (self addressOf: sb) }) = 0 ]
 		  inSmalltalk: [ fileName asFileReference exists ]
 ]
 
@@ -105,6 +108,9 @@ AbstractComposedImageAccess >> headFormat [
 { #category : 'file operations' }
 AbstractComposedImageAccess >> headerFileNameinImage: imageFileName into: buffer bufferSize: bufferSize [
 
+	<var: #imageFileName type: #'char *'>
+	<var: #buffer type: #'char *'>
+	<returnTypeC: #'char *'>
 	| headerFileName |
 	headerFileName := 'header.ston'.
 
@@ -168,18 +174,55 @@ AbstractComposedImageAccess >> permSpaceMetadataFileNameInImage: imageFileName [
 	^ self permSpaceFileName: 'permSpace.ston' inImage: imageFileName into: buffer bufferSize: 255
 ]
 
+{ #category : 'file primitives' }
+AbstractComposedImageAccess >> readLineFrom: file into: lineBuffer ofSize: bufferSize [
+
+	<var: #lineBuffer type: 'char*'>
+	<var: #file type: #sqImageFile>
+	self
+		cCode: [
+			| idx aCharacter |
+			idx := 0.
+
+			aCharacter := self fgetc: file.
+
+			[ aCharacter = -1 ] whileFalse: [
+				aCharacter = 10
+					ifTrue: [ aCharacter := -1 ]
+					ifFalse: [
+						aCharacter = 13
+							ifTrue: [
+								aCharacter := self fgetc: file.
+								aCharacter ~= 13 ifTrue: [
+									self cCall: 'ungetc' withArguments: {
+											aCharacter.
+											file } ].
+								aCharacter := -1 ]
+							ifFalse: [
+								lineBuffer at: idx put: aCharacter.
+								idx := idx + 1.
+								bufferSize = (idx + 1)
+									ifTrue: [ aCharacter := -1 ]
+									ifFalse: [ aCharacter := self fgetc: file ] ] ] ].
+
+			lineBuffer at: idx put: 0 ]
+		inSmalltalk: [ lineBuffer contents: file nextLine ]
+]
+
 { #category : 'segments' }
 AbstractComposedImageAccess >> segmentDataFile: segmentIndex inImage: imageFileName [
 
-	<inline: true>
+	<inline: #always>
 	<var: #buffer declareC: 'char buffer[255]'>
-
 	| buffer |
-		
 	self simulationOnly: [ buffer := nil ].
-		
-	^ self segmentFileName: segmentIndex withExtension: '.data' inImage: imageFileName into: buffer bufferSize: 255.
 
+	^ self
+		  segmentFileName: segmentIndex
+		  withExtension: '.data'
+		  inImage: imageFileName
+		  into: buffer
+		  bufferSize: 255
 ]
 
 { #category : 'segments' }
@@ -201,6 +244,8 @@ AbstractComposedImageAccess >> segmentMetadataFile: segmentIndex inImage: imageF
 
 	<inline: true>
 	<var: #buffer declareC: 'char buffer[255]'>
+	<var: #imageFileName type: #'char *'>
+	<returnTypeC: #'char *'>
 
 	| buffer |
 		
@@ -208,4 +253,52 @@ AbstractComposedImageAccess >> segmentMetadataFile: segmentIndex inImage: imageF
 
 	^ self segmentFileName: segmentIndex withExtension: '.ston' inImage: imageFileName into: buffer bufferSize: 255. 
 
+]
+
+{ #category : 'perm - space' }
+AbstractComposedImageAccess >> snprintf: buffer _: bufferSize _: format _: vararg1 _: vararg2 [
+	"int snprintf(char * restrict str, size_t size, const char * restrict format, ...);"
+
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'perm - space' }
+AbstractComposedImageAccess >> snprintf: buffer _: bufferSize _: format _: vararg1 _: vararg2 _: vararg3 [
+	"int snprintf(char * restrict str, size_t size, const char * restrict format, ...);"
+
+	"Defined in C code"
+
+	<doNotGenerate>
+	self notYetImplemented
+]
+
+{ #category : 'file primitives' }
+AbstractComposedImageAccess >> sscanf: aString _: format _: varHolder [
+
+	<doNotGenerate>
+	(format = self headFormat)
+		  ifTrue: [ 
+			  ^ varHolder contents: (aString substrings: ' ') first ].
+
+	self error.
+]
+
+{ #category : 'file primitives' }
+AbstractComposedImageAccess >> sscanf: line _: format _: varHolder1 _: varHolder2 [
+
+	<doNotGenerate>
+
+	(format = self fieldFormat)
+		  ifTrue: [ 
+			  | dataArray |
+			  dataArray := line substrings: '#:, '.
+			  dataArray first = '}' ifTrue: [ ^ self ].
+			  varHolder1 contents: dataArray second.
+			  varHolder2 contents: dataArray third asInteger.
+			  ^ self ].
+
+	self error
 ]

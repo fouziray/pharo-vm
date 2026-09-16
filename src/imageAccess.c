@@ -170,9 +170,26 @@ size_t basicImageFileWrite(void* initialPtr, size_t sz, size_t count, sqImageFil
 }
 
 int basicImageFileExists(const char* aPath){
+#ifndef _WIN32
 	struct stat st;
-
 	return stat(aPath, &st) == 0;
+#else
+	/*
+	 * In Win32, the filename if using fopen only works with ANSI characters.
+	 * We need to use the wide version.
+	 * _wstat expects a struct _stat (not the POSIX struct stat).
+	 */
+
+	struct _stat st;
+	WCHAR * wideFileName = vm_string_convert_utf8_to_utf16(aPath);
+
+	int result = _wstat(wideFileName, &st) == 0;
+
+	free(wideFileName);
+
+	return result;
+
+#endif
 }
 
 void basicImageReportProgress(size_t totalSize, size_t currentSize){

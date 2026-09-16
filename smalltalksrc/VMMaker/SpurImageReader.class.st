@@ -68,7 +68,7 @@ SpurImageReader >> getWord32FromFile: aFile swap: swapFlag [
 SpurImageReader >> readHeaderFrom: f startingAt: headerStart [
 
 	<var: #f type: #sqImageFile>
-	<var: #headerStart type: #squeakFileOffsetType>
+	<var: #headerStart type: #fileOffset_t>
 	<var: #header type: #SpurImageHeaderStruct>
 	<returnTypeC: #SpurImageHeaderStruct>
 	
@@ -81,6 +81,9 @@ SpurImageReader >> readHeaderFrom: f startingAt: headerStart [
 
 	header imageHeaderSize: (self getWord32FromFile: f swap: header swapBytes).
 	header dataSize: (self getLongFromFile: f swap: header swapBytes).
+	"In SpurFormat the dataSize is just the oldSpace size"
+	header hdrOldSpaceSize: header dataSize.
+
 	header oldBaseAddr: (self getLongFromFile: f swap: header swapBytes).
 	header initialSpecialObjectsOop:
 		(self getLongFromFile: f swap: header swapBytes).
@@ -145,7 +148,7 @@ SpurImageReader >> readImageFromFile: f StartingAt: headerStart [
 	 Smalltalk by invoking the image name as a command."
 
 	<var: #f type: #sqImageFile>
-	<var: #headerStart type: #'squeakFileOffsetType'>
+	<var: #headerStart type: #'fileOffset_t'>
 
 	<var: #header type: #'SpurImageHeaderStruct'>
 	
@@ -164,7 +167,8 @@ SpurImageReader >> readImageFromFile: f StartingAt: headerStart [
 SpurImageReader >> readImageNamed: imageName [
 	
 	<var: #imageName declareC: 'char *imageName'>
-	
+	<var: #file type: #sqImageFile>
+
 	| file |
 	
 	objectMemory ensureAuxiliarStructures.

@@ -127,7 +127,7 @@ CCodeGeneratorGlobalStructure >> emitCVariablesOn: aStream [
 										[self preDeclareInterpreterProxyOn: target]
 									ifFalse: [target nextPutAll: 'static ']]
 							ifFalse:
-								[(self vmClass mustBeGlobal: varString) ifFalse:
+								[(self vmClass mustBeGlobalAndExport: varString) ifFalse:
 									[target nextPutAll: (inStruct ifTrue: ['_iss '] ifFalse: ['static '])]].
 						target nextPutAll: decl; nextPut: $;; cr]
 			]
@@ -190,17 +190,26 @@ CCodeGeneratorGlobalStructure >> emitGlobalStructFlagOn: aStream [
 { #category : 'CAST translation' }
 CCodeGeneratorGlobalStructure >> generateCASTSetFieldTo: aTSendNode [
 
-	| structType fieldName fieldVale setFieldStatements |
+	| structType fieldName fieldVale setFieldStatements structClass |
 	self assert: aTSendNode arguments size = 2.
 
 	fieldName := aTSendNode arguments first.
 	fieldVale := aTSendNode arguments second.
 
 	structType := self structTypeFor: aTSendNode receiver.
+	structClass := structType asClassInEnvironment: self class environment.
 
+	"If the field name is known at compile time, we can just use the accessor, we don't need to compare by the name"
+	fieldName isConstant 
+		ifTrue: [ 
+			self assert: (structClass hasSlotNamed: fieldName value).
+			
+			^ (TSendNode
+                        receiver: aTSendNode receiver
+                        selector: fieldName value , ':'
+                        arguments: { fieldVale }) asCASTIn: self ].
 
-	setFieldStatements := (structType asClassInEnvironment:
-		                       self class environment) allSlots collect: [
+	setFieldStatements := structClass allSlots collect: [
 		                      :slot |
 		                      | comparison |
 		                      comparison := TSendNode
@@ -237,7 +246,7 @@ CCodeGeneratorGlobalStructure >> generateCASTWithFieldsDoSeparatedBy: aTSendNode
 	self assert: aTSendNode arguments second arguments size = 0.
 
 	fieldBlock := aTSendNode arguments first.
-	blockSeparatorStatements := aTSendNode arguments second statements.
+	blockSeparatorStatements := aTSendNode arguments second statements reject: [ :e | e isConstant and: [ e value isNil ] ].
 
 	structType := self structTypeFor: aTSendNode receiver.
 
@@ -257,8 +266,7 @@ CCodeGeneratorGlobalStructure >> generateCASTWithFieldsDoSeparatedBy: aTSendNode
 		do: [ :fieldArgs |
 			allRewrittenStatements addAll:
 				(self bindBlock: fieldBlock withArgs: fieldArgs) ]
-		separatedBy: [
-		allRewrittenStatements addAll: blockSeparatorStatements ].
+		separatedBy: [ allRewrittenStatements addAll: blockSeparatorStatements ].
 
 	^ CCompoundStatementNode statements:
 		  (allRewrittenStatements collect: [ :e | e asCASTIn: self ])
@@ -307,16 +315,6 @@ CCodeGeneratorGlobalStructure >> isGlobalStructureBuild [
 	^true
 ]
 
-{ #category : 'utilities' }
-CCodeGeneratorGlobalStructure >> localizeGlobalVariables [
-"TPR - remove all the global vars destined for the structure that are only used once - not worth the space,
-actually what will happen is the folding code will fold these variables into the method"
-
-	super localizeGlobalVariables.
-	globalVariableUsage := globalVariableUsage select: [:e | e size > 1].
-
-]
-
 { #category : 'C code generator' }
 CCodeGeneratorGlobalStructure >> placeInStructure: var [
 	"See if we should put this array into a structure.
@@ -330,7 +328,7 @@ CCodeGeneratorGlobalStructure >> placeInStructure: var [
 	(check includesSubstring: 'static') ifTrue: [^false].
 	(check includesSubstring: 'volatile') ifTrue: [^false].
 
-	^(self vmClass mustBeGlobal: var) not
+	^(self vmClass mustBeGlobalAndExport: var) not
 ]
 
 { #category : 'C code generator' }

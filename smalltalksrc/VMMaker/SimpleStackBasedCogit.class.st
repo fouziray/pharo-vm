@@ -266,15 +266,10 @@ SimpleStackBasedCogit >> bytecodePC: anInteger [
 	bytecodePC := anInteger 
 ]
 
-{ #category : 'trampolines' }
-SimpleStackBasedCogit >> cPICMissTrampolineFor: numArgs [
-	^ceCPICMissTrampoline
-]
-
 { #category : 'accessing' }
-SimpleStackBasedCogit >> ceCPICMissTrampoline: anAddress [ 
+SimpleStackBasedCogit >> cePICMissTrampoline: anAddress [ 
 	
-	ceCPICMissTrampoline := anAddress
+	cePICMissTrampoline := anAddress
 ]
 
 { #category : 'simulation only' }
@@ -765,7 +760,7 @@ SimpleStackBasedCogit >> compileMachineCodeInterpreterPrimitive: primitiveRoutin
 ]
 
 { #category : 'in-line cacheing' }
-SimpleStackBasedCogit >> compileOpenPIC: selector numArgs: numArgs [
+SimpleStackBasedCogit >> compileMegamorphicIC: selector numArgs: numArgs [
 	"Compile the code for an open PIC.  Perform a probe of the first-level method
 	 lookup cache followed by a call of ceSendFromInLineCacheMiss: if the probe fails."
 	| cacheBaseReg jumpSelectorMiss jumpClassMiss itsAHit jumpBCMethod |
@@ -773,18 +768,17 @@ SimpleStackBasedCogit >> compileOpenPIC: selector numArgs: numArgs [
 	<var: #jumpClassMiss type: #'AbstractInstruction *'>
 	<var: #itsAHit type: #'AbstractInstruction *'>
 	<var: #jumpBCMethod type: #'AbstractInstruction *'>
+	<flag: #lookupInMethodCacheSel:classTag:> "so this method shows up as a sender of lookupInMethodCacheSel:class:"
 	self preenMethodLabel.
 	self compilePICAbort: numArgs.
 	entry := objectRepresentation genGetClassTagOf: ReceiverResultReg into: SendNumArgsReg scratchReg: TempReg.
 
-	self flag: #lookupInMethodCacheSel:classTag:. "so this method shows up as a sender of lookupInMethodCacheSel:class:"
-
 	cacheBaseReg := NoReg.
-	(backEnd isWithinMwOffsetRange: coInterpreter methodCacheAddress) ifFalse:
+	(backEnd isWithinMwOffsetRange: coInterpreter methodCacheAddress asUnsignedInteger) ifFalse:
 		[self MoveCq: coInterpreter methodCacheAddress R: (cacheBaseReg := Extra0Reg)].
 
 	"Do first of three probes.  See CoInterpreter>>lookupInMethodCacheSel:classTag:"
-	jumpSelectorMiss := self compileOpenPICMethodCacheProbeFor: selector withShift: 0 baseRegOrNone: cacheBaseReg.
+	jumpSelectorMiss := self compileMegamorphicICMethodCacheProbeFor: selector withShift: 0 baseRegOrNone: cacheBaseReg.
 	jumpClassMiss := self JumpNonZero: 0.
 
 	"Fetch the method.  The interpret trampoline requires the bytecoded method in SendNumArgsReg"
@@ -793,7 +787,7 @@ SimpleStackBasedCogit >> compileOpenPIC: selector numArgs: numArgs [
 								ifFalse: [MethodCacheMethod << objectMemory shiftForWord])
 					r: ClassReg
 					R: SendNumArgsReg.
-			.
+
 	"If the method is compiled jump to its unchecked entry-point, otherwise interpret it."
 	objectRepresentation genLoadSlot: HeaderIndex sourceReg: SendNumArgsReg destReg: ClassReg.
 	jumpBCMethod := objectRepresentation genJumpImmediate: ClassReg.
@@ -803,12 +797,12 @@ SimpleStackBasedCogit >> compileOpenPIC: selector numArgs: numArgs [
 
 	"First probe missed.  Do second of three probes.  Shift hash right one and retry."
 	jumpSelectorMiss jmpTarget: (jumpClassMiss jmpTarget: self Label).
-	jumpSelectorMiss := self compileOpenPICMethodCacheProbeFor: selector withShift: 1 baseRegOrNone: cacheBaseReg.
+	jumpSelectorMiss := self compileMegamorphicICMethodCacheProbeFor: selector withShift: 1 baseRegOrNone: cacheBaseReg.
 	self JumpZero: itsAHit.
 
 	"Second probe missed.  Do last probe.  Shift hash right two and retry."
 	jumpSelectorMiss jmpTarget: self Label.
-	jumpSelectorMiss := self compileOpenPICMethodCacheProbeFor: selector withShift: 2 baseRegOrNone: cacheBaseReg.
+	jumpSelectorMiss := self compileMegamorphicICMethodCacheProbeFor: selector withShift: 2 baseRegOrNone: cacheBaseReg.
 	self JumpZero: itsAHit.
 
 	"Last probe missed.  Call ceSendFromInLineCacheMiss: to do the full lookup."
@@ -830,8 +824,8 @@ SimpleStackBasedCogit >> compileOpenPIC: selector numArgs: numArgs [
 ]
 
 { #category : 'in-line cacheing' }
-SimpleStackBasedCogit >> compileOpenPICMethodCacheProbeFor: selector withShift: shift baseRegOrNone: baseRegOrNone [
-	"Compile one method cache probe in an OpenPIC's lookup of selector.
+SimpleStackBasedCogit >> compileMegamorphicICMethodCacheProbeFor: selector withShift: shift baseRegOrNone: baseRegOrNone [
+	"Compile one method cache probe in a megamorphic IC's lookup of selector.
 	 Answer the jump taken if the selector probe fails.
 	 The class tag of the receiver must be in SendNumArgsReg.  ClassReg and TempReg are used as scratch registers.
 	 On a hit, the offset of the entry is in ClassReg."
@@ -958,7 +952,9 @@ SimpleStackBasedCogit >> compilePrimitive [
 	(flags anyMask: PrimCallOnSmalltalkStack) ifTrue: [ 
 		self assert: flags = PrimCallOnSmalltalkStack.
 		^ self compileMachineCodeInterpreterPrimitive:
-			  (coInterpreter mcprimFunctionForPrimitiveIndex: primitiveIndex) ].
+			  (self cCoerceSimple:
+				   (coInterpreter mcprimFunctionForPrimitiveIndex: primitiveIndex)
+				   to: #'void (*)(void)') ].
 
 	((primitiveRoutine := coInterpreter
 		                      functionPointerForCompiledMethod: methodObj
@@ -1283,16 +1279,17 @@ SimpleStackBasedCogit >> genExtPushLiteralVariableBytecode [
 { #category : 'bytecode generators' }
 SimpleStackBasedCogit >> genExtPushPseudoVariable [
 	"SistaV1: *	82			01010010			Push thisContext, (then Extend B = 1 => push thisProcess)"
+
 	| ext |
 	ext := extB.
 	extB := 0.
 	numExtB := 0.
-	ext caseOf: {
-		[0]	->	[^self genPushActiveContextBytecode].
-		}
-		otherwise:
-			[^self unknownBytecode].
-	^0
+	ext
+		caseOf: {
+				([ 0 ] -> [ ^ self genPushActiveContextBytecode ]).
+				([ 1 ] -> [ ^ self genPushActiveProcessBytecode ]) }
+		otherwise: [ ^ self unknownBytecode ].
+	^ 0
 ]
 
 { #category : 'bytecode generators' }
@@ -1637,20 +1634,19 @@ SimpleStackBasedCogit >> genLookupForPerformNumArgs: numArgs [
 	"Compile the code for a probe of the first-level method cache for a perform primtiive.
 	 The selector is assumed to be in Arg0Reg.  Defer to adjustArgumentsForPerform: to
 	 adjust the arguments before the jump to the method."
-	| jumpSelectorMiss jumpClassMiss jumpInterpret itsAHit cacheBaseReg |
+	| jumpSelectorMiss jumpClassMiss jumpInterpret itsAHit cacheBaseReg jumpWrongArity |
 	<var: #jumpSelectorMiss type: #'AbstractInstruction *'>
 	<var: #jumpClassMiss type: #'AbstractInstruction *'>
 	<var: #jumpInterpret type: #'AbstractInstruction *'>
 	<var: #itsAHit type: #'AbstractInstruction *'>
+	<flag: #lookupInMethodCacheSel:classTag:> "so this method shows up as a sender of lookupInMethodCacheSel:class:"
 
 	"N.B.  Can't assume TempReg already contains the tag because a method can
 	 of course be invoked via the unchecked entry-point, e.g. as does perform:."
-	objectRepresentation genGetInlineCacheClassTagFrom: ReceiverResultReg into: SendNumArgsReg forEntry: false.
-
-	self flag: #lookupInMethodCacheSel:classTag:. "so this method shows up as a sender of lookupInMethodCacheSel:class:"
+	objectRepresentation genGetInlineCacheClassTagFrom: ReceiverResultReg into: SendNumArgsReg.
 
 	cacheBaseReg := NoReg.
-	(backEnd isWithinMwOffsetRange: coInterpreter methodCacheAddress) ifFalse:
+	(backEnd isWithinMwOffsetRange: coInterpreter methodCacheAddress asUnsignedInteger) ifFalse:
 		[self MoveCq: coInterpreter methodCacheAddress R: (cacheBaseReg := Extra0Reg)].
 
 	"Do first of three probes.  See CoInterpreter>>lookupInMethodCacheSel:classTag:"
@@ -1666,6 +1662,19 @@ SimpleStackBasedCogit >> genLookupForPerformNumArgs: numArgs [
 	"If the method is not compiled fall back on the interpreter primitive."
 	objectRepresentation genLoadSlot: HeaderIndex sourceReg: SendNumArgsReg destReg: ClassReg.
 	jumpInterpret := objectRepresentation genJumpImmediate: ClassReg.
+	
+	"We are in machine code, we need to check arity!
+	Load the target method number of arguments (zero extended by hand if needed).
+	Then compare it to the callsite one.
+	Jump to fail if not equal"
+	self backEnd byteReadsZeroExtend ifFalse:
+		[self MoveCq: 0 R: SendNumArgsReg].
+	"We need the offset of cmNumArgs, but as it is a bit field, we have to get the offset of the previous element plus its size. It works because the previous one is a sqLong"
+	self MoveMb: ((self offset: CogMethod of: #objectHeader) + (self sizeof: #sqLong)) r: ClassReg R: SendNumArgsReg.
+	"numArgs contains the number of arguments of perform, which contains the selector."
+	self CmpCq: numArgs - 1 R: SendNumArgsReg.
+	jumpWrongArity := self JumpNonZero: 0.
+	
 	"Adjust arguments and jump to the method's unchecked entry-point."
 	self AddCq: cmNoCheckEntryOffset R: ClassReg.
 	self adjustArgumentsForPerform: numArgs.
@@ -1683,7 +1692,7 @@ SimpleStackBasedCogit >> genLookupForPerformNumArgs: numArgs [
 
 	"Last probe missed.  Caller will generate the call to fall back on the interpreter primitive."
 	jumpSelectorMiss jmpTarget:
-	(jumpInterpret jmpTarget: self Label).
+	(jumpInterpret jmpTarget: (jumpWrongArity jmpTarget: self Label)).
 	^0
 ]
 
@@ -1875,7 +1884,6 @@ SimpleStackBasedCogit >> genPrimitiveFullClosureValue [
 	 block entry or the no-context-switch entry, as appropriate, and we're done.  If not,
 	 invoke the interpreter primitive."
 
-	<option: #SistaV1BytecodeSet>
 	<var: #jumpFailImmediateMethod type: #'AbstractInstruction *'>
 	<var: #jumpFail4 type: #'AbstractInstruction *'>
 	<var: #jumpFailNArgs type: #'AbstractInstruction *'>
@@ -1978,6 +1986,12 @@ SimpleStackBasedCogit >> genPushActiveContextBytecode [
 		inBlock: inBlock.
 	self PushR: ReceiverResultReg.
 	^0
+]
+
+{ #category : 'bytecode generators' }
+SimpleStackBasedCogit >> genPushActiveProcessBytecode [
+
+	^ self unknownBytecode
 ]
 
 { #category : 'constant support' }
@@ -2339,6 +2353,9 @@ SimpleStackBasedCogit >> genSend: selectorIndex numArgs: numArgs [
 SimpleStackBasedCogit >> genSend: selectorIndex numArgs: numArgs sendTable: sendTable [
 	<inline: false>
 	<var: #sendTable type: #'sqInt *'>
+	
+	<story: #pic>
+	
 	| annotation |
 	self assert: needsFrame.
 	annotation := self annotationForSendTable: sendTable.
@@ -2775,6 +2792,7 @@ SimpleStackBasedCogit >> genUpArrowReturn [
 { #category : 'primitive generators - call' }
 SimpleStackBasedCogit >> generateCheckProfileTickFromJump: arrivingJmp returningTo: returningLabel beforeCallDo: aBlockClosure [
 
+	<var: #arrivingJmp type: #'AbstractInstruction *'>
 	arrivingJmp jmpTarget: self Label.
 
 	aBlockClosure value.
@@ -2793,8 +2811,8 @@ SimpleStackBasedCogit >> generateMissAbortTrampolines [
 
 	ceMethodAbortTrampoline := self genMethodAbortTrampoline.
 	cePICAbortTrampoline := self genPICAbortTrampoline.
-	ceCPICMissTrampoline := self genTrampolineFor: #ceCPICMiss:receiver:
-								called: 'ceCPICMissTrampoline'
+	cePICMissTrampoline := self genTrampolineFor: #cePICMiss:receiver:
+								called: 'cePICMissTrampoline'
 								arg: ClassReg
 								arg: ReceiverResultReg.
 	ceReapAndResetErrorCodeTrampoline := self genTrampolineFor: #ceReapAndResetErrorCodeFor:
@@ -2815,17 +2833,13 @@ SimpleStackBasedCogit >> generateTracingTrampolines [
 	ceTraceBlockActivationTrampoline :=
 		self genTrampolineFor: #ceTraceBlockActivation
 			called: 'ceTraceBlockActivationTrampoline'
-			regsToSave: CallerSavedRegisterMask..
+			regsToSave: CallerSavedRegisterMask.
 	ceTraceStoreTrampoline :=
 		self genTrampolineFor: #ceTraceStoreOf:into:
 			called: 'ceTraceStoreTrampoline'
 			arg: ClassReg
 			arg: ReceiverResultReg
-			regsToSave: CallerSavedRegisterMask..
-	self cCode: [] inSmalltalk:
-		[ceTraceLinkedSendTrampoline := self simulatedTrampolineFor: #ceShortCutTraceLinkedSend:.
-		 ceTraceBlockActivationTrampoline := self simulatedTrampolineFor: #ceShortCutTraceBlockActivation:.
-		 ceTraceStoreTrampoline := self simulatedTrampolineFor: #ceShortCutTraceStore:]
+			regsToSave: CallerSavedRegisterMask.
 ]
 
 { #category : 'register management' }
@@ -3009,6 +3023,11 @@ SimpleStackBasedCogit >> pcDataFor: descriptor Annotation: isBackwardBranchAndAn
 { #category : 'trampolines' }
 SimpleStackBasedCogit >> picAbortTrampolineFor: numArgs [
 	^cePICAbortTrampoline
+]
+
+{ #category : 'trampolines' }
+SimpleStackBasedCogit >> picMissTrampolineFor: numArgs [
+	^cePICMissTrampoline
 ]
 
 { #category : 'primitive generators' }

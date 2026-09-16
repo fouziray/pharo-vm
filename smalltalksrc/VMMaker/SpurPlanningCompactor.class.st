@@ -745,6 +745,7 @@ SpurPlanningCompactor >> unmarkObjectsFromFirstFreeObject [
 	"Sweep the final immobile heap, freeing and coalescing unmarked and free objects,
 	 and unmarking all marked objects up to the end of memory."
 	| startOfFree freeBytes |
+	 <var: 'freeBytes' type: #usqInt>
 	freeBytes := 0.
 	manager allOldSpaceEntitiesFrom: firstFreeObject do:
 		[:o|
@@ -1066,7 +1067,7 @@ SpurPlanningCompactor >> useFreeChunkForSavedFirstFieldsSpace: highestSuitableFr
 SpurPlanningCompactor >> useSegmentForSavedFirstFieldsSpace: spaceEstimate [
 	"Attempt to allocate a memory segment large enough to hold the savedFirstFieldsSpace.
 	 Invoked when neither eden nor a large free chunk are found to be big enough for the job."
-	<var: #segAddress type: #'void *'>
+	<var: #segAddress type: #usqInt>
 	| roundedSize allocatedSize segAddress |
 	roundedSize := spaceEstimate + 1023 // 1024 * 1024.
 	
