@@ -68,6 +68,39 @@ VMJITVMPrimitiveTest >> linkPicWithCases: sizeOfPic withIntegerAtPosition: aPosi
 	^ { targetTypes . targetMethods }
 ]
 
+{ #category : 'primitive cache setting' }
+VMJITVMPrimitiveTest >> linkSpuriousPicWithCases: sizeOfPic [
+	"We create two target type and methods arrays, with sizes > to the size of pic limit (6).
+	
+	We fill it with types and fresh methods, making sure that the nth position has the integer type, which we will look for matching"
+	| targetTypes targetMethods |
+	targetTypes := self newArrayWithSlots: sizeOfPic.
+	targetMethods := self newArrayWithSlots: sizeOfPic.
+
+	1 to: sizeOfPic do: [:i|
+		| targetType targetMethod |
+		
+		targetType := self  setSmallIntegerClassIntoClassTable.
+
+		memory
+			storePointer: i - 1
+			ofObject: targetTypes
+			withValue: targetType.
+		
+		targetMethod := methodBuilder 
+			bytecodes: #[
+				16r4C "push self"
+				16r5C "ret top"
+			];
+			buildMethod.
+		memory
+			storePointer: i - 1
+			ofObject: targetMethods
+			withValue: targetMethod.
+	].
+	^ { targetTypes . targetMethods }
+]
+
 { #category : 'accessing' }
 VMJITVMPrimitiveTest >> sendSiteToSet [
 
@@ -95,10 +128,34 @@ VMJITVMPrimitiveTest >> setUp [
 	super setUp.
 
 	interpreter messageSelector: memory nilObject.
-
-	self setUpTrampolines.
-	self setUpCogMethodEntry.
 	self createBaseFrame
+]
+
+{ #category : 'initialization' }
+VMJITVMPrimitiveTest >> setUpMethodDictionaryIn: aClass [
+	"2 instances variables the array of methods and the tally
+	and 12 entries to put elemetns of the collection"
+	
+	| aMethodDictionary anArrayOfMethods |
+	aMethodDictionary := self
+		newObjectWithSlots: 2 + 12
+		format: MethodDictionary instSpec
+		classIndex: memory arrayClassIndexPun.
+	anArrayOfMethods := self
+		newObjectWithSlots: 12
+		format: Array instSpec
+		classIndex: memory arrayClassIndexPun.
+	memory
+		storePointer: MethodDictionaryIndex
+		ofObject: aClass
+		withValue: aMethodDictionary.
+	memory
+		storePointer: MethodArrayIndex
+		ofObject: aMethodDictionary
+		withValue: anArrayOfMethods.
+		
+	
+
 ]
 
 { #category : 'primitive cache setting' }
@@ -192,6 +249,77 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCachePICselectorNotNil [
 	self
 		runFrom: (interpreter cogMethodOf: sourceMethod ) address + cogit noCheckEntryOffset
 		until: (interpreter cogMethodOf: (memory fetchPointer: positionToMatch - 1 ofObject: targetMethods)) address + cogit noCheckEntryOffset 
+]
+
+{ #category : 'primitive cache setting' }
+VMJITVMPrimitiveTest >> testPrimitiveMethodCacheReSettingMegaMorphic [
+	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays targetSelector yourselfMethod smallIntegerClass |
+
+	positionToMatch := 3.
+	cogit generateMissAbortTrampolines.
+	sourceMethod := methodBuilder
+		bytecodes: #[ 
+			16r4C "push self"
+			16r80 "send 0 arg"
+			16r5C "ret top"
+		];
+		buildMethod.
+
+	"we create a method to patch into the megamorphic inline cache"
+	yourselfMethod := methodBuilder
+		bytecodes: #[ 
+			16r4C "push self"
+			16r80"send 0 arg"
+			16r5C "ret top"
+		];
+		buildMethod.			
+	"Go 2 bytes after the beginning of the method.
+	This is the byte following the send!"
+	bcpc := (interpreter startPCOfMethod: sourceMethod) + 2. 
+	
+	targetArrays := self linkSpuriousPicWithCases:  6.
+	targetTypes := targetArrays first.
+	targetMethods := targetArrays second.
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
+	"sourceMethod"
+	interpreter push: sourceMethod.
+	"not a block"
+	
+	interpreter push: (memory integerObjectOf: -1).
+	"bcpc"
+	interpreter push: (memory integerObjectOf: bcpc).
+	"false boolean"
+	interpreter push: (memory booleanObjectOf: false).
+	"selector"
+	interpreter push:  (targetSelector).
+	
+	"target types"
+	interpreter push: targetTypes.
+	"target methods"
+	interpreter push: targetMethods.
+
+	interpreter argumentCount: 7.
+	interpreter primitiveMethodCacheSetting.
+	self deny: interpreter failed.
+	smallIntegerClass := self setSmallFloatClassIntoClassTable .
+	self setUpMethodDictionaryIn: smallIntegerClass .
+	self installSelector: targetSelector  method: yourselfMethod  inMethodDictionary: (memory fetchPointer: MethodDictionaryIndex
+		                     ofObject: smallIntegerClass)  .
+"
+	interpreter 
+				ensureMethodIsCogged: yourselfMethod 
+				maybeClosure: memory nilObject ."
+	self
+		prepareStackForSendReceiver: (memory smallFloatObjectOf: 3.0 " memory integerObjectOf: 1") 
+		arguments: { }.
+
+"	self openMachineDebuggerAt: (interpreter cogMethodOf: sourceMethod ) address + cogit  noCheckEntryOffset. 
+"
+	
+		self
+		runFrom: (interpreter cogMethodOf: sourceMethod ) address + cogit noCheckEntryOffset 
+		until: (cogit picMissTrampolines at:3) "(interpreter cogMethodOf: yourselfMethod) address + cogit entryOffset ."
+
 ]
 
 { #category : 'primitive cache setting' }

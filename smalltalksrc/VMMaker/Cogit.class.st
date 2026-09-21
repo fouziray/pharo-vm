@@ -3658,9 +3658,10 @@ Cogit >> ceCPICMiss: cPIC receiver: receiver [
 	<story: #pic>
 	<var: #cPIC type: #'CogMethod *'>
 	| callerReturnAddress newTargetMethodOrNil errorSelectorOrNil |
-	1halt.
+
 	self simulationOnly: [
 		cPIC isInteger ifTrue: [
+				1halt.
 			^ self
 				  ceCPICMiss: (self cogMethodSurrogateAt: cPIC)
 				  receiver: receiver ] ].
@@ -10133,6 +10134,7 @@ Cogit >> patchToMegamorphicICFor: selector numArgs: numArgs receiver: receiver [
 	<api>
 	| oPIC callerReturnAddress extent |
 	<var: #oPIC type: #'CogMethod *'>
+1 halt.
 	callerReturnAddress := coInterpreter stackTop.
 
 	oPIC := methodZone openPICWithSelector: selector.
@@ -10156,6 +10158,9 @@ Cogit >> patchToMegamorphicICFor: selector numArgs: numArgs receiver: receiver [
 		enableCodeZoneWriteDuring: [
 		"Relink the send site to the pic.  Reset the cache tag to the selector, for the
 		 benefit of the cacheTag assert check in checkIfValidOopRef:pc:cogMethod: et al."
+		self flag:#here.
+		"check if the cache "
+		1 halt.
 		extent := backEnd
 					rewriteInlineCacheAt: callerReturnAddress
 					tag: (self inlineCacheValueForSelector: selector
