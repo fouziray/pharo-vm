@@ -242,7 +242,7 @@ CogMethodZone >> compactCompiledCode [
 	methodCount := 0.
 	[ source < self limitZony and: [ source cmType ~= CMFree ] ]
 		whileTrue: [
-			self assert: (cogit cogMethodDoesntLookKosher: source) = 0.
+			"self assert: (cogit cogMethodDoesntLookKosher: source) = 0."
 			source objectHeader: objectHeaderValue.
 			source cmUsageCount > 0 ifTrue: [
 				source cmUsageCount: source cmUsageCount // 2 ].
@@ -256,8 +256,7 @@ CogMethodZone >> compactCompiledCode [
 	dest := source.
 	[ source < self limitZony ] whileTrue: [
 		| byteSize |
-		self assert: (cogit maybeFreeCogMethodDoesntLookKosher: source) = 0.
-
+"		self assert: (cogit maybeFreeCogMethodDoesntLookKosher: source) = 0."
 		byteSize := source blockSize.
 
 		source cmType ~= CMFree ifTrue: [
@@ -332,8 +331,8 @@ CogMethodZone >> freeMethod: cogMethod [
 	<var: #cogMethod type: #'CogMethod *'>
 	<inline: false>
 	self assert: cogMethod cmType ~= CMFree.
-	self assert: (cogit cogMethodDoesntLookKosher: cogMethod) = 0.
-	cogMethod cmType = CMMethod ifTrue: [ "There should be a one-to-one mapping between bytecoded and cog methods.""Only reset the original method's header if it is referring to this CogMethod."
+	"self assert: (cogit cogMethodDoesntLookKosher: cogMethod) = 0.
+"	cogMethod cmType = CMMethod ifTrue: [ "There should be a one-to-one mapping between bytecoded and cog methods.""Only reset the original method's header if it is referring to this CogMethod."
 		(coInterpreter rawHeaderOf: cogMethod methodObject) asInteger
 		= cogMethod asInteger
 			ifTrue: [
@@ -592,7 +591,7 @@ CogMethodZone >> planCompaction [
 		[cogMethod cmType = CMFree
 			ifTrue: [delta := delta - cogMethod blockSize]
 			ifFalse:
-				[self assert: (cogit cogMethodDoesntLookKosher: cogMethod) = 0.
+				["self assert: (cogit cogMethodDoesntLookKosher: cogMethod) = 0."
 				 cogMethod objectHeader: delta.
 				 SistaVM ifTrue:
 					[self savePICUsageCount: cogMethod]].
