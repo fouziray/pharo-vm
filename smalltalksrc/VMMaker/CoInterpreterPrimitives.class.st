@@ -350,8 +350,7 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 				isMNUCase: false.
 		].
 	"setting method header flag to 1 = it should be frozen"
-	cogit enableCodeZoneWriteDuring: [
-    pic methodHeader: 1 ].
+	cogit publicSetFreezeFlagOn: pic.
 
 		cogit
 			linkSendAt: mcpc
