@@ -126,7 +126,7 @@ VMJITVMPrimitiveTest >> setArrayClassIntoClassTable [
 VMJITVMPrimitiveTest >> setUp [
 
 	super setUp.
-
+	interpreter methodDictLinearSearchLimit: 8.
 	interpreter messageSelector: memory nilObject.
 	self createBaseFrame
 ]
@@ -305,10 +305,9 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheReSettingMegaMorphic [
 	self setUpMethodDictionaryIn: smallIntegerClass .
 	self installSelector: targetSelector  method: yourselfMethod  inMethodDictionary: (memory fetchPointer: MethodDictionaryIndex
 		                     ofObject: smallIntegerClass)  .
-"
-	interpreter 
-				ensureMethodIsCogged: yourselfMethod 
-				maybeClosure: memory nilObject ."
+
+	cogit cog: yourselfMethod selector: memory nilObject.
+
 	self
 		prepareStackForSendReceiver: (memory smallFloatObjectOf: 3.0 " memory integerObjectOf: 1") 
 		arguments: { }.
@@ -318,7 +317,157 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheReSettingMegaMorphic [
 	
 		self
 		runFrom: (interpreter cogMethodOf: sourceMethod ) address + cogit noCheckEntryOffset 
-		until: (cogit picMissTrampolines at:3) "(interpreter cogMethodOf: yourselfMethod) address + cogit entryOffset ."
+		until: "(cogit picMissTrampolines at:3)" (interpreter cogMethodOf: yourselfMethod) address + cogit entryOffset .
+
+]
+
+{ #category : 'primitive cache setting' }
+VMJITVMPrimitiveTest >> testPrimitiveMethodCacheReSettingMegaMorphicTargetIsCogged [
+	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays targetSelector yourselfMethod smallIntegerClass sourceCogMethod |
+
+	positionToMatch := 3.
+	cogit generateMissAbortTrampolines.
+	sourceMethod := methodBuilder
+		bytecodes: #[ 
+			16r4C "push self"
+			16r80 "send 0 arg"
+			16r5C "ret top"
+		];
+		buildMethod.
+
+	"we create a method to patch into the megamorphic inline cache"
+	yourselfMethod := methodBuilder
+		bytecodes: #[ 
+			16r4C "push self"
+			16r80"send 0 arg"
+			16r5C "ret top"
+		];
+		buildMethod.
+	
+	"Go 2 bytes after the beginning of the method.
+	This is the byte following the send!"
+	bcpc := (interpreter startPCOfMethod: sourceMethod) + 2. 
+	
+	targetArrays := self linkSpuriousPicWithCases:  6.
+	targetTypes := targetArrays first.
+	targetMethods := targetArrays second.
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
+	"sourceMethod"
+	interpreter push: sourceMethod.
+	"not a block"
+	
+	interpreter push: (memory integerObjectOf: -1).
+	"bcpc"
+	interpreter push: (memory integerObjectOf: bcpc).
+	"false boolean"
+	interpreter push: (memory booleanObjectOf: false).
+	"selector"
+	interpreter push:  (targetSelector).
+	
+	"target types"
+	interpreter push: targetTypes.
+	"target methods"
+	interpreter push: targetMethods.
+
+	interpreter argumentCount: 7.
+	interpreter primitiveMethodCacheSetting.
+	self deny: interpreter failed.
+	
+	smallIntegerClass := self setSmallFloatClassIntoClassTable .
+	
+	self setUpMethodDictionaryIn: smallIntegerClass .
+	self installSelector: targetSelector  method: yourselfMethod  inMethodDictionary: (memory fetchPointer: MethodDictionaryIndex
+		                     ofObject: smallIntegerClass)  .
+	
+
+		
+
+
+"	self openMachineDebuggerAt: (sourceCogMethod ) address + cogit  noCheckEntryOffset. 
+"
+	
+	sourceCogMethod := interpreter cogMethodOf: sourceMethod.
+"		interpreter ensureMethodIsCogged: yourselfMethod  maybeClosure: memory nilObject.
+
+	"
+	
+	
+	self
+		prepareStackForSendReceiver: (memory smallFloatObjectOf: 3.0 " memory integerObjectOf: 1") 
+		arguments: { }.
+	
+		self
+		runFrom: ( sourceCogMethod ) address + cogit noCheckEntryOffset 
+		until: (cogit picMissTrampolines at:0) " (interpreter cogMethodOf: yourselfMethod  ) address + cogit noCheckEntryOffset ".
+
+]
+
+{ #category : 'primitive cache setting' }
+VMJITVMPrimitiveTest >> testPrimitiveMethodCacheReSettingMegaMorphicTargetIsNotCogged [
+	| targetTypes targetMethods sourceMethod bcpc positionToMatch targetArrays targetSelector yourselfMethod smallIntegerClass |
+
+	positionToMatch := 3.
+	cogit generateMissAbortTrampolines.
+	sourceMethod := methodBuilder
+		bytecodes: #[ 
+			16r4C "push self"
+			16r80 "send 0 arg"
+			16r5C "ret top"
+		];
+		buildMethod.
+
+	"we create a method to patch into the megamorphic inline cache"
+	yourselfMethod := methodBuilder
+		bytecodes: #[ 
+			16r4C "push self"
+			16r80"send 0 arg"
+			16r5C "ret top"
+		];
+		buildMethod.			
+	"Go 2 bytes after the beginning of the method.
+	This is the byte following the send!"
+	bcpc := (interpreter startPCOfMethod: sourceMethod) + 2. 
+	
+	targetArrays := self linkSpuriousPicWithCases:  6.
+	targetTypes := targetArrays first.
+	targetMethods := targetArrays second.
+	targetSelector := memory pinObject: (memory stringForCString: #yourself).
+	"sourceMethod"
+	interpreter push: sourceMethod.
+	"not a block"
+	
+	interpreter push: (memory integerObjectOf: -1).
+	"bcpc"
+	interpreter push: (memory integerObjectOf: bcpc).
+	"false boolean"
+	interpreter push: (memory booleanObjectOf: false).
+	"selector"
+	interpreter push:  (targetSelector).
+	
+	"target types"
+	interpreter push: targetTypes.
+	"target methods"
+	interpreter push: targetMethods.
+
+	interpreter argumentCount: 7.
+	interpreter primitiveMethodCacheSetting.
+	self deny: interpreter failed.
+	smallIntegerClass := self setSmallFloatClassIntoClassTable .
+	self setUpMethodDictionaryIn: smallIntegerClass .
+	self installSelector: targetSelector  method: yourselfMethod  inMethodDictionary: (memory fetchPointer: MethodDictionaryIndex
+		                     ofObject: smallIntegerClass)  .
+
+
+	self
+		prepareStackForSendReceiver: (memory smallFloatObjectOf: 3.0 " memory integerObjectOf: 1") 
+		arguments: { }.
+
+"	self openMachineDebuggerAt: (interpreter cogMethodOf: sourceMethod ) address + cogit  noCheckEntryOffset. 
+"
+	
+		self
+		runFrom: (interpreter cogMethodOf: sourceMethod ) address + cogit noCheckEntryOffset 
+		until: (cogit picMissTrampolines  at:0 ) .
 
 ]
 
