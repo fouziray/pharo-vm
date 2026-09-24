@@ -10670,12 +10670,7 @@ Cogit >> publicCogPICSelector: selector numArgs: numArgs Case0Method: case0CogMe
 
 { #category : 'in-line cacheing' }
 Cogit >> publicSetFreezeFlagOn: aPICCogMethod [
-	"Attempt to create a two-case PIC for case0CogMethod and  case1Method,case1Tag.
-	 The tag for case0CogMethod is at the send site and so doesn't need to be generated.
-	 case1Method may be any of
-		- a Cog method; link to its unchecked entry-point
-		- a CompiledMethod; link to ceInterpretMethodFromPIC:
-		- a CompiledMethod; link to ceMNUFromPICMNUMethod:receiver:"
+
 
 	<api>
 	<var: #aPICCogMethod type: #'CogMethod*'>
