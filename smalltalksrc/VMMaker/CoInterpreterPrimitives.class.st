@@ -336,7 +336,6 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 		       Case1Method: secondCogMethod methodObject
 		       tag: (cogit inlineCacheTagForClass: (objectMemory fetchPointer: 1 ofObject: typesArray) )
 		       isMNUCase: false.
-		pic  methodHeader: 1.
 		2 to: sizeOfTargets - 1 do:[ :i |
 			| targetCogMethod |
 			targetCogMethod := self
