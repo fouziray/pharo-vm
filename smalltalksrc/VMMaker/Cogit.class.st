@@ -3540,7 +3540,7 @@ Cogit >> ceCPICMiss: cPIC receiver: receiver [
 		= self isMNUPicAbortDiscriminatorValue.
 
 	"Transition to megamorphic if the PIC is full"
-	MaxCPICCases <= cPIC cPICNumCases ifTrue: [
+	MaxPICCases <= cPIC picNumCases ifTrue: [
 		((methodZone methodFor: cPIC)  methodHeader = 1) ifFalse: [ 
 			self
 				patchToMegamorphicICFor: cPIC selector
