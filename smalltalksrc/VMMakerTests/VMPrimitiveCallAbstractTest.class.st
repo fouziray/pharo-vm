@@ -200,7 +200,7 @@ VMPrimitiveCallAbstractTest >> setUpTrampolines [
 	cogit picAbortTrampolines at: 3 put: cogit cePICAbortTrampoline.
 	
 
-	cogit ceCPICMissTrampoline:  ( self compileTrampoline: [ "1 halt." cogit RetN: 0 ]  named:#ceCPICMissTrampoline ).
+	cogit cePICMissTrampoline:  ( self compileTrampoline: [ "1 halt." cogit RetN: 0 ]  named:#ceCPICMissTrampoline ).
 
 	cogit ceStoreCheckTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#ceStoreCheckTrampoline).
 	cogit objectRepresentation setAllStoreTrampolinesWith: (self compileTrampoline: [ cogit RetN: 0 ] named: #ceStoreTrampoline).

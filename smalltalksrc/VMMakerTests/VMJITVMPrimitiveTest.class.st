@@ -1109,8 +1109,7 @@ VMJITVMPrimitiveTest >> testPrimitiveMethodCacheSettingPolymorphicCalledWithUnse
 	self
 		prepareStackForSendReceiver: missReceiver
 		arguments: { }.
-1 halt.
-" self openMachineDebugger "
+
 	self
 		runFrom: (interpreter cogMethodOf: sourceMethod) address + cogit noCheckEntryOffset
 		until: cogit ceCPICMissTrampoline.

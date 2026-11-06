@@ -10048,7 +10048,7 @@ Cogit >> patchToMegamorphicICFor: selector numArgs: numArgs receiver: receiver [
 	<api>
 	| oPIC callerReturnAddress extent |
 	<var: #oPIC type: #'CogMethod *'>
-1 halt.
+
 	callerReturnAddress := coInterpreter stackTop.
 
 	oPIC := methodZone megamorphicICWithSelector: selector.
