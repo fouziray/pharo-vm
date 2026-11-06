@@ -3772,7 +3772,7 @@ Cogit >> cePICMiss: aPIC receiver: receiver [
 		= self isMNUPicAbortDiscriminatorValue.
 
 	"Transition to megamorphic if the PIC is full"
-	MaxPICCases <= aPIC picNumCases ifTrue: [
+	(MaxPICCases <= aPIC picNumCases and: [ self picIsFrozen: aPIC ]) ifTrue: [
 		self
 			patchToMegamorphicICFor: aPIC selector
 			numArgs: aPIC cmNumArgs
@@ -10236,6 +10236,12 @@ Cogit >> picInterpretAbortOffset [
 	 - (backEnd hasLinkRegister
 		ifTrue: [backEnd pushLinkRegisterByteSize + backEnd callInstructionByteSize]
 		ifFalse: [backEnd callInstructionByteSize])
+]
+
+{ #category : 'in-line cacheing' }
+Cogit >> picIsFrozen: aPIC [
+	
+	^  aPIC methodHeader == 0
 ]
 
 { #category : 'accessing' }
