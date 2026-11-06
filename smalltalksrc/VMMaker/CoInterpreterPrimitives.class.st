@@ -188,6 +188,7 @@ CoInterpreterPrimitives >> primitiveLongRunningPrimitiveSemaphore [
 
 { #category : 'system control primitives' }
 CoInterpreterPrimitives >> primitiveMethodCacheSetting [
+	<api>
 	"
 	Links a method MC at a send site to a set of target types/methods.
 	
