@@ -4508,6 +4508,7 @@ Cogit >> cogCodeConstituents: withDetails [
 
 { #category : 'in-line cacheing' }
 Cogit >> cogExtendPIC: aPIC CaseNMethod: caseNMethod tag: caseNTag isMNUCase: isMNUCase [
+	<api>
 	"Extend the aPIC with the supplied case.  If caseNMethod is cogged dispatch direct to
 	 its unchecked entry-point.  If caseNMethod is not cogged, jump to the fast interpreter
 	 dispatch, and if isMNUCase then dispatch to fast MNU invocation and mark the aPIC as
