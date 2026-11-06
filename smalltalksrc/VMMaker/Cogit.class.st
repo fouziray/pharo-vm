@@ -3772,11 +3772,12 @@ Cogit >> cePICMiss: aPIC receiver: receiver [
 		= self isMNUPicAbortDiscriminatorValue.
 
 	"Transition to megamorphic if the PIC is full"
-	(MaxPICCases <= aPIC picNumCases and: [ self picIsFrozen: aPIC ]) ifTrue: [
-		self
-			patchToMegamorphicICFor: aPIC selector
-			numArgs: aPIC cmNumArgs
-			receiver: receiver.
+	(MaxPICCases <= aPIC picNumCases) ifTrue: [
+		(self picIsFrozen: aPIC) ifFalse: [
+			self
+				patchToMegamorphicICFor: aPIC selector
+				numArgs: aPIC cmNumArgs
+				receiver: receiver].
 		^ coInterpreter ceSendFromInLineCacheMiss: aPIC ].
 
 	self
@@ -10240,7 +10241,7 @@ Cogit >> picInterpretAbortOffset [
 
 { #category : 'in-line cacheing' }
 Cogit >> picIsFrozen: aPIC [
-	
+	<var: #aPIC type: #'CogMethod *'>
 	^  aPIC methodHeader == 0
 ]
 
