@@ -15,7 +15,7 @@ CoInterpreterPrimitives >> cogWithoutCompacting: aMethodObj numCopied: nCopied [
 			<returnTypeC: #'CogMethod *'>
         
           | cogged |
-(self methodHasCogMethod: aMethodObj) ifTrue: [ ^ true ].
+(self methodHasCogMethod: aMethodObj) ifTrue: [ ^ self cogMethodOf: aMethodObj ].
           cogged := nCopied >= 0
                   ifTrue: [ cogit cogFullBlockMethod: aMethodObj numCopied: nCopied ]
                   ifFalse: [ cogit cog: aMethodObj selector: objectMemory nilObject ].
