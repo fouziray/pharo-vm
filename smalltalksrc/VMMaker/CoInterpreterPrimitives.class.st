@@ -12,11 +12,12 @@ CoInterpreterPrimitives >> cogWithoutCompacting: aMethodObj numCopied: nCopied [
            Never compacts: if the zone is full, cog: has already called for a
            compaction, which runs at the next interrupt check."
           <inline: true>
-          (self methodHasCogMethod: aMethodObj) ifTrue: [ ^ true ].
-          nCopied >= 0
+          | cogged |
+(self methodHasCogMethod: aMethodObj) ifTrue: [ ^ true ].
+          cogged := nCopied >= 0
                   ifTrue: [ cogit cogFullBlockMethod: aMethodObj numCopied: nCopied ]
                   ifFalse: [ cogit cog: aMethodObj selector: objectMemory nilObject ].
-          ^ (self methodHasCogMethod: aMethodObj) ifFalse: [ ^ self primitiveFailFor: PrimErrNoCMemory ] ifTrue: [ true ]
+          ^ (self methodHasCogMethod: aMethodObj) ifFalse: [  self primitiveFailFor: PrimErrNoCMemory ] ifTrue: [ cogged ]
   
 
 ]
