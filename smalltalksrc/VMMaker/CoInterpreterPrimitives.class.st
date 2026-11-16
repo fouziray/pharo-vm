@@ -16,7 +16,7 @@ CoInterpreterPrimitives >> cogWithoutCompacting: aMethodObj numCopied: nCopied [
           nCopied >= 0
                   ifTrue: [ cogit cogFullBlockMethod: aMethodObj numCopied: nCopied ]
                   ifFalse: [ cogit cog: aMethodObj selector: objectMemory nilObject ].
-          ^ self methodHasCogMethod: aMethodObj
+          ^ (self methodHasCogMethod: aMethodObj) ifFalse: [ ^ self primitiveFailFor: PrimErrNoCMemory ] ; yourself
   
 
 ]
@@ -279,8 +279,7 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 		ifTrue: [ ^ self primitiveFailFor: PrimErrBadArgument ].
 
 	"Compile source method if needed, fail if did not work"
-	(self cogWithoutCompacting: sourceMethod numCopied: (objectMemory integerValueOf: numCopied)) ifFalse: [
-			^ self primitiveFail ].
+	(self cogWithoutCompacting: sourceMethod numCopied: (objectMemory integerValueOf: numCopied)) .
 
 
 
@@ -303,17 +302,14 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 	(mcpc > 0 and: [ cogit isSendReturnPC: mcpc ])
 		ifFalse: [ ^ self primitiveFailFor: PrimErrBadArgument ].
 		
-	0 to: (objectMemory stSizeOf: targetMethodArray) - 1 do: [ :i |
-    	(self cogWithoutCompacting: (objectMemory fetchPointer: i ofObject: targetMethodArray) numCopied: -1)
-            ifFalse: [ ^ self primitiveFailFor: PrimErrNoCMemory ] ].
+
 	
 	(objectMemory stSizeOf: targetMethodArray) = 1 ifTrue: [ 
 		"Requested monomorphic link"
 		| targetType targetMethod targetCogMethod |
 		targetType := objectMemory fetchPointer: 0 ofObject: typesArray.
 		targetMethod := objectMemory fetchPointer: 0 ofObject: targetMethodArray.
-		targetCogMethod := (self cogWithoutCompacting: targetMethod numCopied: -1)
-            ifFalse: [ ^ self primitiveFailFor: PrimErrNoCMemory ].
+		targetCogMethod := (self cogWithoutCompacting: targetMethod numCopied: -1).
 
 		cogit setSelectorOf: targetCogMethod to: callsiteSelector.
 		
@@ -341,11 +337,9 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 		"build the pic from inside the primitive"
 		
 		sizeOfTargets := (objectMemory stSizeOf: targetMethodArray). 
-		firstCogMethod := (self cogWithoutCompacting: (objectMemory fetchPointer: 0 ofObject: targetMethodArray)  numCopied: -1)
-            ifFalse: [ ^ self primitiveFailFor: PrimErrNoCMemory ].
+		firstCogMethod := (self cogWithoutCompacting: (objectMemory fetchPointer: 0 ofObject: targetMethodArray)  numCopied: -1).
 	
-		secondCogMethod := (self cogWithoutCompacting: (objectMemory fetchPointer: 1 ofObject: targetMethodArray)  numCopied: -1)
-            ifFalse: [ ^ self primitiveFailFor: PrimErrNoCMemory ].
+		secondCogMethod := (self cogWithoutCompacting: (objectMemory fetchPointer: 1 ofObject: targetMethodArray)  numCopied: -1).
 		cogit setSelectorOf: firstCogMethod to: callsiteSelector.
 		cogit setSelectorOf: secondCogMethod to: callsiteSelector.
 		pic := cogit
@@ -357,8 +351,7 @@ CoInterpreterPrimitives >> primitiveMethodCacheSetting [
 		       isMNUCase: false.
 		2 to: sizeOfTargets - 1 do:[ :i |
 			| targetCogMethod |
-			targetCogMethod := (self cogWithoutCompacting: (objectMemory fetchPointer: i ofObject: targetMethodArray) numCopied: -1)
-            ifFalse: [ ^ self primitiveFailFor: PrimErrNoCMemory ].
+			targetCogMethod := (self cogWithoutCompacting: (objectMemory fetchPointer: i ofObject: targetMethodArray) numCopied: -1).
 			cogit setSelectorOf: targetCogMethod to: callsiteSelector.
 			cogit
 				cogExtendPIC: (pic) 
