@@ -11,7 +11,9 @@ CoInterpreterPrimitives >> cogWithoutCompacting: aMethodObj numCopied: nCopied [
           "Answer whether aMethodObj has machine code, compiling it if needed.
            Never compacts: if the zone is full, cog: has already called for a
            compaction, which runs at the next interrupt check."
-          <inline: true>
+			 <inline: true>
+			<returnTypeC: #'CogMethod *'>
+        
           | cogged |
 (self methodHasCogMethod: aMethodObj) ifTrue: [ ^ true ].
           cogged := nCopied >= 0
