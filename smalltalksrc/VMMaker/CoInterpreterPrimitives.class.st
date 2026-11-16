@@ -16,7 +16,7 @@ CoInterpreterPrimitives >> cogWithoutCompacting: aMethodObj numCopied: nCopied [
           nCopied >= 0
                   ifTrue: [ cogit cogFullBlockMethod: aMethodObj numCopied: nCopied ]
                   ifFalse: [ cogit cog: aMethodObj selector: objectMemory nilObject ].
-          ^ (self methodHasCogMethod: aMethodObj) ifFalse: [ ^ self primitiveFailFor: PrimErrNoCMemory ] ; yourself
+          ^ (self methodHasCogMethod: aMethodObj) ifFalse: [ ^ self primitiveFailFor: PrimErrNoCMemory ] ifTrue: [ true ]
   
 
 ]
