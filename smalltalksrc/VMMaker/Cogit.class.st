@@ -10242,7 +10242,7 @@ Cogit >> picInterpretAbortOffset [
 { #category : 'in-line cacheing' }
 Cogit >> picIsFrozen: aPIC [
 	<var: #aPIC type: #'CogMethod *'>
-	^  aPIC methodHeader == 0
+	^  aPIC methodHeader == 1
 ]
 
 { #category : 'accessing' }
